@@ -319,7 +319,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION:	AfxMessageBox(_T("BatchNamer v1.0 (2021-02-14 Release)")); break;
+	case IDM_VERSION:	AfxMessageBox(_T("BatchNamer v1.0 (2021-02-21 Release)")); break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	default:
