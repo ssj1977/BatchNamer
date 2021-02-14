@@ -1220,11 +1220,12 @@ void CBatchNamerDlg::ImportPath()
 	m_list.SetRedraw(TRUE);
 }
 
-
+//#include <afxdlgs.h>
 //파일의 경로를 하나로 통일. 일종의 MoveFile이 됨. 중복 체크 필요
 void CBatchNamerDlg::NameSamePath()
 {
-	/*CFolderDialog dlg(_T("경로 선택"));
+	CFolderPickerDialog dlg;
+///	CFolderDialog dlg(_T("경로 선택"));
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strPath = dlg.GetPathName();
 	//e:\ 같은 경우를 대비하여 끝에 오는 \를 삭제
@@ -1233,9 +1234,9 @@ void CBatchNamerDlg::NameSamePath()
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		//COL_FOLDER 변경해 주면 나중에 실제 변경때 이값이 COL_NEWNAME과 결합되면서 새 경로가 된다
-		m_list.SetItemText(i, COL_OLDFOLDER, strPath);
+		m_list.SetItemText(i, COL_NEWFOLDER, strPath);
 	}
-	m_list.SetRedraw(TRUE);*/
+	m_list.SetRedraw(TRUE);
 }
 
 void CBatchNamerDlg::NameDelPos()
