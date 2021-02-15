@@ -66,7 +66,7 @@ BOOL CDlgInput::OnInitDialog()
 
 void CDlgInput::ArrangeCtrl()
 {
-	SetDlgItemText(IDC_STATIC_TITLE, m_strTitle);
+	SetWindowText(m_strTitle);
 	SetDlgItemText(IDC_STATIC_1, m_strStatic1);
 	SetDlgItemText(IDC_STATIC_2, m_strStatic2);
 	SetDlgItemText(IDC_EDIT_1, m_strReturn1);

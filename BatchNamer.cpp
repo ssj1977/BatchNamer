@@ -41,7 +41,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_bUseDefaultColor = TRUE;
 	m_nFontSize = 12;
 	m_bUseDefaultFont = TRUE;
-	m_nIconType = SHIL_SMALL;
+	m_nIconType = SHIL_EXTRALARGE;
 }
 
 
