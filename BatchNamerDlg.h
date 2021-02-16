@@ -45,7 +45,6 @@ protected:
 	HICON m_hIcon;
 	void AddByFileDialog();
 	void SortList();
-	inline void NameAppend(int nItem, CString strAppend);
 	void NameDelToken();
 	void NameDelPos();
 	void NameSamePath();

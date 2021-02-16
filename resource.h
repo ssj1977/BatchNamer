@@ -22,9 +22,9 @@
 #define IDS_TB_17                       18
 #define IDS_TB_18                       19
 #define IDS_TB_19                       20
-#define IDS_ADDFRONT                    21
-#define IDS_ADDBACK                     22
-#define IDS_ADDSTRING                   23
+#define IDS_ADDSTRING                   21
+#define IDS_ADDPARENT                   22
+#define IDS_STRINGTOADD                 23
 #define IDS_WORKING                     24
 #define IDS_COL_OLDNAME                 25
 #define IDS_COL_NEWNAME                 26
@@ -45,6 +45,11 @@
 #define IDS_ICON_SMALL                  58
 #define IDS_ICON_EXLARGE                59
 #define IDS_ICON_JUMBO                  60
+#define IDS_REPLACESTRING               61
+#define IDS_REPLACEOLD                  62
+#define IDS_REPLACENEW                  63
+#define IDS_ADDTIMECREATE               64
+#define IDS_ADDTIMEMODIFY               65
 #define IDD_BATCHNAMER                  102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129

@@ -24,6 +24,7 @@ END_MESSAGE_MAP()
 
 CBatchNamerApp::CBatchNamerApp()
 {
+	m_bEnglishUI = FALSE;
 	m_bShowEverytime = TRUE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
 	m_nLoadType = 0; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가
 	m_nShowFlag = 0; //칼럼 표시 여부
@@ -91,6 +92,13 @@ int CBatchNamerApp::ExitInstance()
 
 BOOL CBatchNamerApp::InitInstance()
 {
+	TCHAR szBuff[MAX_PATH];
+	GetModuleFileName(m_hInstance, szBuff, MAX_PATH);
+	CString strExePath = szBuff;
+	m_strINIPath = Get_Folder(strExePath) + L"\\" + Get_Name(strExePath, FALSE) + L".ini";
+	INILoad(m_strINIPath);
+
+	if (m_bEnglishUI == TRUE) SetLocale(LANG_ENGLISH);
 	// 애플리케이션 매니페스트가 ComCtl32.dll 버전 6 이상을 사용하여 비주얼 스타일을
 	// 사용하도록 지정하는 경우, Windows XP 상에서 반드시 InitCommonControlsEx()가 필요합니다.
 	// InitCommonControlsEx()를 사용하지 않으면 창을 만들 수 없습니다.
@@ -108,12 +116,6 @@ BOOL CBatchNamerApp::InitInstance()
 	//CShellManager *pShellManager = new CShellManager;
 	// MFC 컨트롤의 테마를 사용하기 위해 "Windows 원형" 비주얼 관리자 활성화
 	CMFCVisualManager::SetDefaultManager(RUNTIME_CLASS(CMFCVisualManagerWindows));
-
-	TCHAR szBuff[MAX_PATH];
-	GetModuleFileName(m_hInstance, szBuff, MAX_PATH);
-	CString strExePath = szBuff;
-	m_strINIPath = Get_Folder(strExePath) + L"\\" + Get_Name(strExePath, FALSE) + L".ini";
-	INILoad(m_strINIPath);
 
 	CBatchNamerDlg dlg;
 	m_pMainWnd = &dlg;
@@ -148,6 +150,7 @@ BOOL CBatchNamerApp::InitInstance()
 void CBatchNamerApp::INISave(CString strFile)
 {
 	CString strData, strLine, str1, str2;
+	strLine.Format(_T("EnglishUI=%d\r\n"), m_bEnglishUI); strData += strLine;
 	strLine.Format(_T("ShowCFGLoad=%d\r\n"), m_bShowEverytime); strData += strLine;
 	strLine.Format(_T("LoadType=%d\r\n"), m_nLoadType);	strData += strLine;
 	strLine.Format(_T("ShowColumnFlag=%d\r\n"), m_nShowFlag);	strData += strLine;
@@ -189,6 +192,14 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("UseDefaultFont")) == 0) m_bUseDefaultFont = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("FontSize")) == 0) m_nFontSize = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = _ttoi(str2);
 		}
 	}
+}
+
+
+void CBatchNamerApp::SetLocale(int nLanguageID)
+{
+	//LANG_KOREAN / LANG_ENGLISH
+	SetThreadLocaleEx(MAKELCID(MAKELANGID(nLanguageID, SUBLANG_DEFAULT), SORT_DEFAULT));
 }

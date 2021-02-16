@@ -28,7 +28,7 @@ typedef vector<CString> CStrArray;
 typedef map<CString, int> CExtMap; //확장자에 해당하는 이미지맵의 번호를 기억
 static CExtMap mapExt;
 
-inline CString GetFolderString(CString strPath)
+inline CString GetFolderName(CString strPath)
 {
 	return strPath.Right(strPath.GetLength() - strPath.ReverseFind(_T('\\')) - 1);
 }
@@ -57,7 +57,7 @@ inline CString GetTimeStringToAdd(CString strTime)
 {
 	strTime.Remove(_T(':'));
 	strTime.Remove(_T('-'));
-	strTime.Remove(_T(' '));
+	strTime.Replace(_T(' '), _T('_'));
 	return strTime;
 }
 
@@ -267,9 +267,8 @@ void CBatchNamerDlg::ArrangeCtrl()
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
 		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT);
 	}
-	m_tool2.RedrawWindow();
 	GetDlgItem(IDC_ST_BAR)->MoveWindow(0, rc.bottom - BARHEIGHT + 1, rc.Width(), BARHEIGHT - 2);
-	GetDlgItem(IDC_ST_BAR)->RedrawWindow();
+	RedrawWindow();
 }
 
 void CBatchNamerDlg::OnSize(UINT nType, int cx, int cy)
@@ -319,7 +318,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION:	AfxMessageBox(_T("BatchNamer v1.0 (2021-02-21 Release)")); break;
+	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.0 (2021-02-21 Release)")); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	default:
@@ -415,7 +414,7 @@ void CBatchNamerDlg::AddListItem(CFileFind& find)
 	strName = find.GetFileName();
 	strFolder = Get_Folder(strPath);
 	CTime tTemp;
-	find.GetLastWriteTime(tTemp);
+	find.GetCreationTime(tTemp);
 	strTimeCreate = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
 	find.GetLastWriteTime(tTemp);
 	strTimeModify = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
@@ -657,7 +656,8 @@ void CBatchNamerDlg::ManualChange()
 void CBatchNamerDlg::NameReplace()
 {
 	CDlgInput dlg;
-	dlg.InitInputDlg(_T("이름에 들어있는 문자열을 바꿉니다."), _T("를"), _T("으로"));
+	dlg.InitInputDlg(IDSTR(IDS_TB_01),IDSTR(IDS_REPLACEOLD), IDSTR(IDS_REPLACENEW));
+	dlg.AddOption(IDSTR(IDS_REPLACESTRING), INPUT_ONE);
 
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strTemp;
@@ -674,11 +674,11 @@ void CBatchNamerDlg::NameReplace()
 void CBatchNamerDlg::NameAdd(BOOL bFront = TRUE)
 {
 	CDlgInput dlg;
-	dlg.InitInputDlg(IDSTR(bFront ? IDS_ADDFRONT : IDS_ADDBACK), IDSTR(IDS_ADDSTRING), _T(""));
-	dlg.AddOption(_T("직접 입력한 문자열 추가"), INPUT_ONE);
-	dlg.AddOption(_T("파일이 들어있는 폴더명 추가"), INPUT_NONE);
-	dlg.AddOption(_T("파일 변경 일시 추가"), INPUT_NONE);
-	dlg.AddOption(_T("파일 생성 일시 추가"), INPUT_NONE);
+	dlg.InitInputDlg(IDSTR(bFront ? IDS_TB_02 : IDS_TB_03), IDSTR(IDS_STRINGTOADD), _T(""));
+	dlg.AddOption(IDSTR(IDS_ADDSTRING), INPUT_ONE);
+	dlg.AddOption(IDSTR(IDS_ADDPARENT), INPUT_NONE);
+	dlg.AddOption(IDSTR(IDS_ADDTIMECREATE), INPUT_NONE);
+	dlg.AddOption(IDSTR(IDS_ADDTIMEMODIFY), INPUT_NONE);
 
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strTemp;
@@ -691,7 +691,7 @@ void CBatchNamerDlg::NameAdd(BOOL bFront = TRUE)
 			strTemp = dlg.m_strReturn1;
 			break;
 		case 1: //폴더명
-			strTemp = GetFolderString(m_list.GetItemText(i, COL_OLDFOLDER));
+			strTemp = GetFolderName(m_list.GetItemText(i, COL_OLDFOLDER));
 			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
 			if (strTemp.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strTemp.Empty();
 			break;
@@ -709,20 +709,14 @@ void CBatchNamerDlg::NameAdd(BOOL bFront = TRUE)
 		}
 		else
 		{
-			NameAppend(i, strTemp);
+			BOOL bIsDir = m_list.GetItemData(i);
+			CString strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir) + strTemp;
+			CString	strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			if (strExt.IsEmpty() == FALSE) strName += strExt;
+			m_list.SetItemText(i, COL_NEWNAME, strName);
 		}
 	}
 	m_list.SetRedraw(TRUE);
-}
-
-//inline 함수. 이름 맨 뒤, 확장자 바로 앞에 특정 문자열을 삽입해주는 기능
-void CBatchNamerDlg::NameAppend(int nItem, CString strAppend)
-{
-	BOOL bIsDir = m_list.GetItemData(nItem);
-	CString strName = Get_Name(m_list.GetItemText(nItem, COL_NEWNAME), bIsDir) + strAppend;
-	CString	strExt = Get_Ext(m_list.GetItemText(nItem, COL_NEWNAME), bIsDir);
-	if (strExt.IsEmpty() == FALSE) strName += strExt;
-	m_list.SetItemText(nItem, COL_NEWNAME, strName);
 }
 
 void CBatchNamerDlg::NameDelType()
