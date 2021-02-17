@@ -26,6 +26,7 @@ CBatchNamerApp::CBatchNamerApp()
 {
 	m_bEnglishUI = FALSE;
 	m_bShowEverytime = TRUE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
+	m_bAutoSort = TRUE; //항목 추가시 자동 정렬 여부
 	m_nLoadType = 0; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가
 	m_nShowFlag = 0; //칼럼 표시 여부
 	m_rcMain = CRect(0, 0, 0, 0);
@@ -152,6 +153,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	CString strData, strLine, str1, str2;
 	strLine.Format(_T("EnglishUI=%d\r\n"), m_bEnglishUI); strData += strLine;
 	strLine.Format(_T("ShowCFGLoad=%d\r\n"), m_bShowEverytime); strData += strLine;
+	strLine.Format(_T("AutoSort=%d\r\n"), m_bAutoSort); strData += strLine;
 	strLine.Format(_T("LoadType=%d\r\n"), m_nLoadType);	strData += strLine;
 	strLine.Format(_T("ShowColumnFlag=%d\r\n"), m_nShowFlag);	strData += strLine;
 	strLine.Format(_T("MainX1=%d\r\n"), m_rcMain.left);		strData += strLine;
@@ -180,6 +182,7 @@ void CBatchNamerApp::INILoad(CString strFile)
 		if (str2.IsEmpty() == FALSE)
 		{
 			if (str1.CompareNoCase(_T("ShowCFGLoad")) == 0) m_bShowEverytime = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("AutoSort")) == 0) m_bAutoSort = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("LoadType")) == 0) m_nLoadType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ShowColumnFlag")) == 0) m_nShowFlag = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainX1")) == 0) m_rcMain.left = _ttoi(str2);

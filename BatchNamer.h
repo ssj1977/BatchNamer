@@ -22,6 +22,7 @@ public:
 	BOOL m_bEnglishUI;
 	CString m_strINIPath;
 	BOOL m_bShowEverytime;
+	BOOL m_bAutoSort;
 	int m_nLoadType;
 	int m_nShowFlag;
 	CRect m_rcMain;

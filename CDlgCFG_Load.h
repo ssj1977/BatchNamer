@@ -11,7 +11,8 @@ public:
 	CDlgCFG_Load(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgCFG_Load();
 	BOOL m_bShowEverytime;
-	BOOL m_nLoadType;
+	BOOL m_bAutoSort;
+	int m_nLoadType;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME

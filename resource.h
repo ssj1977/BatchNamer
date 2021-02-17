@@ -34,6 +34,7 @@
 #define IDS_COL_FILESIZE                30
 #define IDS_COL_TIMECREATE              31
 #define IDS_COL_TIMEMODIFY              32
+#define IDS_ERR_TOOMANYITEMS            33
 #define IDS_MSG_APPLYASK                50
 #define IDS_MSG_NONAME                  51
 #define IDS_MSG_DUPNAME                 52
@@ -68,13 +69,10 @@
 #define IDC_ST_BAR                      1007
 #define IDC_TOOLBORDER_1                1012
 #define IDC_TOOLBORDER_2                1013
-#define IDC_RADIO_LOAD_1                1014
-#define IDC_RADIO_LOAD_2                1015
-#define IDC_RADIO_LOAD_3                1017
-#define IDC_RADIO_LOAD_4                1018
-#define IDC_RADIO_SHOW_0                1019
-#define IDC_RADIO_SHOW_1                1020
-#define IDC_RADIO_LOAD_0                1021
+#define IDC_RADIO_LOAD_0                1014
+#define IDC_RADIO_LOAD_1                1015
+#define IDC_RADIO_AUTOSORT_0            1019
+#define IDC_RADIO_AUTOSORT_1            1020
 #define IDC_CHECK_DEFAULT_COLOR         1023
 #define IDC_CHECK_DEFAULT_FONT          1024
 #define IDC_COLOR_BK                    1026
@@ -84,6 +82,7 @@
 #define IDC_ST_FONTSIZE                 1032
 #define IDC_ST_COLOR_TEXT               1033
 #define IDC_ST_COLOR_BK                 1034
+#define IDC_CHK_SHOWEVERYTIME           1035
 #define IDM_APPLY_CHANGE                32771
 #define IDM_NAME_REPLACE                32772
 #define IDM_NAME_ADD_FRONT              32773
@@ -126,9 +125,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        146
+#define _APS_NEXT_RESOURCE_VALUE        147
 #define _APS_NEXT_COMMAND_VALUE         32820
-#define _APS_NEXT_CONTROL_VALUE         1035
+#define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

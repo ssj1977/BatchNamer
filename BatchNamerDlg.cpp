@@ -483,10 +483,12 @@ void CBatchNamerDlg::ConfigLoadType()
 	CDlgCFG_Load dlg;
 	dlg.m_bShowEverytime = APP()->m_bShowEverytime;
 	dlg.m_nLoadType = APP()->m_nLoadType;
+	dlg.m_bAutoSort = APP()->m_bAutoSort;
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bShowEverytime = dlg.m_bShowEverytime;
 		APP()->m_nLoadType = dlg.m_nLoadType;
+		APP()->m_bAutoSort = dlg.m_bAutoSort;
 	}
 }
 
@@ -578,7 +580,7 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 	}
 	DragFinish(hDropInfo);
 	//SetDlgItemText(IDC_ST_BAR, _T(""));
-	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
+	if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 	m_list.SetRedraw(TRUE);
 	clock_t timeend = clock();
 	UpdateMenu();
@@ -592,14 +594,15 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 void CBatchNamerDlg::AddByFileDialog()
 {
 	CFileDialog dlg(TRUE, _T("*.*"), NULL,
-		OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY, _T("All Files(*.*)|*.*||"), NULL);
-
-	TCHAR* buf = new TCHAR[65536];
+		OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY,
+		_T("All Files(*.*)|*.*||"), NULL, 0 , TRUE);
+	OPENFILENAME& ofn = dlg.GetOFN();
+	ofn.lpstrTitle = _T("이름 붙일 파일 불러오기");
+	ofn.nMaxFile = (MAX_PATH + sizeof(TCHAR)) * 10000;
+	TCHAR* buf = new TCHAR[ofn.nMaxFile];
 	memset(buf, 0, sizeof(buf));
-	dlg.m_ofn.lpstrTitle = _T("이름 붙일 파일 불러오기");
-	dlg.m_ofn.lpstrFile = buf;
-	dlg.m_ofn.nMaxFile = 65536;
-
+	ofn.lpstrFile = buf;
+	int nCount = 0;
 	if (dlg.DoModal() == IDOK)
 	{
 		if (APP()->m_bShowEverytime) ConfigLoadType();
@@ -611,11 +614,15 @@ void CBatchNamerDlg::AddByFileDialog()
 		{
 			strPath = dlg.GetNextPathName(pos);
 			AddPathStart(strPath);
+			nCount++;
 		}
 		SetDlgItemText(IDC_ST_BAR, _T(""));
+		if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 		m_list.SetRedraw(TRUE);
+		UpdateMenu();
 	}
 	delete[] buf;
+	if (nCount > 10000) AfxMessageBox(IDSTR(IDS_ERR_TOOMANYITEMS));
 }
 
 
