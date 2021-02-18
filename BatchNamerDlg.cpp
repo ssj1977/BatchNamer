@@ -350,6 +350,13 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 			UpdateCount();
 			return TRUE;
 		}
+		if (pMsg->wParam == VK_ESCAPE)
+		{
+			if (m_list.GetItemCount() > 0)
+			{
+				if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return TRUE;
+			}
+		}
 		// <>를 이용해 리스트상에서 이동 가능
 		if (pMsg->wParam == 188) { ListUp(); return TRUE; }
 		if (pMsg->wParam == 190) { ListDown(); return TRUE; }
@@ -566,28 +573,27 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 	TCHAR szFilePath[_MAX_PATH];
 	memset(szFilePath, 0, sizeof(szFilePath));
 	CString strPath;
+	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
 	cFiles = DragQueryFile(hDropInfo, (UINT)-1, NULL, 0);
 	if (APP()->m_bShowEverytime) ConfigLoadType();
-	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
-	clock_t timestart = clock();
+	//clock_t timestart = clock();
 	m_list.SetRedraw(FALSE);
 	for (int i = 0; i < cFiles; i++)
 	{
 		DragQueryFile(hDropInfo, i, szFilePath, sizeof(szFilePath));
 		strPath = (LPCTSTR)szFilePath;
 		AddPathStart(strPath);
-		UpdateCount();
 	}
 	DragFinish(hDropInfo);
-	//SetDlgItemText(IDC_ST_BAR, _T(""));
 	if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 	m_list.SetRedraw(TRUE);
-	clock_t timeend = clock();
+	//clock_t timeend = clock();
 	UpdateMenu();
-	double result = (double)(timeend - timestart);
-	CString strTemp;
-	strTemp.Format(_T("%f MSecs"), result);
-	SetDlgItemText(IDC_ST_BAR, strTemp);
+	UpdateCount();
+	//double result = (double)(timeend - timestart);
+	//CString strTemp;
+	//strTemp.Format(_T("%f MSecs"), result);
+	//SetDlgItemText(IDC_ST_BAR, strTemp);
 }
 
 //파일 열기 시스템 다이얼로그를 사용해서 파일을 목록에 추가한다
@@ -596,8 +602,10 @@ void CBatchNamerDlg::AddByFileDialog()
 	CFileDialog dlg(TRUE, _T("*.*"), NULL,
 		OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY,
 		_T("All Files(*.*)|*.*||"), NULL, 0 , TRUE);
+	CString strTemp;
+	strTemp.LoadString(IDS_LOAD_FILEDIALOG);
 	OPENFILENAME& ofn = dlg.GetOFN();
-	ofn.lpstrTitle = _T("이름 붙일 파일 불러오기");
+	ofn.lpstrTitle = strTemp;
 	ofn.nMaxFile = (MAX_PATH + sizeof(TCHAR)) * 10000;
 	TCHAR* buf = new TCHAR[ofn.nMaxFile];
 	memset(buf, 0, sizeof(buf));
@@ -616,9 +624,9 @@ void CBatchNamerDlg::AddByFileDialog()
 			AddPathStart(strPath);
 			nCount++;
 		}
-		SetDlgItemText(IDC_ST_BAR, _T(""));
 		if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 		m_list.SetRedraw(TRUE);
+		UpdateCount();
 		UpdateMenu();
 	}
 	delete[] buf;
@@ -1174,7 +1182,7 @@ void CBatchNamerDlg::Export(int nMode)
 void CBatchNamerDlg::ImportName()
 {
 	CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
-	dlg.m_ofn.lpstrTitle = _T("바꿀 파일 이름 불러오기");
+	dlg.GetOFN().lpstrTitle = _T("바꿀 파일 이름 불러오기");
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strData, strName;
 	ReadFileToCString(dlg.GetPathName(), strData);
@@ -1201,7 +1209,9 @@ void CBatchNamerDlg::ImportName()
 void CBatchNamerDlg::ImportPath()
 {
 	CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
-	dlg.m_ofn.lpstrTitle = _T("파일에서 경로목록 읽어 추가하기");
+	CString strTemp;
+	strTemp.LoadString(IDS_IMPORT_PATH);
+	dlg.GetOFN().lpstrTitle = strTemp;
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strImportData;
 	ReadFileToCString(dlg.GetPathName(), strImportData);
@@ -1217,7 +1227,7 @@ void CBatchNamerDlg::ImportPath()
 		strPath.TrimLeft(); strPath.TrimRight();
 		AddPathStart(strPath);
 	}
-	SetDlgItemText(IDC_ST_BAR, _T(""));
+	UpdateCount();
 	m_list.SetRedraw(TRUE);
 }
 
@@ -1465,10 +1475,10 @@ void CBatchNamerDlg::UpdateCount()
 	CString strTemp;
 	if (nCount == 0)
 	{
-		strTemp = _T("드래그 앤 드롭 또는 메뉴를 이용하여 파일을 추가해 주세요");
+		strTemp = IDSTR(IDS_PLEASE_ADD);
 		UpdateMenu();
 	}
-	else strTemp.Format(_T("%d 개"), nCount);
+	else strTemp.Format(IDSTR(IDS_COUNT_FORMAT), nCount);
 	SetDlgItemText(IDC_ST_BAR, strTemp);
 }
 

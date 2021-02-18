@@ -35,6 +35,11 @@
 #define IDS_COL_TIMECREATE              31
 #define IDS_COL_TIMEMODIFY              32
 #define IDS_ERR_TOOMANYITEMS            33
+#define IDS_LOAD_FILEDIALOG             34
+#define IDS_PLEASE_ADD                  35
+#define IDS_COUNT_FORMAT                36
+#define IDS_IMPORT_PATH                 37
+#define IDS_CONFIRM_EXIT                38
 #define IDS_MSG_APPLYASK                50
 #define IDS_MSG_NONAME                  51
 #define IDS_MSG_DUPNAME                 52
