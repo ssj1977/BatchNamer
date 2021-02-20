@@ -16,7 +16,7 @@ public:
 	virtual ~CDlgInput();
 	void AddOption(CString strText, UINT nData);
 	void InitValue(CString str1, CString str2);
-	void InitInputDlg(CString strTitle, CString strStatic1, CString strStatic2);
+	void InitInputDlg(CString strTitle, CString strStatic1, CString strStatic2, BOOL bNumberOnly = FALSE);
 	CString m_strTitle;
 	void ArrangeCtrl();
 	CString m_strStatic2;
@@ -27,6 +27,7 @@ public:
 	CUIntArray m_aOptionData;
 	int m_nCB;
 	int m_nDlgType;
+	BOOL m_bNumberOnly;
 // 대화 상자 데이터입니다.
 //#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_INPUT };

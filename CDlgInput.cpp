@@ -76,39 +76,37 @@ void CDlgInput::ArrangeCtrl()
 	{
 		GetDlgItem(IDC_STATIC_1)->ShowWindow(SW_SHOW);
 		GetDlgItem(IDC_EDIT_1)->ShowWindow(SW_SHOW);
-		//GetDlgItem(IDC_STATIC_1)->EnableWindow(TRUE);
-		//GetDlgItem(IDC_EDIT_1)->EnableWindow(TRUE);
 	}
 	else
 	{
 		GetDlgItem(IDC_STATIC_1)->ShowWindow(SW_HIDE);
 		GetDlgItem(IDC_EDIT_1)->ShowWindow(SW_HIDE);
-		//GetDlgItem(IDC_STATIC_1)->EnableWindow(FALSE);
-		//GetDlgItem(IDC_EDIT_1)->EnableWindow(FALSE);
 	}
-
 	if (m_strStatic2.IsEmpty() == FALSE && m_nDlgType == INPUT_TWO)
 	{
 		GetDlgItem(IDC_STATIC_2)->ShowWindow(SW_SHOW);
 		GetDlgItem(IDC_EDIT_2)->ShowWindow(SW_SHOW);
-		//GetDlgItem(IDC_STATIC_2)->EnableWindow(TRUE);
-		//GetDlgItem(IDC_EDIT_2)->EnableWindow(TRUE);
 	}
 	else
 	{
 		GetDlgItem(IDC_STATIC_2)->ShowWindow(SW_HIDE);
 		GetDlgItem(IDC_EDIT_2)->ShowWindow(SW_HIDE);
-		//GetDlgItem(IDC_STATIC_2)->EnableWindow(FALSE);
-		//GetDlgItem(IDC_EDIT_2)->EnableWindow(FALSE);
 	}
-	//	if (m_strStatic1.IsEmpty() && m_strStatic2.IsEmpty()) m_cb.MoveWindow(20,40,300,500);
+	if (m_bNumberOnly == TRUE)
+	{
+		LONG style = GetWindowLong(GetDlgItem(IDC_EDIT_1)->GetSafeHwnd(), GWL_STYLE);
+		SetWindowLong(GetDlgItem(IDC_EDIT_1)->GetSafeHwnd(), GWL_STYLE, style | ES_NUMBER);
+		style = GetWindowLong(GetDlgItem(IDC_EDIT_2)->GetSafeHwnd(), GWL_STYLE);
+		SetWindowLong(GetDlgItem(IDC_EDIT_2)->GetSafeHwnd(), GWL_STYLE, style | ES_NUMBER);
+	}
 }
 
-void CDlgInput::InitInputDlg(CString strTitle, CString strStatic1, CString strStatic2)
+void CDlgInput::InitInputDlg(CString strTitle, CString strStatic1, CString strStatic2, BOOL bNumberOnly)
 {
 	m_strTitle = strTitle;
 	m_strStatic1 = strStatic1;
 	m_strStatic2 = strStatic2;
+	m_bNumberOnly = bNumberOnly;
 }
 
 void CDlgInput::OnOK()

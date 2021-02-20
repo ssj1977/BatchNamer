@@ -40,6 +40,11 @@
 #define IDS_COUNT_FORMAT                36
 #define IDS_IMPORT_PATH                 37
 #define IDS_CONFIRM_EXIT                38
+#define IDS_POS_1                       39
+#define IDS_POS_2                       40
+#define IDS_DELPOS_FRONT                41
+#define IDS_DELPOS_REAR                 42
+#define IDS_MSG_INVALIDPOS              43
 #define IDS_MSG_APPLYASK                50
 #define IDS_MSG_NONAME                  51
 #define IDS_MSG_DUPNAME                 52

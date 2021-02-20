@@ -1253,26 +1253,17 @@ void CBatchNamerDlg::NameSamePath()
 void CBatchNamerDlg::NameDelPos()
 {
 	CDlgInput dlg;
-	dlg.InitInputDlg(_T("지정위치를 삭제합니다.(첫글자는 1번째)"), _T("번째부터"), _T("번째까지"));
-	dlg.AddOption(_T("앞에서부터 삭제"), INPUT_TWO);
-	dlg.AddOption(_T("제일 뒤부터 삭제"), INPUT_TWO);
+	dlg.InitInputDlg(IDSTR(IDS_TB_05), IDSTR(IDS_POS_1), IDSTR(IDS_POS_2), TRUE);
+	dlg.AddOption(IDSTR(IDS_DELPOS_FRONT), INPUT_TWO);
+	dlg.AddOption(IDSTR(IDS_DELPOS_REAR), INPUT_ONE);
 	if (dlg.DoModal() == IDCANCEL) return;
 
 	int nStart = _ttoi(dlg.m_strReturn1);
 	int nEnd = _ttoi(dlg.m_strReturn2);
 	if (nStart == 0 && nEnd == 0) return;
-
-	if (nStart < 0 || nEnd < 0)
-	{
-		AfxMessageBox(_T("음수값이나 잘못된 값이 입력되었습니다.")); return;
-	}
 	if (dlg.m_nCB == 0 && nEnd > 0 && nStart > nEnd)
 	{
-		AfxMessageBox(_T("시작점이 끝점보다 뒤에 있습니다.")); return;
-	}
-	if (dlg.m_nCB == 1 && nStart != 0)
-	{
-		AfxMessageBox(_T("맨 뒤에서부터 삭제할때는 '~까지'만 필요합니다.")); return;
+		AfxMessageBox(IDSTR(IDS_MSG_INVALIDPOS)); return;
 	}
 
 	CString strName, strExt;
@@ -1297,7 +1288,7 @@ void CBatchNamerDlg::NameDelPos()
 		else if (dlg.m_nCB == 1) //뒤의 n개
 		{
 			int nLen = strName.GetLength();
-			if (nEnd < nLen) nLen = nEnd;
+			if (nStart < nLen) nLen = nStart;
 			strName.Delete(strName.GetLength() - nLen, nLen);
 		}
 
