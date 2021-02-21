@@ -28,6 +28,7 @@ public:
 	void UpdateCount();
 	void UpdateMenu();
 	void ArrangeCtrl();
+	static UINT ApplyChange_Thread(void* lParam);
 // 대화 상자 데이터입니다.
 //#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_BATCHNAMER };
@@ -45,9 +46,8 @@ protected:
 	HICON m_hIcon;
 	void AddByFileDialog();
 	void SortList();
-	void NameDelToken();
-	void NameDelPos();
-	void NameSamePath();
+	void NameRemoveSelected();
+	void NameSetParent();
 	void Export(int nMode);
 	void ImportName();
 	void ImportPath();
@@ -57,6 +57,7 @@ protected:
 	void ListUp();
 	void SwapItem(int n1, int n2);
 	void ApplyChange();
+	void ApplyChange_Start();
 	void ManualChange();
 	void AddPath(CString strFile, BOOL bIsDirectory);
 	void AddPathStart(CString strPath);
@@ -67,7 +68,7 @@ protected:
 	void ExtAdd();
 	void ExtDel();
 	void NameDigit();
-	void NameDelType();
+	void NameNumberFilter(BOOL bRemoveNumber);
 	void NameAdd(BOOL bFront);
 	void NameReplace();
 	void ClearList();

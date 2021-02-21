@@ -45,6 +45,12 @@
 #define IDS_DELPOS_FRONT                41
 #define IDS_DELPOS_REAR                 42
 #define IDS_MSG_INVALIDPOS              43
+#define IDS_MANUAL_CHANGE               44
+#define IDS_POS_1_REAR                  45
+#define IDS_ADDPREFIX                   46
+#define IDS_ADDSUFFIX                   47
+#define IDS_REMOVEBYBRACKET             48
+#define IDS_MSG_BRACKETINVALID          49
 #define IDS_MSG_APPLYASK                50
 #define IDS_MSG_NONAME                  51
 #define IDS_MSG_DUPNAME                 52
@@ -61,6 +67,27 @@
 #define IDS_REPLACENEW                  63
 #define IDS_ADDTIMECREATE               64
 #define IDS_ADDTIMEMODIFY               65
+#define IDS_BRACKET1                    66
+#define IDS_BRACKET2                    67
+#define IDS_MSG_BRACKETLEN              68
+#define IDS_SETPARENT                   69
+#define IDS_IMPORTNAME                  70
+#define IDS_EXPORTNAME                  71
+#define IDS_EXPORTFULLPATH              72
+#define IDS_DIGITBACK                   73
+#define IDS_DIGITFRONT                  74
+#define IDS_DIGITCOUNT                  75
+#define IDS_MSG_INVALIDDIGIT            76
+#define IDS_EXT_APPEND                  77
+#define IDS_EXT_TOADD                   78
+#define IDS_EXT_REPLACE                 79
+#define IDS_EXT_OLD                     80
+#define IDS_EXT_NEW                     81
+#define IDS_STARTNUMBER                 82
+#define IDS_ADDNUM_ALL_BACK             83
+#define IDS_ADDNUM_ALL_FRONT            84
+#define IDS_ADDNUM_BYFOLDER_BACK        85
+#define IDS_ADDNUM_BYFOLDER_FRONT       86
 #define IDD_BATCHNAMER                  102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
@@ -98,16 +125,16 @@
 #define IDM_NAME_ADD_FRONT              32773
 #define IDM_NAME_ADD_REAR               32774
 #define IDM_NAME_EMPTY                  32775
-#define IDM_NAME_DELPOS                 32776
-#define IDM_NAME_DELTOKEN               32777
-#define IDM_NAME_DEL_TYPE               32778
+#define IDM_NAME_REMOVESELECTED         32776
+#define IDM_NAME_EXTRACTNUMBER          32777
+#define IDM_NAME_REMOVENUMBER           32778
 #define IDM_NAME_DIGIT                  32779
 #define IDM_NAME_ADDNUM                 32780
 #define IDM_UNDO_CHANGE                 32781
 #define IDM_CLEAR_LIST                  32782
 #define IDM_MANUAL_CHANGE               32783
 #define IDM_SORT_LIST                   32784
-#define IDM_NAME_SAMEPATH               32787
+#define IDM_NAME_SETPARENT              32787
 #define IDM_EXT_DEL                     32788
 #define IDM_EXT_ADD                     32789
 #define IDM_EXT_REPLACE                 32790
@@ -135,8 +162,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        147
-#define _APS_NEXT_COMMAND_VALUE         32820
+#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_COMMAND_VALUE         32822
 #define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

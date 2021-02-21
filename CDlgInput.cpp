@@ -15,7 +15,6 @@ CDlgInput::CDlgInput(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_INPUT, pParent)
 {
 	m_nCB = 0;
-	m_nDlgType = INPUT_TWO;
 }
 
 CDlgInput::~CDlgInput()
@@ -43,70 +42,47 @@ BOOL CDlgInput::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	if (m_aOptionText.GetSize() > 0 && m_aOptionText.GetSize() == m_aOptionData.GetSize())
+	SetWindowText(m_strTitle);
+	if (m_strReturn1.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_1, m_strReturn1);
+	if (m_strReturn2.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_2, m_strReturn2);
+
+	if (m_aInputItemPtr.GetSize() > 0)
 	{
 		int nItem;
-		for (int i = 0; i < m_aOptionText.GetSize(); i++)
+		for (int i = 0; i < m_aInputItemPtr.GetSize(); i++)
 		{
-			nItem = m_cb.AddString(m_aOptionText[i]);
-			m_cb.SetItemData(nItem, m_aOptionData[i]);
+			InputItem* pItem = (InputItem*)m_aInputItemPtr[i];
+			nItem = m_cb.AddString(pItem->m_strItemName);
+			m_cb.SetItemData(nItem, (DWORD_PTR)pItem);
 		}
 		m_cb.SetCurSel(m_nCB);
+		OnSelchangeCbInput();
 	}
 	else
 	{
-		m_cb.ShowWindow(SW_HIDE);
+		return FALSE;
 	}
-	ArrangeCtrl();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-
-void CDlgInput::ArrangeCtrl()
+void CDlgInput::InitInputDlg(InputItem* pItem)
 {
-	SetWindowText(m_strTitle);
-	SetDlgItemText(IDC_STATIC_1, m_strStatic1);
-	SetDlgItemText(IDC_STATIC_2, m_strStatic2);
-	SetDlgItemText(IDC_EDIT_1, m_strReturn1);
-	SetDlgItemText(IDC_EDIT_2, m_strReturn2);
-
-	if (m_strStatic1.IsEmpty() == FALSE && m_nDlgType != INPUT_NONE)
-	{
-		GetDlgItem(IDC_STATIC_1)->ShowWindow(SW_SHOW);
-		GetDlgItem(IDC_EDIT_1)->ShowWindow(SW_SHOW);
-	}
-	else
-	{
-		GetDlgItem(IDC_STATIC_1)->ShowWindow(SW_HIDE);
-		GetDlgItem(IDC_EDIT_1)->ShowWindow(SW_HIDE);
-	}
-	if (m_strStatic2.IsEmpty() == FALSE && m_nDlgType == INPUT_TWO)
-	{
-		GetDlgItem(IDC_STATIC_2)->ShowWindow(SW_SHOW);
-		GetDlgItem(IDC_EDIT_2)->ShowWindow(SW_SHOW);
-	}
-	else
-	{
-		GetDlgItem(IDC_STATIC_2)->ShowWindow(SW_HIDE);
-		GetDlgItem(IDC_EDIT_2)->ShowWindow(SW_HIDE);
-	}
-	if (m_bNumberOnly == TRUE)
-	{
-		LONG style = GetWindowLong(GetDlgItem(IDC_EDIT_1)->GetSafeHwnd(), GWL_STYLE);
-		SetWindowLong(GetDlgItem(IDC_EDIT_1)->GetSafeHwnd(), GWL_STYLE, style | ES_NUMBER);
-		style = GetWindowLong(GetDlgItem(IDC_EDIT_2)->GetSafeHwnd(), GWL_STYLE);
-		SetWindowLong(GetDlgItem(IDC_EDIT_2)->GetSafeHwnd(), GWL_STYLE, style | ES_NUMBER);
-	}
-}
-
-void CDlgInput::InitInputDlg(CString strTitle, CString strStatic1, CString strStatic2, BOOL bNumberOnly)
-{
-	m_strTitle = strTitle;
-	m_strStatic1 = strStatic1;
-	m_strStatic2 = strStatic2;
-	m_bNumberOnly = bNumberOnly;
+	BOOL bShow1 = !(pItem->m_strLabel1.IsEmpty());
+	BOOL bShow2 = !(pItem->m_strLabel2.IsEmpty());
+	SetDlgItemText(IDC_STATIC_1, pItem->m_strLabel1);
+	SetDlgItemText(IDC_STATIC_2, pItem->m_strLabel2);
+	GetDlgItem(IDC_STATIC_1)->ShowWindow(bShow1 ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_EDIT_1)->ShowWindow(bShow1 ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_STATIC_2)->ShowWindow(bShow2 ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_EDIT_2)->ShowWindow(bShow2 ? SW_SHOW : SW_HIDE);
+	HWND h1 = GetDlgItem(IDC_EDIT_1)->GetSafeHwnd();
+	HWND h2 = GetDlgItem(IDC_EDIT_2)->GetSafeHwnd();
+	SetWindowLong(h1, GWL_STYLE, pItem->m_bIsNumber1 
+		? (GetWindowLong(h1, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h1, GWL_STYLE) & ~ES_NUMBER));
+	SetWindowLong(h2, GWL_STYLE, pItem->m_bIsNumber2 
+		? (GetWindowLong(h2, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h2, GWL_STYLE) & ~ES_NUMBER));
 }
 
 void CDlgInput::OnOK()
@@ -117,16 +93,6 @@ void CDlgInput::OnOK()
 	CDialogEx::OnOK();
 }
 
-void CDlgInput::InitValue(CString str1, CString str2)
-{
-	m_strReturn1 = str1;
-	m_strReturn2 = str2;
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// CDlgInput message handlers
-
 void CDlgInput::OnCancel()
 {
 	// TODO: Add extra cleanup here
@@ -134,14 +100,26 @@ void CDlgInput::OnCancel()
 	CDialogEx::OnCancel();
 }
 
-void CDlgInput::AddOption(CString strText, UINT nData)
+void CDlgInput::InitValue(CString str1, CString str2)
 {
-	m_aOptionText.Add(strText);
-	m_aOptionData.Add(nData);
+	m_strReturn1 = str1;
+	m_strReturn2 = str2;
+}
+void CDlgInput::AddOption(InputItem* pItem)
+{
+	if (pItem == NULL) return;
+	m_aInputItemPtr.Add(pItem);
 }
 
 void CDlgInput::OnSelchangeCbInput()
 {
-	if (m_aOptionData.GetSize() > 0) m_nDlgType = m_cb.GetItemData(m_cb.GetCurSel());
-	ArrangeCtrl();
+	int nSel = m_cb.GetCurSel();
+	if (nSel < 0 || nSel >= m_aInputItemPtr.GetSize()) return;
+	InputItem* pItem = (InputItem*)m_cb.GetItemData(nSel);
+	InitInputDlg(pItem);
+}
+
+InputItem* CDlgInput::GetCurrentItem()
+{
+	return (InputItem*)m_aInputItemPtr[m_nCB];
 }

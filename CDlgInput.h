@@ -1,10 +1,22 @@
 ﻿#pragma once
 
-#ifndef INPUT_NONE
-#define INPUT_NONE 0
-#define INPUT_ONE 1
-#define INPUT_TWO 2
-#endif
+struct InputItem
+{
+	CString m_strItemName;	//콤보박스에 들어갈 이름
+	int m_nCommand;		//동작하는 기능 종류  
+	CString m_strLabel1;	//첫번째 입력창 상단 라벨
+	BOOL m_bIsNumber1;		//첫번째 입력창이 숫자만 받는지 여부
+	CString m_strLabel2;	//두번째 입력창 상단 라벨
+	BOOL m_bIsNumber2;		//두번째 입력창이 숫자만 받는지 여부
+	InputItem()
+	{
+		m_nCommand = 0;
+		m_bIsNumber1 = FALSE;
+		m_bIsNumber2 = FALSE;
+	}
+};
+
+
 // CDlgInput 대화 상자
 
 class CDlgInput : public CDialogEx
@@ -14,20 +26,15 @@ class CDlgInput : public CDialogEx
 public:
 	CDlgInput(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgInput();
-	void AddOption(CString strText, UINT nData);
+	void AddOption(InputItem* pItem);
 	void InitValue(CString str1, CString str2);
-	void InitInputDlg(CString strTitle, CString strStatic1, CString strStatic2, BOOL bNumberOnly = FALSE);
+	void InitInputDlg(InputItem* pItem);
+	InputItem* GetCurrentItem();
 	CString m_strTitle;
-	void ArrangeCtrl();
-	CString m_strStatic2;
-	CString m_strStatic1;
 	CString m_strReturn2;
 	CString m_strReturn1;
-	CStringArray m_aOptionText;
-	CUIntArray m_aOptionData;
+	CPtrArray m_aInputItemPtr;
 	int m_nCB;
-	int m_nDlgType;
-	BOOL m_bNumberOnly;
 // 대화 상자 데이터입니다.
 //#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_INPUT };
