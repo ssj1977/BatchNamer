@@ -88,6 +88,9 @@
 #define IDS_ADDNUM_ALL_FRONT            84
 #define IDS_ADDNUM_BYFOLDER_BACK        85
 #define IDS_ADDNUM_BYFOLDER_FRONT       86
+#define IDS_ADDNUM_BYFOLDER_FRONT2      87
+#define IDS_MSG_STOPTHREAD              87
+#define IDS_PROGRESS_CHANGE             88
 #define IDD_BATCHNAMER                  102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
@@ -120,6 +123,7 @@
 #define IDC_ST_COLOR_TEXT               1033
 #define IDC_ST_COLOR_BK                 1034
 #define IDC_CHK_SHOWEVERYTIME           1035
+#define IDC_BTN_STOPTHREAD              1037
 #define IDM_APPLY_CHANGE                32771
 #define IDM_NAME_REPLACE                32772
 #define IDM_NAME_ADD_FRONT              32773
@@ -164,7 +168,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        149
 #define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1036
+#define _APS_NEXT_CONTROL_VALUE         1038
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

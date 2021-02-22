@@ -35,6 +35,7 @@ public:
 	void INISave(CString strFile);
 	void INILoad(CString strFile);
 	void SetLocale(int nLanguageID);
+	void UpdateThreadLocale();
 
 // 재정의입니다.
 public:

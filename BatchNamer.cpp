@@ -91,6 +91,11 @@ int CBatchNamerApp::ExitInstance()
 	return CWinAppEx::ExitInstance();
 }
 
+void CBatchNamerApp::UpdateThreadLocale()
+{
+	if (m_bEnglishUI == TRUE) SetLocale(LANG_ENGLISH);
+}
+
 BOOL CBatchNamerApp::InitInstance()
 {
 	TCHAR szBuff[MAX_PATH];

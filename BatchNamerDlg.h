@@ -81,4 +81,6 @@ protected:
 	afx_msg void OnDropFiles(HDROP hDropInfo);
 	afx_msg void OnDblclkListFile(NMHDR* pNMHDR, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnBnClickedBtnStopthread();
 };

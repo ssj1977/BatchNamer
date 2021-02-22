@@ -127,6 +127,7 @@ BEGIN_MESSAGE_MAP(CBatchNamerDlg, CDialogEx)
 	ON_WM_SIZE()
 	ON_WM_DROPFILES()
 	ON_NOTIFY(NM_DBLCLK, IDC_LIST_FILE, OnDblclkListFile)
+	ON_BN_CLICKED(IDC_BTN_STOPTHREAD, &CBatchNamerDlg::OnBnClickedBtnStopthread)
 END_MESSAGE_MAP()
 
 
@@ -271,7 +272,12 @@ void CBatchNamerDlg::ArrangeCtrl()
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
 		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT);
 	}
-	GetDlgItem(IDC_ST_BAR)->MoveWindow(0, rc.bottom - BARHEIGHT + 1, rc.Width(), BARHEIGHT - 2);
+
+	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsThreadWorking ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(st_bIsThreadWorking);
+	GetDlgItem(IDC_BTN_STOPTHREAD)->MoveWindow(rc.right - TOOLWIDTH, rc.bottom - BARHEIGHT + 1, TOOLWIDTH, BARHEIGHT - 2);
+	int BARWIDTH = rc.Width() - (st_bIsThreadWorking ? TOOLWIDTH : 0);
+	GetDlgItem(IDC_ST_BAR)->MoveWindow(0, rc.bottom - BARHEIGHT + 1, BARWIDTH, BARHEIGHT - 2);
 	RedrawWindow();
 }
 
@@ -285,7 +291,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 {
 	if (st_bIsThreadWorking == TRUE)
 	{
-		return TRUE;
+		return CDialogEx::OnCommand(wParam, lParam);
 	}
 	switch (wParam)
 	{
@@ -344,29 +350,37 @@ void CBatchNamerDlg::ToggleListColumn(int nCol)
 BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 {
 	//주로 단축키의 처리
-	if (pMsg->message == WM_KEYDOWN && st_bIsThreadWorking == FALSE)
+	if (pMsg->message == WM_KEYDOWN)
 	{
-		if (pMsg->wParam == VK_DELETE)
+		if (st_bIsThreadWorking == FALSE)
 		{
-			int nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
-			while (nItem != -1)
+			if (pMsg->wParam == VK_DELETE)
 			{
-				m_list.DeleteListItem(nItem);
-				nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+				int nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+				while (nItem != -1)
+				{
+					m_list.DeleteListItem(nItem);
+					nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+				}
+				UpdateCount();
+				return TRUE;
 			}
-			UpdateCount();
+			if (pMsg->wParam == VK_ESCAPE)
+			{
+				if (m_list.GetItemCount() > 0)
+				{
+					if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return TRUE;
+				}
+			}
+			// <>를 이용해 리스트상에서 이동 가능
+			if (pMsg->wParam == 188) { ListUp(); return TRUE; }
+			if (pMsg->wParam == 190) { ListDown(); return TRUE; }
+		}
+		else //st_bIsThreadWorking == TRUE
+		{
+			if (pMsg->wParam == VK_ESCAPE) OnBnClickedBtnStopthread();
 			return TRUE;
 		}
-		if (pMsg->wParam == VK_ESCAPE)
-		{
-			if (m_list.GetItemCount() > 0)
-			{
-				if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return TRUE;
-			}
-		}
-		// <>를 이용해 리스트상에서 이동 가능
-		if (pMsg->wParam == 188) { ListUp(); return TRUE; }
-		if (pMsg->wParam == 190) { ListDown(); return TRUE; }
 	}
 
 	if (pMsg->message == WM_KEYUP && (GetKeyState(VK_CONTROL) & 0xFF00) != 0 && st_bIsThreadWorking == FALSE)
@@ -958,6 +972,9 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 {
 	CBatchNamerDlg* dlg = (CBatchNamerDlg*)lParam;
 	st_bIsThreadWorking = TRUE;
+	APP()->UpdateThreadLocale();
+	APP()->UpdateThreadLocale();
+	dlg->ArrangeCtrl();
 	dlg->m_list.EnableWindow(FALSE);
 	dlg->m_tool1.EnableWindow(FALSE);
 	dlg->m_tool2.EnableWindow(FALSE);
@@ -968,6 +985,8 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	dlg->m_tool2.EnableWindow(TRUE);
 	dlg->UpdateMenu();
 	st_bIsThreadWorking = FALSE;
+	dlg->ArrangeCtrl();
+	dlg->UpdateCount();
 	return 0;
 }
 
@@ -1022,8 +1041,9 @@ void CBatchNamerDlg::ApplyChange()
 	//실제 파일이름을 바꾸는 곳
 	//m_list.SetRedraw(FALSE);
 
-	CString strOldPath, strOldExt, strNewExt;
+	CString strOldPath, strOldExt, strNewExt, strBar;
 	int nImage = 0;
+	int nChanged = 0;
 	BOOL bIsDir = FALSE;
 	//SHFILEOPSTRUCT shf;
 	//TCHAR pathOld[MAX_PATH];
@@ -1032,6 +1052,7 @@ void CBatchNamerDlg::ApplyChange()
 	//int nLen;
 	for (int i = 0; i < nCount; i++)
 	{
+		if (st_bIsThreadWorking == FALSE) break;
 		strOldPath = m_list.GetOldPath(i);
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		try
@@ -1082,6 +1103,7 @@ void CBatchNamerDlg::ApplyChange()
 							m_list.SetItem(i, 0, LVIF_IMAGE, NULL, nImage, 0, 0, 0);
 						}
 					}
+					nChanged++;
 				}
 			}
 		}
@@ -1092,12 +1114,14 @@ void CBatchNamerDlg::ApplyChange()
 			strTemp.Format(_T("%s -> %s %s\n"), strOldPath, aNewPath.at(i), IDSTR(IDS_MSG_CHANGEFAIL));
 			strLog += strTemp;
 		}
+		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nChanged, i + 1, nCount);
+		SetDlgItemText(IDC_ST_BAR, strBar);
 	}
 	//m_list.SetRedraw(TRUE);
 	if (strLog.IsEmpty() == FALSE) AfxMessageBox(strLog);
 	else
 	{
-		strTemp.Format(_T("%d %s\n"), nCount, IDSTR(IDS_MSG_CHANGEDONE));
+		strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nChanged, nCount);
 		AfxMessageBox(strTemp);
 	}
 }
@@ -1660,4 +1684,11 @@ void CBatchNamerDlg::UpdateFontSize()
 	m_font.DeleteObject();
 	m_font.CreateFontIndirect(&lf); //자동 소멸되지 않도록 멤버 변수 사용
 	m_list.SetFont(&m_font);
+}
+
+
+void CBatchNamerDlg::OnBnClickedBtnStopthread()
+{
+	if (AfxMessageBox(IDSTR(IDS_MSG_STOPTHREAD), MB_YESNO) == IDNO) return;
+	st_bIsThreadWorking = FALSE;
 }
