@@ -188,6 +188,7 @@
     <ClInclude Include="CDlgCFG_Load.h" />
     <ClInclude Include="CDlgCFG_View.h" />
     <ClInclude Include="CDlgInput.h" />
+    <ClInclude Include="CDlgSort.h" />
     <ClInclude Include="CNameListCtrl.h" />
     <ClInclude Include="EtcFunctions.h" />
     <ClInclude Include="framework.h" />
@@ -201,6 +202,7 @@
     <ClCompile Include="CDlgCFG_Load.cpp" />
     <ClCompile Include="CDlgCFG_View.cpp" />
     <ClCompile Include="CDlgInput.cpp" />
+    <ClCompile Include="CDlgSort.cpp" />
     <ClCompile Include="CNameListCtrl.cpp" />
     <ClCompile Include="EtcFunctions.cpp" />
     <ClCompile Include="pch.cpp">

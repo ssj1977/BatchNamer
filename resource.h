@@ -99,6 +99,7 @@
 #define IDR_MENU_MAIN                   134
 #define IDD_CFG_LOAD                    137
 #define IDD_CFG_VIEW                    141
+#define IDD_SORT                        149
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_STATIC_1                    1002
@@ -124,6 +125,16 @@
 #define IDC_ST_COLOR_BK                 1034
 #define IDC_CHK_SHOWEVERYTIME           1035
 #define IDC_BTN_STOPTHREAD              1037
+#define IDC_RADIO_SORT_SIZE             1039
+#define IDC_RADIO_SORT_FULLPATH         1040
+#define IDC_RADIO_SORT_NEWNAME          1041
+#define IDC_RADIO_SORT_TIMECREATE       1042
+#define IDC_RADIO_SORT_TIMEMODIFY       1043
+#define IDC_RADIO_SORT_OLDFOLDER        1044
+#define IDC_RADIO_SORT_ASCEND           1047
+#define IDC_RADIO_SORT_DESCEND          1048
+#define IDC_RADIO_SORT_NEWFOLDER        1049
+#define IDC_RADIO_SORT_OLDNAME          1050
 #define IDM_APPLY_CHANGE                32771
 #define IDM_NAME_REPLACE                32772
 #define IDM_NAME_ADD_FRONT              32773
@@ -166,9 +177,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        149
+#define _APS_NEXT_RESOURCE_VALUE        151
 #define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1038
+#define _APS_NEXT_CONTROL_VALUE         1048
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

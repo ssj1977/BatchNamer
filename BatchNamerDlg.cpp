@@ -252,6 +252,7 @@ void CBatchNamerDlg::ArrangeCtrl()
 	CRect rcButton, rcSplit;
 	m_tool1.GetToolBarCtrl().GetItemRect(0, rcButton);
 	m_tool1.GetToolBarCtrl().GetItemRect(1, rcSplit);
+	m_tool2.GetToolBarCtrl().SetButtonWidth(rcButton.Width(), rcButton.Width() * 2);
 	int TOOLHEIGHT = (rcButton.Height() + rcSplit.Width()) * 10;
 	int TOOLWIDTH = rcButton.Width() + rcSplit.Width();
 	int BARHEIGHT = m_lfHeight * 2;
@@ -945,18 +946,40 @@ void CBatchNamerDlg::ExtReplace()
 	item1.m_strLabel1 = IDSTR(IDS_EXT_OLD); //_T("원래 확장자")
 	item1.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바뀔 확장자")
 	dlg.AddOption(&item1);
-
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strTemp;
-	CString strExt = dlg.m_strReturn1;
-	if (strExt.IsEmpty()) return;
-	if (strExt.GetAt(0) != _T('.')) strExt = _T(".") + strExt;
+	CString strCurrentExt, strOldExt, strNewExt;
+	strOldExt = dlg.m_strReturn1;
+	strNewExt = dlg.m_strReturn2;
+	if (strNewExt.IsEmpty()) return;
+	if (strNewExt.GetAt(0) != _T('.')) strNewExt = _T(".") + strNewExt;
+	if (strOldExt.IsEmpty() == FALSE)
+	{
+		if (strOldExt.GetAt(0) != _T('.')) strOldExt = _T(".") + strOldExt;
+	}
 	m_list.SetRedraw(FALSE);
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), (BOOL)m_list.GetItemData(i));
-		strTemp += strExt;
-		m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		BOOL bIsDir = m_list.GetItemData(i);
+		if (bIsDir == FALSE)
+		{
+			if (strOldExt.IsEmpty() == FALSE)
+			{
+				strCurrentExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+				if (strOldExt.CompareNoCase(strCurrentExt) == 0)
+				{
+					strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+					strTemp += strNewExt;
+					m_list.SetItemText(i, COL_NEWNAME, strTemp);
+				}
+			}
+			else
+			{
+				strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+				strTemp += strNewExt;
+				m_list.SetItemText(i, COL_NEWNAME, strTemp);
+			}
+		}
 	}
 	m_list.SetRedraw(TRUE);
 }
