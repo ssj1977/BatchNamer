@@ -1572,6 +1572,8 @@ void CBatchNamerDlg::NameRemoveSelected()
 void CBatchNamerDlg::SortList()
 {
 	CDlgSort dlg;
+	dlg.m_nSortCol = m_list.GetHeaderCtrl().GetSortColumn();
+	dlg.m_bAsc = m_list.GetHeaderCtrl().IsAscending();
 	if (dlg.DoModal() == IDCANCEL) return;
 	int nCol = dlg.m_nSortCol;
 	BOOL bAsc = dlg.m_bAsc;
