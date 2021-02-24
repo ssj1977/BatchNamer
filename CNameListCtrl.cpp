@@ -85,8 +85,8 @@ int CNameListCtrl::CompareItemByType(LPARAM item1, LPARAM item2, int nCol, int n
 		ULONGLONG size1 = Str2Size(str1);
 		ULONGLONG size2 = Str2Size(str2);
 		if (size1 == size2) nRet = 0;
-		else if (size1 > size2) nRet = -1;
-		else if (size1 < size2) nRet = 1;
+		else if (size1 > size2) nRet = 1;
+		else if (size1 < size2) nRet = -1;
 	}
 	return nRet;
 }

@@ -16,6 +16,7 @@
 #include "CDlgCFG_Load.h"
 #include "CDlgCFG_View.h"
 #include "CDlgInput.h"
+#include "CDlgSort.h"
 #pragma warning(disable:4786)
 #include <map>
 #include <vector>
@@ -1570,39 +1571,13 @@ void CBatchNamerDlg::NameRemoveSelected()
 //리스트를 정해진 기준에 따라 정렬한다
 void CBatchNamerDlg::SortList()
 {
-/*	CDlgInput dlg;
-	dlg.InitInputDlg(_T("정렬 기준 설정"), _T(""), _T(""));
-	dlg.AddOption(_T("파일 이름에 따라 오름차순"), INPUT_NONE);
-	dlg.AddOption(_T("파일 이름에 따라 내림차순"), INPUT_NONE);
-	dlg.AddOption(_T("전체경로에 따라 오름차순"), INPUT_NONE);
-	dlg.AddOption(_T("전체경로에 따라 내림차순"), INPUT_NONE);
-	dlg.AddOption(_T("파일 크기에 따라 오름차순"), INPUT_NONE);
-	dlg.AddOption(_T("파일 크기에 따라 내림차순"), INPUT_NONE);
-	dlg.AddOption(_T("수정한 시각에 따라 오름차순"), INPUT_NONE);
-	dlg.AddOption(_T("수정한 시각에 따라 내림차순"), INPUT_NONE);
-	dlg.AddOption(_T("만든 시각에 따라 오름차순"), INPUT_NONE);
-	dlg.AddOption(_T("만든 시각에 따라 내림차순"), INPUT_NONE);
-
+	CDlgSort dlg;
 	if (dlg.DoModal() == IDCANCEL) return;
-
-	int nCol = 0;
-	BOOL bAsc = TRUE;
-	switch (dlg.m_nCB)
-	{
-	case 0: nCol = COL_OLDNAME; bAsc = TRUE; break;
-	case 1: nCol = COL_OLDNAME; bAsc = FALSE; break;
-	case 2: nCol = COL_FULLPATH; bAsc = TRUE; break;
-	case 3: nCol = COL_FULLPATH; bAsc = FALSE; break;
-	case 4: nCol = COL_FILESIZE; bAsc = TRUE; break;
-	case 5: nCol = COL_FILESIZE; bAsc = FALSE; break;
-	case 6: nCol = COL_TIMEMODIFY; bAsc = TRUE; break;
-	case 7: nCol = COL_TIMEMODIFY; bAsc = FALSE; break;
-	case 8: nCol = COL_TIMECREATE; bAsc = TRUE; break;
-	case 9: nCol = COL_TIMECREATE; bAsc = FALSE; break;
-	}
+	int nCol = dlg.m_nSortCol;
+	BOOL bAsc = dlg.m_bAsc;
 	m_list.SetRedraw(FALSE);
 	m_list.Sort(nCol, bAsc);
-	m_list.SetRedraw(TRUE);*/
+	m_list.SetRedraw(TRUE);
 }
 
 void CBatchNamerDlg::OnDblclkListFile(NMHDR* pNMHDR, LRESULT* pResult)

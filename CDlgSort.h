@@ -10,6 +10,10 @@ class CDlgSort : public CDialogEx
 public:
 	CDlgSort(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgSort();
+	void SetCheckByID(int nID, BOOL bCheck);
+	BOOL GetCheckByID(int nID);
+	int m_nSortCol;
+	BOOL m_bAsc;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
