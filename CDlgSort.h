@@ -12,6 +12,7 @@ public:
 	virtual ~CDlgSort();
 	void SetCheckByID(int nID, BOOL bCheck);
 	BOOL GetCheckByID(int nID);
+	CWnd* m_pSortWnd;
 	int m_nSortCol;
 	BOOL m_bAsc;
 

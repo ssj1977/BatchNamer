@@ -25,7 +25,7 @@ END_MESSAGE_MAP()
 CBatchNamerApp::CBatchNamerApp()
 {
 	m_bEnglishUI = FALSE;
-	m_bShowEverytime = TRUE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
+	m_bShowEverytime = FALSE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
 	m_bAutoSort = TRUE; //항목 추가시 자동 정렬 여부
 	m_nLoadType = 0; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가
 	m_nShowFlag = 0; //칼럼 표시 여부

@@ -49,7 +49,7 @@ protected:
 	void NameRemoveSelected();
 	void NameSetParent();
 	void Export(int nMode);
-	void ImportName();
+	void ImportNewName();
 	void ImportPath();
 	void NameEmpty();
 	void NameAddNum();

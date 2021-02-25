@@ -17,6 +17,7 @@ CDlgSort::CDlgSort(CWnd* pParent /*=nullptr*/)
 {
 	m_nSortCol = COL_OLDNAME;
 	m_bAsc = TRUE;
+	m_pSortWnd = NULL;
 }
 
 CDlgSort::~CDlgSort()
@@ -51,19 +52,24 @@ BOOL CDlgSort::GetCheckByID(int nID)
 BOOL CDlgSort::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-	// TODO:  여기에 추가 초기화 작업을 추가합니다.
-	switch (m_nSortCol)
+	if (m_pSortWnd == NULL) return FALSE;
+	CMFCHeaderCtrl& header = ((CNameListCtrl*)m_pSortWnd)->GetHeaderCtrl();
+	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_SORTCOL);
+	int nCount = header.GetItemCount();
+	m_nSortCol = header.GetSortColumn();
+	m_bAsc = header.IsAscending();
+	HDITEM hdi;
+	TCHAR buf[MAX_PATH];
+	hdi.mask = HDI_TEXT;
+	hdi.cchTextMax = MAX_PATH;
+	hdi.pszText = buf;
+	for (int i = 0; i < nCount; i++)
 	{
-		case COL_OLDNAME: SetCheckByID(IDC_RADIO_SORT_OLDNAME, TRUE); break;
-		case COL_NEWNAME: SetCheckByID(IDC_RADIO_SORT_NEWNAME, TRUE); break;
-		case COL_OLDFOLDER: SetCheckByID(IDC_RADIO_SORT_OLDFOLDER, TRUE); break;
-		case COL_NEWFOLDER: SetCheckByID(IDC_RADIO_SORT_NEWFOLDER, TRUE); break;
-		case COL_FILESIZE: SetCheckByID(IDC_RADIO_SORT_SIZE, TRUE); break;
-		case COL_TIMEMODIFY: SetCheckByID(IDC_RADIO_SORT_TIMEMODIFY, TRUE); break;
-		case COL_TIMECREATE: SetCheckByID(IDC_RADIO_SORT_TIMECREATE, TRUE); break;
-		case COL_FULLPATH: SetCheckByID(IDC_RADIO_SORT_FULLPATH, TRUE); break;
+		header.GetItem(i, &hdi);
+		pCB->AddString(hdi.pszText);
 	}
+	pCB->SetCurSel(m_nSortCol);
+
 	if (m_bAsc == TRUE) SetCheckByID(IDC_RADIO_SORT_ASCEND, TRUE);
 	else				SetCheckByID(IDC_RADIO_SORT_DESCEND, TRUE);
 
@@ -74,19 +80,10 @@ BOOL CDlgSort::OnInitDialog()
 
 void CDlgSort::OnOK()
 {
-	if		(GetCheckByID(IDC_RADIO_SORT_OLDNAME)) m_nSortCol = COL_OLDNAME;
-	else if (GetCheckByID(IDC_RADIO_SORT_NEWNAME)) m_nSortCol = COL_NEWNAME;
-	else if (GetCheckByID(IDC_RADIO_SORT_OLDFOLDER)) m_nSortCol = COL_OLDFOLDER;
-	else if (GetCheckByID(IDC_RADIO_SORT_NEWFOLDER)) m_nSortCol = COL_NEWFOLDER;
-	else if (GetCheckByID(IDC_RADIO_SORT_SIZE)) m_nSortCol = COL_FILESIZE;
-	else if (GetCheckByID(IDC_RADIO_SORT_TIMEMODIFY)) m_nSortCol = COL_TIMEMODIFY;
-	else if (GetCheckByID(IDC_RADIO_SORT_TIMECREATE)) m_nSortCol = COL_TIMECREATE;
-	else if (GetCheckByID(IDC_RADIO_SORT_FULLPATH)) m_nSortCol = COL_FULLPATH;
-
-
+	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_SORTCOL);
+	m_nSortCol = pCB->GetCurSel();
 	if (GetCheckByID(IDC_RADIO_SORT_ASCEND)) m_bAsc = TRUE;
 	else   m_bAsc = FALSE; //if (GetCheckByID(IDC_RADIO_SORT_DESCEND))
-
 	CDialogEx::OnOK();
 }
 

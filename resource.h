@@ -91,6 +91,8 @@
 #define IDS_ADDNUM_BYFOLDER_FRONT2      87
 #define IDS_MSG_STOPTHREAD              87
 #define IDS_PROGRESS_CHANGE             88
+#define IDS_ADDDATECREATE               89
+#define IDS_ADDDATEMODIFY               90
 #define IDD_BATCHNAMER                  102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
@@ -125,16 +127,9 @@
 #define IDC_ST_COLOR_BK                 1034
 #define IDC_CHK_SHOWEVERYTIME           1035
 #define IDC_BTN_STOPTHREAD              1037
-#define IDC_RADIO_SORT_SIZE             1039
-#define IDC_RADIO_SORT_FULLPATH         1040
-#define IDC_RADIO_SORT_NEWNAME          1041
-#define IDC_RADIO_SORT_TIMECREATE       1042
-#define IDC_RADIO_SORT_TIMEMODIFY       1043
-#define IDC_RADIO_SORT_OLDFOLDER        1044
 #define IDC_RADIO_SORT_ASCEND           1047
 #define IDC_RADIO_SORT_DESCEND          1048
-#define IDC_RADIO_SORT_NEWFOLDER        1049
-#define IDC_RADIO_SORT_OLDNAME          1050
+#define IDC_CB_SORTCOL                  1049
 #define IDM_APPLY_CHANGE                32771
 #define IDM_NAME_REPLACE                32772
 #define IDM_NAME_ADD_FRONT              32773
@@ -179,7 +174,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        151
 #define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1048
+#define _APS_NEXT_CONTROL_VALUE         1050
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

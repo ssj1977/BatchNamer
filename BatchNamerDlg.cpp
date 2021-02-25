@@ -47,21 +47,28 @@ inline CString GetTimeStringToShow(FILETIME& dt)
 	return strRet;
 }
 
-inline CString GetTimeStringToAdd(FILETIME& dt)
+inline CString GetTimeStringToAdd(FILETIME& dt, BOOL bAddTime)
 {
 	CString strRet;
 	SYSTEMTIME systime;
 	FileTimeToSystemTime(&dt, &systime);
-	strRet.Format(_T("%d%02d%02d_%02d%02d%02d"), systime.wYear,
-		systime.wMonth, systime.wDay, systime.wHour, systime.wMinute, systime.wSecond);
+	if (bAddTime == TRUE)
+	{
+		strRet.Format(_T("%d-%02d-%02d_%02d%02d%02d"), systime.wYear,	systime.wMonth, systime.wDay, 
+													systime.wHour, systime.wMinute, systime.wSecond);
+	}
+	else
+	{
+		strRet.Format(_T("%d-%02d-%02d"), systime.wYear, systime.wMonth, systime.wDay);
+	}
 	return strRet;
 }
 
-inline CString GetTimeStringToAdd(CString strTime)
+inline CString GetTimeStringToAdd(CString strTime, BOOL bAddTime)
 {
-	strTime.Remove(_T(':'));
-	strTime.Remove(_T('-'));
 	strTime.Replace(_T(' '), _T('_'));
+	if (bAddTime == TRUE) strTime.Remove(_T(':'));
+	else strTime = strTime.Left(strTime.ReverseFind(_T('_')));
 	return strTime;
 }
 
@@ -322,7 +329,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_EXPORT_FILE:		Export(1);		break;
 	case IDM_EXPORT_CLIP2:		Export(2);		break;
 	case IDM_EXPORT_FILE2:		Export(3);		break;
-	case IDM_IMPORT_FILE:		ImportName();		break;
+	case IDM_IMPORT_FILE:		ImportNewName();		break;
 	case IDM_IMPORT_FILE2:		ImportPath();		break;
 
 	case IDM_LIST_ADD:			AddByFileDialog(); break;
@@ -333,7 +340,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.0 (2021-02-21 Release)")); 	break;
+	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.0 (2021-02-26 Release)")); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	default:
@@ -410,7 +417,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 		if (pMsg->wParam == _T('V'))
 		{
 			if ((GetKeyState(VK_SHIFT) & 0xFF00) != 0)	ImportPath();
-			else if (m_list.GetItemCount() > 0)		ImportName();
+			else if (m_list.GetItemCount() > 0)		ImportNewName();
 			return TRUE;
 		}
 	}
@@ -661,8 +668,8 @@ void CBatchNamerDlg::AddByFileDialog()
 void CBatchNamerDlg::ClearList()
 {
 	m_list.DeleteAllItems();
-	m_bSelected = FALSE;
 	m_list.m_setPath.clear();
+	m_bSelected = FALSE;
 	UpdateCount();
 }
 
@@ -673,6 +680,7 @@ void CBatchNamerDlg::UndoChanges()
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		m_list.SetItemText(i, COL_NEWNAME, m_list.GetItemText(i, COL_OLDNAME));
+		m_list.SetItemText(i, COL_NEWFOLDER, m_list.GetItemText(i, COL_OLDFOLDER));
 	}
 	m_list.SetRedraw(TRUE);
 }
@@ -732,19 +740,32 @@ void CBatchNamerDlg::NameAdd(BOOL bFront = TRUE)
 	item2.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
 	item2.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
 	InputItem item3;
-	item3.m_strItemName = IDSTR(IDS_ADDTIMECREATE);
-	item3.m_nCommand = IDS_ADDTIMECREATE;
+	item3.m_strItemName = IDSTR(IDS_ADDDATECREATE);
+	item3.m_nCommand = IDS_ADDDATECREATE;
 	item3.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
 	item3.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
 	InputItem item4;
-	item4.m_strItemName = IDSTR(IDS_ADDTIMEMODIFY);
-	item4.m_nCommand = IDS_ADDTIMEMODIFY;
+	item4.m_strItemName = IDSTR(IDS_ADDDATEMODIFY);
+	item4.m_nCommand = IDS_ADDDATEMODIFY;
 	item4.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
 	item4.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+	InputItem item5;
+	item5.m_strItemName = IDSTR(IDS_ADDTIMECREATE);
+	item5.m_nCommand = IDS_ADDTIMECREATE;
+	item5.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+	item5.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+	InputItem item6;
+	item6.m_strItemName = IDSTR(IDS_ADDTIMEMODIFY);
+	item6.m_nCommand = IDS_ADDTIMEMODIFY;
+	item6.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+	item6.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+
 	dlg.AddOption(&item1);
 	dlg.AddOption(&item2);
 	dlg.AddOption(&item3);
 	dlg.AddOption(&item4);
+	dlg.AddOption(&item5);
+	dlg.AddOption(&item6);
 
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strTemp;
@@ -762,11 +783,17 @@ void CBatchNamerDlg::NameAdd(BOOL bFront = TRUE)
 			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
 			if (strTemp.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strTemp.Empty();
 			break;
+		case IDS_ADDDATECREATE: //변경일시
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE);
+			break;
+		case IDS_ADDDATEMODIFY: //생성일시
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE);
+			break;
 		case IDS_ADDTIMECREATE: //변경일시
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY));
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE);
 			break;
 		case IDS_ADDTIMEMODIFY: //생성일시
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE));
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE);
 			break;
 		}
 		//앞뒤에 추가로 지정된 문자열 붙이기
@@ -820,15 +847,15 @@ void CBatchNamerDlg::NameDigit()
 	CDlgInput dlg;
 	dlg.m_strTitle = IDSTR(IDS_TB_08);
 	InputItem item1;
-	item1.m_strItemName = IDSTR(IDS_DIGITBACK); //"맨 뒤쪽 숫자의 앞에 0을 추가해서 자리수를 맞춥니다."
+	item1.m_strItemName = IDSTR(IDS_DIGITBACK); //"맨 뒤쪽 숫자의 앞에 0을 추가해서 자릿수를 맞춥니다."
 	item1.m_nCommand = IDS_DIGITBACK;
 	item1.m_bIsNumber1 = TRUE;
-	item1.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자리수")
+	item1.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 	InputItem item2;
-	item2.m_strItemName = IDSTR(IDS_DIGITFRONT); //"맨 앞쪽 숫자의 앞에 0을 추가해서 자리수를 맞춥니다."
+	item2.m_strItemName = IDSTR(IDS_DIGITFRONT); //"맨 앞쪽 숫자의 앞에 0을 추가해서 자릿수를 맞춥니다."
 	item2.m_nCommand = IDS_DIGITFRONT;
 	item2.m_bIsNumber1 = TRUE;
-	item2.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자리수")
+	item2.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 	dlg.AddOption(&item1);
 	dlg.AddOption(&item2);
 
@@ -836,7 +863,7 @@ void CBatchNamerDlg::NameDigit()
 	int nDigit = _ttoi(dlg.m_strReturn1);
 	if (nDigit <= 0)
 	{
-		AfxMessageBox(IDSTR(IDS_MSG_INVALIDDIGIT)); //_T("자리수 입력이 잘못되었습니다."));
+		AfxMessageBox(IDSTR(IDS_MSG_INVALIDDIGIT)); //_T("자릿수 입력이 잘못되었습니다."));
 		return;
 	}
 	CString strName, strExt;
@@ -1243,28 +1270,28 @@ void CBatchNamerDlg::NameAddNum()
 	item1.m_strItemName = IDSTR(IDS_ADDNUM_ALL_BACK); //"모든 이름 뒤에 목록 순서대로 번호를 붙입니다."
 	item1.m_nCommand = IDS_ADDNUM_ALL_BACK;
 	item1.m_bIsNumber1 = TRUE;
-	item1.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자리수")
+	item1.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 	item1.m_bIsNumber2 = TRUE;
 	item1.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
 	InputItem item2;
 	item2.m_strItemName = IDSTR(IDS_ADDNUM_ALL_FRONT); //"모든 이름 앞에 목록 순서대로 번호를 붙입니다."
 	item2.m_nCommand = IDS_ADDNUM_ALL_FRONT;
 	item2.m_bIsNumber1 = TRUE;
-	item2.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자리수")
+	item2.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 	item2.m_bIsNumber2 = TRUE;
 	item2.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
 	InputItem item3;
 	item3.m_strItemName = IDSTR(IDS_ADDNUM_BYFOLDER_BACK); //"폴더별로 이름 뒤에 목록 순서대로 번호를 붙입니다."
 	item3.m_nCommand = IDS_ADDNUM_BYFOLDER_BACK;
 	item3.m_bIsNumber1 = TRUE;
-	item3.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자리수")
+	item3.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 	item3.m_bIsNumber2 = TRUE;
 	item3.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
 	InputItem item4;
 	item4.m_strItemName = IDSTR(IDS_ADDNUM_BYFOLDER_FRONT); //"폴더별로 이름 앞에 목록 순서대로 번호를 붙입니다."
 	item4.m_nCommand = IDS_ADDNUM_BYFOLDER_FRONT;
 	item4.m_bIsNumber1 = TRUE;
-	item4.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자리수")
+	item4.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 	item4.m_bIsNumber2 = TRUE;
 	item4.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
 	
@@ -1378,10 +1405,11 @@ void CBatchNamerDlg::Export(int nMode)
 //파일명을 텍스트 파일에서 읽어와서 차례대로 새로 바뀔 이름인 COL_NEWNAME 을 수정한다
 //텍스트 파일은 이름 하나당 엔터(\n)로 구분해서 저장한 타입
 //현재 리스트에 있는 개수만큼 읽어온다
-void CBatchNamerDlg::ImportName()
+void CBatchNamerDlg::ImportNewName()
 {
 	CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
-	CString strTitle; strTitle.LoadString(IDS_IMPORTNAME); //"바꿀 파일 이름 불러오기"
+	CString strTitle; 
+	strTitle.LoadString(IDS_IMPORTNAME); //"바꿀 파일 이름 불러오기"
 	dlg.GetOFN().lpstrTitle = strTitle;
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strData, strName;
@@ -1393,13 +1421,13 @@ void CBatchNamerDlg::ImportName()
 	{
 		nPos = GetLine(strData, nPos, strName, _T("\n"));
 		strName.TrimLeft(); strName.TrimRight();
-		if (strName.IsEmpty() == FALSE)
-		{
+		//if (strName.IsEmpty() == FALSE)
+		//{
 			//원래 이름이 존재해야만 하므로 맨 위부터 교체하는 형식
 			if (i >= m_list.GetItemCount()) break; //리스트 넘어가면 끝
 			m_list.SetItemText(i, COL_NEWNAME, strName);
 			i++;
-		}
+		//}
 	}
 	m_list.SetRedraw(TRUE);
 }
@@ -1572,8 +1600,7 @@ void CBatchNamerDlg::NameRemoveSelected()
 void CBatchNamerDlg::SortList()
 {
 	CDlgSort dlg;
-	dlg.m_nSortCol = m_list.GetHeaderCtrl().GetSortColumn();
-	dlg.m_bAsc = m_list.GetHeaderCtrl().IsAscending();
+	dlg.m_pSortWnd = &m_list;
 	if (dlg.DoModal() == IDCANCEL) return;
 	int nCol = dlg.m_nSortCol;
 	BOOL bAsc = dlg.m_bAsc;

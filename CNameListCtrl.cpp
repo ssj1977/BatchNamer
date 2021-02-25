@@ -46,7 +46,9 @@ ULONGLONG Str2Size(CString str)
 int CNameListCtrl::OnCompareItems(LPARAM lParam1, LPARAM lParam2, int iColumn)
 {
 	int nRet = 0;
-	if (iColumn == COL_OLDNAME || iColumn == COL_NEWNAME || iColumn == COL_OLDFOLDER || iColumn == COL_NEWFOLDER)
+	if (iColumn == COL_OLDNAME || iColumn == COL_NEWNAME || 
+		iColumn == COL_OLDFOLDER || iColumn == COL_NEWFOLDER || 
+		iColumn == COL_FULLPATH)
 		nRet = CompareItemByType(lParam1, lParam2, iColumn, COL_COMP_PATH);
 	else if (iColumn == COL_TIMECREATE || iColumn == COL_TIMEMODIFY) 
 		nRet = CompareItemByType(lParam1, lParam2, iColumn, COL_COMP_STR);
