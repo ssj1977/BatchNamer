@@ -1,22 +1,5 @@
 ﻿#pragma once
 
-struct InputItem
-{
-	CString m_strItemName;	//콤보박스에 들어갈 이름
-	int m_nCommand;		//동작하는 기능 종류  
-	CString m_strLabel1;	//첫번째 입력창 상단 라벨
-	BOOL m_bIsNumber1;		//첫번째 입력창이 숫자만 받는지 여부
-	CString m_strLabel2;	//두번째 입력창 상단 라벨
-	BOOL m_bIsNumber2;		//두번째 입력창이 숫자만 받는지 여부
-	InputItem()
-	{
-		m_nCommand = 0;
-		m_bIsNumber1 = FALSE;
-		m_bIsNumber2 = FALSE;
-	}
-};
-
-
 // CDlgInput 대화 상자
 
 class CDlgInput : public CDialogEx

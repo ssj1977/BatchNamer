@@ -44,6 +44,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_nFontSize = 12;
 	m_bUseDefaultFont = TRUE;
 	m_nIconType = SHIL_EXTRALARGE;
+	m_aPreset.SetSize(5);
 }
 
 

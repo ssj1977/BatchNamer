@@ -102,8 +102,10 @@
 #define IDD_CFG_LOAD                    137
 #define IDD_CFG_VIEW                    141
 #define IDD_SORT                        149
+#define IDD_PRESET                      151
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
+#define IDC_LIST_PRESET                 1001
 #define IDC_STATIC_1                    1002
 #define IDC_STATIC_2                    1003
 #define IDC_EDIT_1                      1004
@@ -130,6 +132,13 @@
 #define IDC_RADIO_SORT_ASCEND           1047
 #define IDC_RADIO_SORT_DESCEND          1048
 #define IDC_CB_SORTCOL                  1049
+#define IDC_CB_PRESET_SELECT            1051
+#define IDC_CB_PRESET_COMMAND           1052
+#define IDC_EDIT_PRESET_OPTION_1        1053
+#define IDC_EDIT_PRESET_OPTION_2        1054
+#define IDC_BTN_PRESET_TASK_EDIT        1055
+#define IDC_BTN_PRESET_TASK_ADD         1057
+#define IDC_BTN_PRESET_TASK_DELETE      1058
 #define IDM_APPLY_CHANGE                32771
 #define IDM_NAME_REPLACE                32772
 #define IDM_NAME_ADD_FRONT              32773
@@ -167,14 +176,29 @@
 #define IDM_SHOW_NEWFOLDER              32816
 #define IDM_SHOW_OLDFOLDER              32817
 #define IDM_CFG_VIEW                    32819
+#define ID_32822                        32822
+#define IDM_PRESET_START                32823
+#define ID_32824                        32824
+#define ID_32825                        32825
+#define ID_32826                        32826
+#define ID_32827                        32827
+#define ID_32828                        32828
+#define ID_32829                        32829
+#define IDM_PRESET_END                  32830
+#define IDM_PRESET_APPLY1               32831
+#define IDM_PRESET_APPLY2               32832
+#define IDM_PRESET_APPLY3               32833
+#define IDM_PRESET_APPLY4               32834
+#define IDM_PRESET_APPLY5               32835
+#define IDM_PRESET_EDIT                 32836
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        151
-#define _APS_NEXT_COMMAND_VALUE         32822
-#define _APS_NEXT_CONTROL_VALUE         1050
+#define _APS_NEXT_RESOURCE_VALUE        153
+#define _APS_NEXT_COMMAND_VALUE         32837
+#define _APS_NEXT_CONTROL_VALUE         1058
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

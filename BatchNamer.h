@@ -11,6 +11,43 @@
 #include "resource.h"		// 주 기호입니다.
 #include <afxwinappex.h>
 
+//CDlgInput 및 CDlgPreset에 사용되는 입력창 설정용 구조체
+struct InputItem
+{
+	CString m_strItemName;	//콤보박스에 들어갈 이름
+	int m_nCommand;		//동작하는 기능 종류  
+	CString m_strLabel1;	//첫번째 입력창 상단 라벨
+	BOOL m_bIsNumber1;		//첫번째 입력창이 숫자만 받는지 여부
+	CString m_strLabel2;	//두번째 입력창 상단 라벨
+	BOOL m_bIsNumber2;		//두번째 입력창이 숫자만 받는지 여부
+	InputItem()
+	{
+		m_nCommand = 0;
+		m_bIsNumber1 = FALSE;
+		m_bIsNumber2 = FALSE;
+	}
+};
+
+//프리셋의 단위 작업 항목을 나타내는 구조체
+struct PresetTask
+{
+	int m_nCommand;		//기능 종류  
+	CString m_str1;		//첫번째 인자
+	CString m_str2;		//두번째 인자
+	PresetTask() { m_nCommand = 0; }
+	PresetTask(int nCommand) { m_nCommand = nCommand; }
+};
+
+typedef CArray<PresetTask, PresetTask&> PresetTaskArray;
+
+//프리셋을 나타내는 구조체
+struct BatchNamerPreset
+{
+	CString m_strName;
+	PresetTaskArray m_aTask;
+};
+
+typedef CArray<BatchNamerPreset, BatchNamerPreset&> PresetArray;
 // CBatchNamerApp:
 // 이 클래스의 구현에 대해서는 BatchNamer.cpp을(를) 참조하세요.
 //
@@ -32,6 +69,7 @@ public:
 	int m_nFontSize;
 	BOOL m_bUseDefaultFont;
 	int m_nIconType;
+	PresetArray m_aPreset;
 	void INISave(CString strFile);
 	void INILoad(CString strFile);
 	void SetLocale(int nLanguageID);
@@ -47,5 +85,5 @@ public:
 };
 inline CBatchNamerApp* APP() { return (CBatchNamerApp*)AfxGetApp(); };
 
-
 extern CBatchNamerApp theApp;
+

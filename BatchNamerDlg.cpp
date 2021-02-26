@@ -17,6 +17,7 @@
 #include "CDlgCFG_View.h"
 #include "CDlgInput.h"
 #include "CDlgSort.h"
+#include "CDlgPreset.h"
 #pragma warning(disable:4786)
 #include <map>
 #include <vector>
@@ -212,6 +213,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	m_list.SetColumnWidth(COL_TIMECREATE, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_TIMECREATE));
 	m_list.SetColumnWidth(COL_FULLPATH, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_FULLPATH));
 	m_list.GetHeaderCtrl().SetSortColumn(COL_OLDNAME, TRUE);
+
 	UpdateMenu();
 	UpdateCount();
 
@@ -281,7 +283,6 @@ void CBatchNamerDlg::ArrangeCtrl()
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
 		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT);
 	}
-
 	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsThreadWorking ? SW_SHOW : SW_HIDE);
 	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(st_bIsThreadWorking);
 	GetDlgItem(IDC_BTN_STOPTHREAD)->MoveWindow(rc.right - TOOLWIDTH, rc.bottom - BARHEIGHT + 1, TOOLWIDTH, BARHEIGHT - 2);
@@ -343,12 +344,20 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.0 (2021-02-26 Release)")); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
+	case IDM_PRESET_EDIT: PresetEdit(); break;
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
 	UpdateMenu();
 	return TRUE;
 }
+
+void CBatchNamerDlg::PresetEdit()
+{
+	CDlgPreset dlg;
+	dlg.DoModal();
+}
+
 
 void CBatchNamerDlg::ToggleListColumn(int nCol)
 {

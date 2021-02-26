@@ -73,6 +73,7 @@ protected:
 	void NameReplace();
 	void ClearList();
 	void ToggleListColumn(int nCol);
+	void PresetEdit();
 	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
