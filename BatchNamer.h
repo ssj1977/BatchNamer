@@ -15,27 +15,45 @@
 struct InputItem
 {
 	CString m_strItemName;	//콤보박스에 들어갈 이름
-	int m_nCommand;		//동작하는 기능 종류  
+	int m_nSubCommand;		//동작하는 기능 종류  
 	CString m_strLabel1;	//첫번째 입력창 상단 라벨
 	BOOL m_bIsNumber1;		//첫번째 입력창이 숫자만 받는지 여부
 	CString m_strLabel2;	//두번째 입력창 상단 라벨
 	BOOL m_bIsNumber2;		//두번째 입력창이 숫자만 받는지 여부
 	InputItem()
 	{
-		m_nCommand = 0;
+		m_nSubCommand = 0;
+		m_bIsNumber1 = FALSE;
+		m_bIsNumber2 = FALSE;
+	}
+	void Clear() 
+	{
+		m_strItemName.Empty();
+		m_strLabel1.Empty();
+		m_strLabel2.Empty();
+		m_nSubCommand = 0;
 		m_bIsNumber1 = FALSE;
 		m_bIsNumber2 = FALSE;
 	}
 };
 
+typedef CArray<InputItem, InputItem&> InputItemArray;
+
 //프리셋의 단위 작업 항목을 나타내는 구조체
 struct PresetTask
 {
-	int m_nCommand;		//기능 종류  
+	int m_nCommand;		//기능 종류 (툴바 버튼과 연결)
+	int m_nSubCommand;  //기능 종류 (입력창 콤보박스와 연결)
 	CString m_str1;		//첫번째 인자
 	CString m_str2;		//두번째 인자
-	PresetTask() { m_nCommand = 0; }
-	PresetTask(int nCommand) { m_nCommand = nCommand; }
+	PresetTask() { m_nCommand = 0; m_nSubCommand = 0; }
+	PresetTask(PresetTask& task) 
+	{
+		m_nCommand = task.m_nCommand; 
+		m_nSubCommand = task.m_nSubCommand; 
+		m_str1 = task.m_str1;
+		m_str2 = task.m_str2;
+	}
 };
 
 typedef CArray<PresetTask, PresetTask&> PresetTaskArray;
@@ -48,6 +66,7 @@ struct BatchNamerPreset
 };
 
 typedef CArray<BatchNamerPreset, BatchNamerPreset&> PresetArray;
+
 // CBatchNamerApp:
 // 이 클래스의 구현에 대해서는 BatchNamer.cpp을(를) 참조하세요.
 //
@@ -86,4 +105,5 @@ public:
 inline CBatchNamerApp* APP() { return (CBatchNamerApp*)AfxGetApp(); };
 
 extern CBatchNamerApp theApp;
+
 

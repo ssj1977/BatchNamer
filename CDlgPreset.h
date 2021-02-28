@@ -10,6 +10,8 @@ public:
 	CDlgPreset(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgPreset();
 
+	CToolBar m_toolPreset;
+
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_PRESET };
@@ -23,10 +25,16 @@ protected:
 public:
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
-	void ArrangeCtrl();
-	afx_msg void OnBnClickedBtnPresetTaskAdd();
 	afx_msg void OnBnClickedBtnPresetTaskDelete();
 	afx_msg void OnBnClickedBtnPresetTaskEdit();
-	afx_msg void OnSelchangeCbPresetCommand();
 	afx_msg void OnSelchangeCbPresetSelect();
+	virtual BOOL OnCommand(WPARAM wParam, LPARAM lParam);
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnBnClickedBtnPresetUp();
+	afx_msg void OnBnClickedBtnPresetDown();
+
+	void ArrangeCtrl();
+	void SwapListItem(int n1, int n2);
+	void SetListTask(int nItem, PresetTask& task);
+	afx_msg void OnDblclkListPreset(NMHDR* pNMHDR, LRESULT* pResult);
 };

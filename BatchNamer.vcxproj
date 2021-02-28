@@ -222,6 +222,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\BatchNamer.ico" />
+    <Image Include="res\bmp00001.bmp" />
     <Image Include="res\toolbar1.bmp" />
     <Image Include="res\toolbar2.bmp" />
   </ItemGroup>

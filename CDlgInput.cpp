@@ -5,7 +5,7 @@
 #include "BatchNamer.h"
 #include "CDlgInput.h"
 #include "afxdialogex.h"
-
+#include "EtcFunctions.h"
 
 // CDlgInput 대화 상자
 
@@ -15,6 +15,7 @@ CDlgInput::CDlgInput(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_INPUT, pParent)
 {
 	m_nCB = 0;
+	m_nCommand = 0;
 }
 
 CDlgInput::~CDlgInput()
@@ -43,31 +44,28 @@ BOOL CDlgInput::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	SetWindowText(m_strTitle);
-	if (m_strReturn1.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_1, m_strReturn1);
-	if (m_strReturn2.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_2, m_strReturn2);
-
-	if (m_aInputItemPtr.GetSize() > 0)
+	if (m_aInput.GetSize() > 0)
 	{
 		int nItem;
-		for (int i = 0; i < m_aInputItemPtr.GetSize(); i++)
+		for (int i = 0; i < m_aInput.GetSize(); i++)
 		{
-			InputItem* pItem = (InputItem*)m_aInputItemPtr[i];
-			nItem = m_cb.AddString(pItem->m_strItemName);
-			m_cb.SetItemData(nItem, (DWORD_PTR)pItem);
+			InputItem& item = m_aInput[i];
+			nItem = m_cb.AddString(item.m_strItemName);
+			m_cb.SetItemData(nItem, (DWORD_PTR)&item);
 		}
 		m_cb.SetCurSel(m_nCB);
 		OnSelchangeCbInput();
 	}
-	else
-	{
-		return FALSE;
-	}
+	else return FALSE;
+
+	if (m_strReturn1.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_1, m_strReturn1);
+	if (m_strReturn2.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_2, m_strReturn2);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 
-void CDlgInput::InitInputDlg(InputItem* pItem)
+void CDlgInput::SetInputItem(InputItem* pItem)
 {
 	BOOL bShow1 = !(pItem->m_strLabel1.IsEmpty());
 	BOOL bShow2 = !(pItem->m_strLabel2.IsEmpty());
@@ -77,18 +75,23 @@ void CDlgInput::InitInputDlg(InputItem* pItem)
 	GetDlgItem(IDC_EDIT_1)->ShowWindow(bShow1 ? SW_SHOW : SW_HIDE);
 	GetDlgItem(IDC_STATIC_2)->ShowWindow(bShow2 ? SW_SHOW : SW_HIDE);
 	GetDlgItem(IDC_EDIT_2)->ShowWindow(bShow2 ? SW_SHOW : SW_HIDE);
+
 	HWND h1 = GetDlgItem(IDC_EDIT_1)->GetSafeHwnd();
 	HWND h2 = GetDlgItem(IDC_EDIT_2)->GetSafeHwnd();
 	SetWindowLong(h1, GWL_STYLE, pItem->m_bIsNumber1 
 		? (GetWindowLong(h1, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h1, GWL_STYLE) & ~ES_NUMBER));
 	SetWindowLong(h2, GWL_STYLE, pItem->m_bIsNumber2 
 		? (GetWindowLong(h2, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h2, GWL_STYLE) & ~ES_NUMBER));
+	SetDlgItemText(IDC_EDIT_1, L"");
+	SetDlgItemText(IDC_EDIT_2, L"");
 }
 
 void CDlgInput::OnOK()
 {
-	GetDlgItemText(IDC_EDIT_1, m_strReturn1);
-	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
+	if (GetDlgItem(IDC_EDIT_1)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_1, m_strReturn1);
+	else m_strReturn1.Empty();
+	if (GetDlgItem(IDC_EDIT_2)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
+	else m_strReturn2.Empty();
 	m_nCB = m_cb.GetCurSel();
 	CDialogEx::OnOK();
 }
@@ -100,26 +103,252 @@ void CDlgInput::OnCancel()
 	CDialogEx::OnCancel();
 }
 
-void CDlgInput::InitValue(CString str1, CString str2)
+void CDlgInput::InitValue(int nSubCommand, CString str1, CString str2)
 {
+	if (nSubCommand != 0)
+	{
+		for (int i = 0; i < m_aInput.GetSize(); i++)
+		{
+			if (m_aInput[i].m_nSubCommand == nSubCommand)
+			{
+				m_nCB = i;
+				break;
+			}
+		}
+	}
 	m_strReturn1 = str1;
 	m_strReturn2 = str2;
 }
 void CDlgInput::AddOption(InputItem* pItem)
 {
 	if (pItem == NULL) return;
-	m_aInputItemPtr.Add(pItem);
+	m_aInput.Add(*pItem);
 }
 
 void CDlgInput::OnSelchangeCbInput()
 {
 	int nSel = m_cb.GetCurSel();
-	if (nSel < 0 || nSel >= m_aInputItemPtr.GetSize()) return;
+	if (nSel < 0 || nSel >= m_aInput.GetSize()) return;
 	InputItem* pItem = (InputItem*)m_cb.GetItemData(nSel);
-	InitInputDlg(pItem);
+	SetInputItem(pItem);
 }
 
-InputItem* CDlgInput::GetCurrentItem()
+int CDlgInput::GetSubCommand()
 {
-	return (InputItem*)m_aInputItemPtr[m_nCB];
+	return m_aInput[m_nCB].m_nSubCommand;
+}
+
+
+void CDlgInput::InitInputByCommand(int nCommand)
+{
+	m_nCommand = nCommand;
+	m_strTitle = IDSTR(nCommand);
+	InputItem item;
+	switch (nCommand)
+	{
+	case IDS_TB_01: //Replace
+		item.m_strItemName = IDSTR(IDS_REPLACESTRING);
+		item.m_nSubCommand = IDS_REPLACESTRING;
+		item.m_strLabel1 = IDSTR(IDS_REPLACEOLD);
+		item.m_strLabel2 = IDSTR(IDS_REPLACENEW);
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_02: //Add Front
+	case IDS_TB_03: //Add End
+		item.m_strItemName = IDSTR(IDS_ADDSTRING);
+		item.m_nSubCommand = IDS_ADDSTRING;
+		item.m_strLabel1 = IDSTR(IDS_STRINGTOADD);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDPARENT);
+		item.m_nSubCommand = IDS_ADDPARENT;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDDATECREATE);
+		item.m_nSubCommand = IDS_ADDDATECREATE;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDDATEMODIFY);
+		item.m_nSubCommand = IDS_ADDDATEMODIFY;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDTIMECREATE);
+		item.m_nSubCommand = IDS_ADDTIMECREATE;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDTIMEMODIFY);
+		item.m_nSubCommand = IDS_ADDTIMEMODIFY;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_05:
+		item.m_strItemName = IDSTR(IDS_DELPOS_FRONT);
+		item.m_nSubCommand = IDS_DELPOS_FRONT;
+		item.m_bIsNumber1 = TRUE;
+		item.m_bIsNumber2 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_POS_1);
+		item.m_strLabel2 = IDSTR(IDS_POS_2);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_DELPOS_REAR);
+		item.m_nSubCommand = IDS_DELPOS_REAR;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_POS_1_REAR);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_REMOVEBYBRACKET); //_T("지정된 문자로 묶인 부분을 삭제합니다.")
+		item.m_nSubCommand = IDS_REMOVEBYBRACKET;
+		item.m_strLabel1 = IDSTR(IDS_BRACKET1); // _T("시작문자")
+		item.m_strLabel2 = IDSTR(IDS_BRACKET2); // _T("끝문자")
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_08:
+		item.m_strItemName = IDSTR(IDS_DIGITBACK); //"맨 뒤쪽 숫자의 앞에 0을 추가해서 자릿수를 맞춥니다."
+		item.m_nSubCommand = IDS_DIGITBACK;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_DIGITFRONT); //"맨 앞쪽 숫자의 앞에 0을 추가해서 자릿수를 맞춥니다."
+		item.m_nSubCommand = IDS_DIGITFRONT;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_09:
+		item.m_strItemName = IDSTR(IDS_ADDNUM_ALL_BACK); //"모든 이름 뒤에 목록 순서대로 번호를 붙입니다."
+		item.m_nSubCommand = IDS_ADDNUM_ALL_BACK;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
+		item.m_bIsNumber2 = TRUE;
+		item.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDNUM_ALL_FRONT); //"모든 이름 앞에 목록 순서대로 번호를 붙입니다."
+		item.m_nSubCommand = IDS_ADDNUM_ALL_FRONT;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
+		item.m_bIsNumber2 = TRUE;
+		item.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDNUM_BYFOLDER_BACK); //"폴더별로 이름 뒤에 목록 순서대로 번호를 붙입니다."
+		item.m_nSubCommand = IDS_ADDNUM_BYFOLDER_BACK;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
+		item.m_bIsNumber2 = TRUE;
+		item.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDNUM_BYFOLDER_FRONT); //"폴더별로 이름 앞에 목록 순서대로 번호를 붙입니다."
+		item.m_nSubCommand = IDS_ADDNUM_BYFOLDER_FRONT;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
+		item.m_bIsNumber2 = TRUE;
+		item.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_13: // Manual Change
+		item.m_strItemName = IDSTR(IDS_MANUAL_CHANGE);
+		item.m_nSubCommand = IDS_MANUAL_CHANGE;
+		item.m_strLabel1 = IDSTR(IDS_COL_NEWNAME);
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_18: // Add Extension
+		item.m_strItemName = IDSTR(IDS_EXT_APPEND); //"확장자를 추가합니다."
+		item.m_nSubCommand = IDS_EXT_APPEND;
+		item.m_strLabel1 = IDSTR(IDS_EXT_TOADD); //_T("추가할 확장자")
+		m_aInput.Add(item);
+		break;
+	case IDS_TB_19: // Replac Extension
+		item.m_strItemName = IDSTR(IDS_EXT_REPLACE); //"확장자를 변경합니다."
+		item.m_nSubCommand = IDS_EXT_REPLACE;
+		item.m_strLabel1 = IDSTR(IDS_EXT_OLD); //_T("원래 확장자")
+		item.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바뀔 확장자")
+		m_aInput.Add(item);
+		break;
+	}
+}
+
+BOOL CDlgInput::VerifyReturnValue()
+{
+	int nCommand = m_nCommand;
+	int nSubCommand = GetSubCommand();
+	switch (nCommand)
+	{
+	case IDS_TB_01: //Replace
+		if (m_strReturn1.IsEmpty()) return FALSE;
+		break;
+	case IDS_TB_02: //Add Front
+	case IDS_TB_03: //Add End
+		if (nSubCommand == IDS_ADDSTRING) {	if (m_strReturn1.IsEmpty()) return FALSE;}
+		break;
+	case IDS_TB_05:
+		if (nSubCommand == IDS_DELPOS_FRONT || nSubCommand == IDS_DELPOS_REAR)
+		{
+			int nStart = _ttoi(m_strReturn1);
+			int nEnd = _ttoi(m_strReturn2);
+			if (nStart == 0 && nEnd == 0) return FALSE;
+			if (nEnd > 0 && nStart > nEnd)
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_INVALIDPOS));
+				return FALSE;
+			}
+		}
+		else if (nSubCommand == IDS_REMOVEBYBRACKET)
+		{
+			if (m_strReturn1.IsEmpty() || m_strReturn2.IsEmpty())
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_BRACKETINVALID)); //_T("시작/끝 문자가 정확하게 지정되지 않았습니다.")
+				return FALSE;
+			}
+			if (m_strReturn1.GetLength() > 1 || m_strReturn2.GetLength() > 1)
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_BRACKETLEN)); //(_T("구분자 길이가 한 글자가 아닙니다."));
+				return FALSE;
+			}
+		}
+		break;
+	case IDS_TB_08:
+		if (nSubCommand == IDS_DIGITBACK || nSubCommand == IDS_DIGITFRONT)
+		{
+			int nDigit = _ttoi(m_strReturn1);
+			if (nDigit < 0 || nDigit > 10)
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_INVALIDDIGIT)); //_T("자릿수 입력이 잘못되었습니다."));
+				return FALSE;
+			}
+		}
+		break;
+	case IDS_TB_09:
+		if (nSubCommand == IDS_ADDNUM_ALL_BACK || nSubCommand == IDS_ADDNUM_ALL_FRONT ||
+			nSubCommand == IDS_ADDNUM_BYFOLDER_BACK || nSubCommand == IDS_ADDNUM_BYFOLDER_FRONT	)
+		{
+			int nDigit = _ttoi(m_strReturn1);
+			if (nDigit < 0 || nDigit > 10)
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_INVALIDDIGIT));
+				return FALSE;
+			}
+		}
+		break;
+	case IDS_TB_13: // Manual Change
+		break;
+	case IDS_TB_18: // Add Extension
+		if (m_strReturn1.IsEmpty()) return FALSE;
+		break;
+	case IDS_TB_19: // Replace Extension
+		if (m_strReturn2.IsEmpty()) return FALSE;
+		break;
+	}
+	return TRUE;
 }
