@@ -93,6 +93,15 @@
 #define IDS_PROGRESS_CHANGE             88
 #define IDS_ADDDATECREATE               89
 #define IDS_ADDDATEMODIFY               90
+#define IDS_PRESET_NAME_FORMAT          91
+#define IDS_PRESET_NAME                 92
+#define IDS_PRESET_NAME_DESC            93
+#define IDS_PRESET_MENU_FORMAT          94
+#define IDS_PRESET_NONAME               95
+#define IDS_PRESET_COMMAND              96
+#define IDS_PRESET_SUBCOMMAND           97
+#define IDS_PRESET_ARG1                 98
+#define IDS_PRESET_ARG2                 99
 #define IDD_BATCHNAMER                  102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
@@ -135,8 +144,9 @@
 #define IDC_CB_SORTCOL                  1049
 #define IDC_CB_PRESET_SELECT            1051
 #define IDC_BTN_PRESET_TASK_EDIT        1055
+#define IDC_BTN_PRESET_TASK_DELETE      1056
 #define IDC_BTN_PRESET_TASK_ADD         1057
-#define IDC_BTN_PRESET_TASK_DELETE      1058
+#define IDC_BTN_PRESET_NAME             1058
 #define IDC_BTN_PRESET_DOWN             1059
 #define IDC_BTN_PRESET_UP2              1060
 #define IDC_BTN_PRESET_UP               1060
@@ -178,27 +188,18 @@
 #define IDM_SHOW_NEWFOLDER              32816
 #define IDM_SHOW_OLDFOLDER              32817
 #define IDM_CFG_VIEW                    32819
-#define ID_32822                        32822
-#define IDM_PRESET_START                32823
-#define ID_32824                        32824
-#define ID_32825                        32825
-#define ID_32826                        32826
-#define ID_32827                        32827
-#define ID_32828                        32828
-#define ID_32829                        32829
-#define IDM_PRESET_END                  32830
-#define IDM_PRESET_APPLY1               32831
-#define IDM_PRESET_APPLY2               32832
-#define IDM_PRESET_APPLY3               32833
-#define IDM_PRESET_APPLY4               32834
-#define IDM_PRESET_APPLY5               32835
-#define IDM_PRESET_EDIT                 32836
+#define IDM_PRESET_EDIT                 32820
+#define IDM_PRESET_APPLY1               32821
+#define IDM_PRESET_APPLY2               32822
+#define IDM_PRESET_APPLY3               32823
+#define IDM_PRESET_APPLY4               32824
+#define IDM_PRESET_APPLY5               32825
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        154
+#define _APS_NEXT_RESOURCE_VALUE        155
 #define _APS_NEXT_COMMAND_VALUE         32837
 #define _APS_NEXT_CONTROL_VALUE         1062
 #define _APS_NEXT_SYMED_VALUE           101

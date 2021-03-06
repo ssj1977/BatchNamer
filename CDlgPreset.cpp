@@ -16,7 +16,7 @@ IMPLEMENT_DYNAMIC(CDlgPreset, CDialogEx)
 CDlgPreset::CDlgPreset(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_PRESET, pParent)
 {
-
+	m_nLogFontHeight = 0;
 }
 
 CDlgPreset::~CDlgPreset()
@@ -36,6 +36,9 @@ BEGIN_MESSAGE_MAP(CDlgPreset, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_PRESET_UP, &CDlgPreset::OnBnClickedBtnPresetUp)
 	ON_BN_CLICKED(IDC_BTN_PRESET_DOWN, &CDlgPreset::OnBnClickedBtnPresetDown)
 	ON_NOTIFY(NM_DBLCLK, IDC_LIST_PRESET, &CDlgPreset::OnDblclkListPreset)
+	ON_WM_SIZE()
+	ON_BN_CLICKED(IDC_BTN_PRESET_NAME, &CDlgPreset::OnBnClickedBtnPresetName)
+	ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
 
@@ -45,7 +48,7 @@ BOOL CDlgPreset::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	m_toolPreset.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_WRAPABLE, WS_CHILD | WS_VISIBLE );
+	m_toolPreset.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_WRAPABLE, WS_CHILD | WS_VISIBLE | CBRS_BORDER_ANY);
 	m_toolPreset.LoadToolBar(IDR_TOOLBAR_PRESET);
 	UINT nStyle;
 	int nCount = m_toolPreset.GetCount();
@@ -53,7 +56,6 @@ BOOL CDlgPreset::OnInitDialog()
 	int aID[] = {	IDS_TB_01, IDS_TB_02, IDS_TB_03, IDS_TB_04, IDS_TB_05, 
 					IDS_TB_06, IDS_TB_07, IDS_TB_08, IDS_TB_09, IDS_TB_16,
 					IDS_TB_17, IDS_TB_18, IDS_TB_19 };
-
 	for (int i = 0; i < nCount; i++)
 	{
 		nStyle = m_toolPreset.GetButtonStyle(i);
@@ -63,34 +65,27 @@ BOOL CDlgPreset::OnInitDialog()
 			nTextIndex += 1;
 		}
 	}
-	CRect rc, rcButton, rcSplit, rcTool;
-	GetDlgItem(IDC_ST_PRESET_ADD)->GetWindowRect(rcTool);
-	ScreenToClient(rcTool);
-	rcTool.DeflateRect(CRect(5, 25, 5, 5));
-	m_toolPreset.MoveWindow(rcTool, TRUE);
-	//GetClientRect(rc);
-	//m_toolPreset.GetToolBarCtrl().GetItemRect(0, rcButton);
-	//m_toolPreset.GetToolBarCtrl().GetItemRect(1, rcSplit);
-	//int TOOLHEIGHT = (rcButton.Height() + rcSplit.Width()) * 13;
-	//int TOOLWIDTH = (rcButton.Width() + rcSplit.Width());
-	//m_toolPreset.MoveWindow(rc.Width()-TOOLWIDTH-10, 0, TOOLWIDTH, TOOLHEIGHT);
-	
-	// TODO:  여기에 추가 초기화 작업을 추가합니다.
-	//Init Preset Mode
+	LOGFONT lf;
+	GetFont()->GetLogFont(&lf);
+	m_nLogFontHeight = abs(lf.lfHeight);
+	ArrangeCtrl();
+	// Initialize List Control
+	int LH = m_nLogFontHeight;
 	CListCtrl* pListPreset = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
-	CComboBox* pCBPreset = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
 	pListPreset->SetExtendedStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-	pListPreset->InsertColumn(0, L"작업", LVCFMT_LEFT, APP()->m_nFontSize * 6);
-	pListPreset->InsertColumn(1, L"기능", LVCFMT_LEFT, APP()->m_nFontSize * 18);
-	pListPreset->InsertColumn(2, L"설정값1", LVCFMT_RIGHT, APP()->m_nFontSize * 7);
-	pListPreset->InsertColumn(3, L"설정값2", LVCFMT_RIGHT, APP()->m_nFontSize * 7);
-
+	pListPreset->InsertColumn(0, IDSTR(IDS_PRESET_COMMAND), LVCFMT_LEFT, LH * 8);
+	pListPreset->InsertColumn(1, IDSTR(IDS_PRESET_SUBCOMMAND), LVCFMT_LEFT, LH * 20);
+	pListPreset->InsertColumn(2, IDSTR(IDS_PRESET_ARG1), LVCFMT_RIGHT, LH * 6);
+	pListPreset->InsertColumn(3, IDSTR(IDS_PRESET_ARG2), LVCFMT_RIGHT, LH * 6);
+	// Load Presets
+	CComboBox* pCBPreset = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
 	PresetArray& aPreset = APP()->m_aPreset;
 	CString strTemp;
 	int nIndex = 0;
 	for (int i = 0; i < aPreset.GetSize(); i++)
 	{
-		strTemp.Format(L"프리셋%d", i+1);
+		if (aPreset[i].m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_NAME_FORMAT), i + 1, IDSTR(IDS_PRESET_NONAME));
+		else strTemp.Format(IDSTR(IDS_PRESET_NAME_FORMAT), i+1, aPreset[i].m_strName);
 		nIndex = pCBPreset->AddString(strTemp);
 	}
 	pCBPreset->SetCurSel(0);
@@ -103,8 +98,8 @@ BOOL CDlgPreset::OnInitDialog()
 void CDlgPreset::OnOK()
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-
-	CDialogEx::OnOK();
+	return;
+	//CDialogEx::OnOK();
 }
 
 
@@ -118,8 +113,43 @@ void CDlgPreset::OnCancel()
 
 void CDlgPreset::ArrangeCtrl()
 {
-	//GetDlgItem(IDC_CB_PRESET)->MoveWindow(rcList.left, rcList.top, rcList.Width(), BARHEIGHT);
-	//GetDlgItem(IDC_LIST_PRESET)->MoveWindow(rcList.left, rcList.top + BARHEIGHT, rcList.Width(), rcList.Height() - BARHEIGHT);
+	int LH = m_nLogFontHeight;
+	CRect rc, rcButton, rcSplit, rcToolButton, rcAdd, rcTemp;
+	GetClientRect(rc);
+	rc.DeflateRect(LH, LH, LH, LH);
+	GetDlgItem(IDC_CB_PRESET_SELECT)->GetWindowRect(rcTemp);
+	GetDlgItem(IDC_CB_PRESET_SELECT)->MoveWindow(rc.left, rc.top, rc.Width(), rcTemp.Height());
+	rc.DeflateRect(0, rcTemp.Height() + LH, 0, 0);
+
+	m_toolPreset.GetToolBarCtrl().GetItemRect(0, rcToolButton);
+	m_toolPreset.GetToolBarCtrl().GetItemRect(1, rcSplit);
+	int n1 = (rc.Width() - (LH*2)) / (rcToolButton.Width() + rcSplit.Width());
+	if (n1 == 0) n1 = 1;
+	int n2 = int(13 / n1) + 1;
+	int TOOLWIDTH = (rcToolButton.Width() + rcSplit.Width()) * n1;
+	int TOOLHEIGHT = (rcToolButton.Height() + rcSplit.Width()) * n2;
+	int ADDHEIGHT = TOOLHEIGHT + LH * 3;
+	GetDlgItem(IDCANCEL)->GetWindowRect(rcButton);
+	int BTNWIDTH = rcButton.Width();
+	if (BTNWIDTH * 6 + LH*5 > rc.Width()) BTNWIDTH = (rc.Width() - BTNWIDTH) / 5 - LH;
+	int BTNHEIGHT = rcButton.Height() + LH * 2; 
+	GetDlgItem(IDC_LIST_PRESET)->MoveWindow(rc.left, rc.top, rc.Width(), rc.Height() - ADDHEIGHT - BTNHEIGHT);
+	GetDlgItem(IDC_LIST_PRESET)->GetWindowRect(rcTemp);
+	rc.DeflateRect(0, rcTemp.Height() + LH, 0, 0);
+	GetDlgItem(IDC_ST_PRESET_ADD)->MoveWindow(rc.left, rc.top, rc.Width(), ADDHEIGHT);
+	m_toolPreset.MoveWindow(rc.left + LH, rc.top + LH*2, TOOLWIDTH, TOOLHEIGHT);
+	rc.DeflateRect(0, ADDHEIGHT + LH, 0, 0);
+	GetDlgItem(IDC_BTN_PRESET_UP)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
+	rc.left = rc.left + BTNWIDTH + LH;
+	GetDlgItem(IDC_BTN_PRESET_DOWN)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
+	rc.left = rc.left + BTNWIDTH + LH;
+	GetDlgItem(IDC_BTN_PRESET_TASK_EDIT)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
+	rc.left = rc.left + BTNWIDTH + LH;
+	GetDlgItem(IDC_BTN_PRESET_TASK_DELETE)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
+	rc.left = rc.left + BTNWIDTH + LH;
+	GetDlgItem(IDC_BTN_PRESET_NAME)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
+	rc.left = rc.left + BTNWIDTH + LH;
+	GetDlgItem(IDCANCEL)->MoveWindow(rc.right-rcButton.Width(), rc.top, rcButton.Width(), rcButton.Height());
 }
 
 
@@ -132,7 +162,8 @@ void CDlgPreset::OnBnClickedBtnPresetTaskDelete()
 	if (nItem == -1) return;
 	pList->DeleteItem(nItem);
 	preset.m_aTask.RemoveAt(nItem);
-
+	if (nItem >= pList->GetItemCount()) nItem = pList->GetItemCount() - 1;
+	if (nItem >= 0 && nItem < pList->GetItemCount()) pList->SetItemState(nItem, LVIS_SELECTED, LVIS_SELECTED);
 }
 
 void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
@@ -171,7 +202,12 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 		CDlgInput dlg;
 		dlg.InitInputByCommand(task.m_nCommand);
 		dlg.InitValue(task.m_nSubCommand, task.m_str1, task.m_str2);
-		if (dlg.DoModal() == IDCANCEL) return;
+		if (dlg.DoModal() == IDCANCEL)
+		{
+			m_toolPreset.RedrawWindow();
+			return;
+		}
+		m_toolPreset.RedrawWindow();
 		if (dlg.VerifyReturnValue() == FALSE) return;
 		task.m_nSubCommand = dlg.GetSubCommand();
 		task.m_str1 = dlg.m_strReturn1;
@@ -232,7 +268,12 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 		{
 			CDlgInput dlg;
 			dlg.InitInputByCommand(nCommand);
-			if (dlg.DoModal() == IDCANCEL) return TRUE;
+			if (dlg.DoModal() == IDCANCEL)
+			{
+				m_toolPreset.RedrawWindow();
+				return TRUE;
+			}
+			m_toolPreset.RedrawWindow();
 			if (dlg.VerifyReturnValue() == FALSE) return TRUE;
 			nSubCommand = dlg.GetSubCommand();
 			str1 = dlg.m_strReturn1;
@@ -321,6 +362,8 @@ void CDlgPreset::SetListTask(int nItem, PresetTask& task)
 	pList->SetItemText(nItem, 1, strSubCommand);
 	pList->SetItemText(nItem, 2, task.m_str1);
 	pList->SetItemText(nItem, 3, task.m_str2);
+	pList->SetItemState(nItem, LVIS_SELECTED, LVIS_SELECTED);
+	pList->EnsureVisible(nItem, FALSE);
 }
 
 
@@ -329,4 +372,43 @@ void CDlgPreset::OnDblclkListPreset(NMHDR* pNMHDR, LRESULT* pResult)
 	//LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
 	OnBnClickedBtnPresetTaskEdit();
 	*pResult = 0;
+}
+
+
+void CDlgPreset::OnSize(UINT nType, int cx, int cy)
+{
+	CDialogEx::OnSize(nType, cx, cy);
+	if (::IsWindow(GetDlgItem(IDC_LIST_PRESET)->GetSafeHwnd()) != FALSE) ArrangeCtrl();
+}
+
+
+void CDlgPreset::OnBnClickedBtnPresetName()
+{
+	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	int nSel = pCB->GetCurSel();
+	BatchNamerPreset& preset = APP()->m_aPreset[nSel];
+	CDlgInput dlg;
+	dlg.InitInputByCommand(IDS_PRESET_NAME);
+	dlg.InitValue(0, preset.m_strName, _T(""));
+	if (dlg.DoModal() == IDCANCEL)
+	{
+		m_toolPreset.RedrawWindow();
+		return;
+	}
+	m_toolPreset.RedrawWindow();
+	if (dlg.VerifyReturnValue() == FALSE) return;
+	preset.m_strName = dlg.m_strReturn1;
+	pCB->DeleteString(nSel);
+	CString strTemp;
+	strTemp.Format(IDSTR(IDS_PRESET_NAME_FORMAT), nSel + 1, preset.m_strName);
+	pCB->InsertString(nSel, strTemp);
+	pCB->SetCurSel(nSel);
+}
+
+
+void CDlgPreset::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+	lpMMI->ptMinTrackSize.x = 400;
+	lpMMI->ptMinTrackSize.y = 300;
+	CDialogEx::OnGetMinMaxInfo(lpMMI);
 }

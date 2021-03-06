@@ -172,6 +172,19 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("UseDefaultFont=%d\r\n"), m_bUseDefaultFont);	strData += strLine;
 	strLine.Format(_T("FontSize=%d\r\n"), m_nFontSize);	strData += strLine;
 	strLine.Format(_T("IconType=%d\r\n"), m_nIconType);	strData += strLine;
+	for (int i = 0; i < m_aPreset.GetSize(); i++)
+	{
+		BatchNamerPreset& ps = m_aPreset[i];
+		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
+		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
+		{
+			PresetTask& pt = ps.m_aTask[j];
+			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
+			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg1=%s\r\n"), pt.m_str1);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg2=%s\r\n"), pt.m_str2);	strData += strLine;
+		}
+	}
 	WriteCStringToFile(strFile, strData);
 }
 
@@ -181,6 +194,8 @@ void CBatchNamerApp::INILoad(CString strFile)
 	CString strData, strLine, str1, str2, strTemp;
 	ReadFileToCString(strFile, strData);
 	int nPos = 0;
+	int nPreset = -1 ;
+	int nTask = -1;
 	while (nPos != -1)
 	{
 		nPos = GetLine(strData, nPos, strLine, _T("\r\n"));
@@ -203,6 +218,41 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = _ttoi(str2);
 		}
+		//이 부분은 str2가 비어 있더라도 받는다
+		if (str1.CompareNoCase(_T("Preset_Name")) == 0)
+		{
+			nTask = -1;
+			nPreset++;
+			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_strName = str2;
+		}
+		else if (str1.CompareNoCase(_T("PresetTask_Command")) == 0)
+		{
+			PresetTask pt;
+			nTask++;
+			m_aPreset[nPreset].m_aTask.Add(pt);
+			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
+				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+					m_aPreset[nPreset].m_aTask[nTask].m_nCommand = _ttoi(str2);
+		}
+		else if (str1.CompareNoCase(_T("PresetTask_SubCommand")) == 0)
+		{
+			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
+				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+					m_aPreset[nPreset].m_aTask[nTask].m_nSubCommand = _ttoi(str2);
+		}
+		else if (str1.CompareNoCase(_T("PresetTask_Arg1")) == 0)
+		{
+			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
+				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+					m_aPreset[nPreset].m_aTask[nTask].m_str1 = str2;
+		}
+		else if (str1.CompareNoCase(_T("PresetTask_Arg2")) == 0)
+		{
+			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
+				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+					m_aPreset[nPreset].m_aTask[nTask].m_str2 = str2;
+		}
+
 	}
 }
 

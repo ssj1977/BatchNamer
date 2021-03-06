@@ -276,6 +276,12 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바뀔 확장자")
 		m_aInput.Add(item);
 		break;
+	case IDS_PRESET_NAME:
+		item.m_strItemName = IDSTR(IDS_PRESET_NAME_DESC);
+		item.m_nSubCommand = IDS_PRESET_NAME_DESC;
+		item.m_strLabel1 = IDSTR(IDS_PRESET_NAME); //_T("원래 확장자")
+		m_aInput.Add(item);
+		break;
 	}
 }
 
@@ -348,6 +354,9 @@ BOOL CDlgInput::VerifyReturnValue()
 		break;
 	case IDS_TB_19: // Replace Extension
 		if (m_strReturn2.IsEmpty()) return FALSE;
+		break;
+	case IDS_PRESET_NAME: // Add Extension
+		if (m_strReturn1.IsEmpty()) return FALSE;
 		break;
 	}
 	return TRUE;

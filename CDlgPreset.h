@@ -11,6 +11,7 @@ public:
 	virtual ~CDlgPreset();
 
 	CToolBar m_toolPreset;
+	int m_nLogFontHeight;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -37,4 +38,7 @@ public:
 	void SwapListItem(int n1, int n2);
 	void SetListTask(int nItem, PresetTask& task);
 	afx_msg void OnDblclkListPreset(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnBnClickedBtnPresetName();
+	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 };

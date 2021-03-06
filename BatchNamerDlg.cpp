@@ -137,6 +137,7 @@ BEGIN_MESSAGE_MAP(CBatchNamerDlg, CDialogEx)
 	ON_WM_DROPFILES()
 	ON_NOTIFY(NM_DBLCLK, IDC_LIST_FILE, OnDblclkListFile)
 	ON_BN_CLICKED(IDC_BTN_STOPTHREAD, &CBatchNamerDlg::OnBnClickedBtnStopthread)
+	ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
 
@@ -341,10 +342,16 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.0 (2021-02-26 Release)")); 	break;
+	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.1 (2021-03-01 Release)")); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
+	case IDM_PRESET_APPLY1: PresetApply(APP()->m_aPreset[0]); break;
+	case IDM_PRESET_APPLY2: PresetApply(APP()->m_aPreset[1]); break;
+	case IDM_PRESET_APPLY3: PresetApply(APP()->m_aPreset[2]); break;
+	case IDM_PRESET_APPLY4: PresetApply(APP()->m_aPreset[3]); break;
+	case IDM_PRESET_APPLY5: PresetApply(APP()->m_aPreset[4]); break;
+
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
@@ -356,6 +363,32 @@ void CBatchNamerDlg::PresetEdit()
 {
 	CDlgPreset dlg;
 	dlg.DoModal();
+	UpdateMenu();
+}
+
+void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
+{
+	int nSize = preset.m_aTask.GetSize();
+	for (int i = 0; i < nSize; i++)
+	{
+		PresetTask& task = preset.m_aTask[i];
+		switch (task.m_nCommand)
+		{
+		case IDS_TB_01:	NameReplace(task.m_nSubCommand, task.m_str1, task.m_str2);	break; //Replace
+		case IDS_TB_02: NameAdd(task.m_nSubCommand, task.m_str1, task.m_str2, TRUE); break; // Add Front
+		case IDS_TB_03: NameAdd(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE); break; // Add End
+		case IDS_TB_04: NameEmpty(FALSE); break; // Empty Name
+		case IDS_TB_05: NameRemoveSelected(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Remove Selected
+		case IDS_TB_06: NameNumberFilter(FALSE, FALSE); break;
+		case IDS_TB_07: NameNumberFilter(TRUE, FALSE); break;
+		case IDS_TB_08: NameDigit(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Digits
+		case IDS_TB_09: NameAddNum(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Add Number
+		case IDS_TB_16: NameSetParent(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Parent
+		case IDS_TB_17: ExtDel(FALSE); break; // Delete Extension
+		case IDS_TB_18: ExtAdd(task.m_nSubCommand, task.m_str1, task.m_str2); break;// Add Extension
+		case IDS_TB_19: ExtReplace(task.m_nSubCommand, task.m_str1, task.m_str2); break;// Replace Extension
+		}
+	}
 }
 
 
@@ -590,7 +623,7 @@ void CBatchNamerDlg::ConfigViewOption()
 			APP()->m_nIconType = dlg.m_nIconType;
 			UpdateImageList();
 		}
-		m_list.RedrawWindow();
+		RedrawWindow();
 	}
 }
 
@@ -1480,28 +1513,29 @@ void CBatchNamerDlg::OnDblclkListFile(NMHDR* pNMHDR, LRESULT* pResult)
 void CBatchNamerDlg::UpdateMenu()
 {
 	BOOL b = (m_list.GetItemCount() > 0);
-	GetMenu()->EnableMenuItem(IDM_APPLY_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_CLEAR_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_SORT_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_UNDO_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_REPLACE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_ADD_FRONT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_ADD_REAR, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_REMOVESELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_EXTRACTNUMBER, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_REMOVENUMBER, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_DIGIT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_ADDNUM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_EMPTY, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_NAME_SETPARENT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXT_ADD, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXT_DEL, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXT_REPLACE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXPORT_CLIP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXPORT_FILE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXPORT_CLIP2, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EXPORT_FILE2, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_IMPORT_FILE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	CMenu* pMenu = GetMenu();
+	pMenu->EnableMenuItem(IDM_APPLY_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_CLEAR_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_SORT_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_UNDO_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_REPLACE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_ADD_FRONT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_ADD_REAR, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_REMOVESELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_EXTRACTNUMBER, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_REMOVENUMBER, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_DIGIT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_ADDNUM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_EMPTY, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_SETPARENT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXT_ADD, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXT_DEL, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXT_REPLACE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_CLIP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_FILE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_CLIP2, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_FILE2, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_IMPORT_FILE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 
 	m_tool1.GetToolBarCtrl().EnableButton(IDM_APPLY_CHANGE, b);
 	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REPLACE, b);
@@ -1523,25 +1557,37 @@ void CBatchNamerDlg::UpdateMenu()
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_REPLACE, b);
 
 	b = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
-	GetMenu()->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	GetMenu()->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_MANUAL_CHANGE, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_UP, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_DOWN, b);
 
-	GetMenu()->CheckMenuItem(IDM_SHOW_OLDFOLDER,
+	pMenu->CheckMenuItem(IDM_SHOW_OLDFOLDER,
 		FlagGET(APP()->m_nShowFlag, COL_OLDFOLDER) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	GetMenu()->CheckMenuItem(IDM_SHOW_NEWFOLDER,
+	pMenu->CheckMenuItem(IDM_SHOW_NEWFOLDER,
 		FlagGET(APP()->m_nShowFlag, COL_NEWFOLDER) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	GetMenu()->CheckMenuItem(IDM_SHOW_FULLPATH,
+	pMenu->CheckMenuItem(IDM_SHOW_FULLPATH,
 		FlagGET(APP()->m_nShowFlag, COL_FULLPATH) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	GetMenu()->CheckMenuItem(IDM_SHOW_SIZE,
+	pMenu->CheckMenuItem(IDM_SHOW_SIZE,
 		FlagGET(APP()->m_nShowFlag, COL_FILESIZE) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	GetMenu()->CheckMenuItem(IDM_SHOW_MODIFYTIME,
+	pMenu->CheckMenuItem(IDM_SHOW_MODIFYTIME,
 		FlagGET(APP()->m_nShowFlag, COL_TIMEMODIFY) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	GetMenu()->CheckMenuItem(IDM_SHOW_CREATETIME,
+	pMenu->CheckMenuItem(IDM_SHOW_CREATETIME,
 		FlagGET(APP()->m_nShowFlag, COL_TIMECREATE) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
+
+	PresetArray& aPS = APP()->m_aPreset;
+	CString strTemp;
+	int n = 0;
+	for (int i=0; i<aPS.GetSize(); i++) //현재는 5개로 고정, 수정하는 경우 동적 메뉴로 바꾸어야 함
+	{
+		BatchNamerPreset& ps = aPS[i];
+		if (ps.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1 , IDSTR(IDS_PRESET_NONAME));
+		else strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1 ,ps.m_strName);
+		pMenu->ModifyMenu(IDM_PRESET_APPLY1 + i, MF_BYCOMMAND | MF_STRING, IDM_PRESET_APPLY1 + i, strTemp);
+		pMenu->EnableMenuItem(IDM_PRESET_APPLY1 + i, (ps.m_aTask.GetSize()>0) ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	}
 
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
@@ -1579,4 +1625,12 @@ void CBatchNamerDlg::OnBnClickedBtnStopthread()
 {
 	if (AfxMessageBox(IDSTR(IDS_MSG_STOPTHREAD), MB_YESNO) == IDNO) return;
 	st_bIsThreadWorking = FALSE;
+}
+
+
+void CBatchNamerDlg::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+	lpMMI->ptMinTrackSize.x = 400;
+	lpMMI->ptMinTrackSize.y = 300;
+	CDialogEx::OnGetMinMaxInfo(lpMMI);
 }

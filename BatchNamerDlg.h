@@ -61,6 +61,7 @@ protected:
 	void ApplyChange_Start();
 	void UndoChanges();
 	void PresetEdit();
+	void PresetApply(BatchNamerPreset& preset);
 	CString GetItemFullPath(int nItem, BOOL bOld = TRUE);
 	void ManualChange();
 	void NameEmpty(BOOL bToggleRedraw = TRUE);
@@ -92,4 +93,5 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedBtnStopthread();
+	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 };
