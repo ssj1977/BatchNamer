@@ -368,8 +368,8 @@ void CBatchNamerDlg::PresetEdit()
 
 void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 {
-	int nSize = preset.m_aTask.GetSize();
-	for (int i = 0; i < nSize; i++)
+	INT_PTR nSize = preset.m_aTask.GetSize();
+	for (INT_PTR i = 0; i < nSize; i++)
 	{
 		PresetTask& task = preset.m_aTask[i];
 		switch (task.m_nCommand)
@@ -802,7 +802,7 @@ void CBatchNamerDlg::NameAdd(int nSubCommand, CString str1, CString str2, BOOL b
 		}
 		else
 		{
-			BOOL bIsDir = m_list.GetItemData(i);
+			BOOL bIsDir =(BOOL) m_list.GetItemData(i);
 			CString strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir) + strTemp;
 			CString	strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 			if (strExt.IsEmpty() == FALSE) strName += strExt;
@@ -827,7 +827,7 @@ void CBatchNamerDlg::NameNumberFilter(BOOL bRemoveNumber, BOOL bToggleRedraw)
 	if (bToggleRedraw == TRUE) m_list.SetRedraw(FALSE);
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		BOOL bIsDir = m_list.GetItemData(i);
+		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 
@@ -857,7 +857,7 @@ void CBatchNamerDlg::NameDigit(int nSubCommand, CString str1, CString str2)
 	int nDigit = _ttoi(str1);
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		BOOL bIsDir = m_list.GetItemData(i);
+		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		nStatus = 0;
@@ -970,7 +970,7 @@ void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
 	}
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		BOOL bIsDir = m_list.GetItemData(i);
+		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 		if (bIsDir == FALSE)
 		{
 			if (strOldExt.IsEmpty() == FALSE)
@@ -1146,8 +1146,8 @@ void CBatchNamerDlg::SwapItem(int n1, int n2)
 	int nCol = COL_TOTAL, i = 0;
 
 	//아이템 데이타 교환
-	DWORD dw1 = m_list.GetItemData(n1);
-	DWORD dw2 = m_list.GetItemData(n2);
+	DWORD_PTR dw1 = (BOOL)m_list.GetItemData(n1);
+	DWORD_PTR dw2 = (BOOL)m_list.GetItemData(n2);
 	m_list.SetItemData(n1, dw2);
 	m_list.SetItemData(n2, dw1);
 

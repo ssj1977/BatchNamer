@@ -111,7 +111,7 @@ void CDlgCFG_View::OnOK()
 		return;
 	}
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_ICONSIZE);
-	m_nIconType = pCB->GetItemData(pCB->GetCurSel());
+	m_nIconType = (int)pCB->GetItemData(pCB->GetCurSel());
 	CDialogEx::OnOK();
 }
 

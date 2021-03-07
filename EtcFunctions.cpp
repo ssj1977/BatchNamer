@@ -40,8 +40,8 @@ int GetFileImageIndex(CString strPath, BOOL bIsDirectory)
 //두 파일명 비교하기 : Locale 고려 비교 기능
 int CompareFileName(TCHAR* name1, TCHAR* name2)
 {
-	int len1=_tcslen(name1);
-	int len2=_tcslen(name2);
+	int len1=(int)_tcslen(name1);
+	int len2=(int)_tcslen(name2);
 	int nRet=CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, name1, len1, name2, len2);
 	if (nRet==CSTR_LESS_THAN) return -1;
 	if (nRet==CSTR_GREATER_THAN) return 1;
@@ -140,10 +140,10 @@ BOOL ReadFileToCString(CString strFile, CString& strData)
 			{
 				filesize-=2;
 #ifdef _UNICODE
-				int nStrLen = ( filesize / sizeof(TCHAR) ) + 1;
-				TCHAR* pBuf=strData.GetBufferSetLength(nStrLen);
+				int nStrLen = int( filesize / sizeof(TCHAR) ) + 1;
+				TCHAR* pBuf = strData.GetBufferSetLength(nStrLen);
 				memset(pBuf, 0, filesize + sizeof(TCHAR));
-				file.Read(pBuf, filesize);
+				file.Read(pBuf, (UINT)filesize);
 				strData.ReleaseBuffer();
 				file.Close();
 #else
@@ -161,7 +161,7 @@ BOOL ReadFileToCString(CString strFile, CString& strData)
 				file.SeekToBegin();
 				char* pBuf=new char[filesize + 1];
 				memset(pBuf, 0, filesize + 1);
-				file.Read(pBuf, filesize);
+				file.Read(pBuf, (UINT)filesize);
 				strData = pBuf;	
 				file.Close();
 				delete[] pBuf;

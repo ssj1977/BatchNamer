@@ -60,20 +60,20 @@ int CNameListCtrl::OnCompareItems(LPARAM lParam1, LPARAM lParam2, int iColumn)
 int CNameListCtrl::CompareItemByType(LPARAM item1, LPARAM item2, int nCol, int nType)
 {
 	int nRet = 0;
-	CString str1 = GetItemText(item1, nCol);
-	CString str2 = GetItemText(item2, nCol);
+	CString str1 = GetItemText((int)item1, nCol);
+	CString str2 = GetItemText((int)item2, nCol);
 	if (nType == COL_COMP_STR)
 	{
 		nRet = StrCmp(str1, str2);
 	}
 	else if (nType == COL_COMP_PATH)
 	{
-		DWORD type1, type2;
-		type1 = GetItemData(item1);
-		type2 = GetItemData(item2);
+		DWORD_PTR type1, type2;
+		type1 = GetItemData((int)item1);
+		type2 = GetItemData((int)item2);
 		if (type1 != type2)
 		{
-			nRet = type1 - type2;
+			nRet = int(type1 - type2);
 		}
 		else
 		{
