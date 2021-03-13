@@ -47,7 +47,7 @@ protected:
 	void AddByFileDialog();
 	void AddPath(CString strFile, BOOL bIsDirectory);
 	void AddPathStart(CString strPath);
-	void AddListItem(CFileFind& find);
+	void AddListItem(WIN32_FIND_DATA& fd, CString strDir);
 	void SortList();
 	void ClearList();
 	void ToggleListColumn(int nCol);

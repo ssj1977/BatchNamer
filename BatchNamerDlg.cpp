@@ -480,71 +480,85 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 
 CString GetFileSizeString(ULONGLONG nSize);
 
-void CBatchNamerDlg::AddListItem(CFileFind& find)
+void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 {
-	CString strName, strFolder, strSize, strTimeCreate, strTimeModify;
-	CString strPath = find.GetFilePath();
+	TCHAR fullpath[MAX_PATH];
+	ULARGE_INTEGER filesize;
+	filesize.HighPart = fd.nFileSizeHigh;
+	filesize.LowPart = fd.nFileSizeLow;
+	PathCombineW(fullpath, strDir, fd.cFileName);
+	CString strSize, strTimeCreate, strTimeModify;
 	//중복체크
-	CPathSet::iterator it = m_list.m_setPath.find(strPath);
-	if (it == m_list.m_setPath.end()) m_list.m_setPath.insert(strPath);
+	CPathSet::iterator it = m_list.m_setPath.find(fullpath);
+	if (it == m_list.m_setPath.end()) m_list.m_setPath.insert(fullpath);
 	else return; // 이미 존재하는 이름
-	BOOL bIsDir = find.IsDirectory();
-	int nImage = GetFileImageIndexFromMap(strPath, bIsDir);
-	strName = find.GetFileName();
-	strFolder = Get_Folder(strPath);
+	BOOL bIsDir = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+	int nImage = GetFileImageIndexFromMap(fullpath, bIsDir);
 	CTime tTemp;
-	find.GetCreationTime(tTemp);
+	tTemp = CTime(fd.ftCreationTime);
 	strTimeCreate = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
-	find.GetLastWriteTime(tTemp);
+	tTemp = CTime(fd.ftLastWriteTime);
 	strTimeModify = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
-	strSize = GetFileSizeString(find.GetLength());
-	int nItem = m_list.InsertItem(m_list.GetItemCount(), find.GetFileName(), nImage);
-	m_list.SetItemText(nItem, COL_NEWNAME, strName);
-	m_list.SetItemText(nItem, COL_OLDFOLDER, strFolder);
-	m_list.SetItemText(nItem, COL_NEWFOLDER, strFolder);
+	strSize = GetFileSizeString(filesize.QuadPart);
+	int nItem = m_list.InsertItem(m_list.GetItemCount(), fd.cFileName, nImage);
+	m_list.SetItemText(nItem, COL_NEWNAME, fd.cFileName);
+	m_list.SetItemText(nItem, COL_OLDFOLDER, strDir);
+	m_list.SetItemText(nItem, COL_NEWFOLDER, strDir);
 	m_list.SetItemText(nItem, COL_FILESIZE, strSize);
 	m_list.SetItemText(nItem, COL_TIMEMODIFY, strTimeModify);
 	m_list.SetItemText(nItem, COL_TIMECREATE, strTimeCreate);
-	m_list.SetItemText(nItem, COL_FULLPATH, strPath);
+	m_list.SetItemText(nItem, COL_FULLPATH, fullpath);
 	m_list.SetItemData(nItem, bIsDir);
 }
 
 void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 {
-	CFileFind find;
+	WIN32_FIND_DATA fd;
+	HANDLE hFind;
 	int nLoadType = APP()->m_nLoadType;
 	if (bIsDirectory) //폴더인 경우의 처리 
 	{
 		if (nLoadType == 1) //폴더 내의 파일들을 추가하기로 선택한 경우 
 		{
-			CString strName, strFolder, strSize, strTimeCreate, strTimeModify;
-			BOOL b = find.FindFile(strPath + _T("\\*.*"));
+			CString strName, strFolder, strSize, strTimeCreate, strTimeModify, strFind;
+			int nLen = 0;
+			strFind = strPath + _T("\\*");
+			TCHAR fullpath[MAX_PATH];
+			hFind = FindFirstFileExW(strFind, FindExInfoBasic, &fd, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
+			if (hFind == INVALID_HANDLE_VALUE) return;
+			BOOL b = TRUE , bIsDot = FALSE, bIsDir = FALSE;
 			while (b)
 			{
-				b = find.FindNextFile();
-				if (find.IsDots() == FALSE)
+				bIsDot = FALSE;
+				nLen = _tcsclen(fd.cFileName);
+				if (nLen == 1 && fd.cFileName[0] == _T('.')) bIsDot = TRUE; //Dots
+				else if (nLen == 2 && fd.cFileName[0] == _T('.') && fd.cFileName[1] == _T('.')) bIsDot = TRUE; //Dots
+				if (bIsDot == FALSE)
 				{
-					if (find.IsDirectory() == TRUE) //폴더인 경우 재귀호출
+					bIsDir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+					if (bIsDir == TRUE) //폴더인 경우 재귀호출
 					{
-						AddPath(find.GetFilePath(), find.IsDirectory());
+						PathCombineW(fullpath, strPath, fd.cFileName);
+						AddPath(fullpath, bIsDir);
 					}
 					else //폴더 내 파일
 					{
-						AddListItem(find);
+						AddListItem(fd, strPath);
 					}
 				}
+				b = FindNextFileW(hFind, &fd);
 			}
-			find.Close();
+			FindClose(hFind);
 			return; //복귀
 		}
 		//else if (nLoadType==0) {} //폴더 이름을 직접 추가하기로 선택한 경우는 단순 파일과 동일하게 처리		
 	}
-	BOOL b = find.FindFile(strPath);
-	if (b)
+	hFind = FindFirstFileExW(strPath, FindExInfoBasic, &fd, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
+	if (hFind != INVALID_HANDLE_VALUE)
 	{
-		find.FindNextFile();
-		AddListItem(find);
+		AddListItem(fd, Get_Folder(strPath));
 	}
+
 }
 
 CString CBatchNamerDlg::GetItemFullPath(int nItem, BOOL bOld)
@@ -1013,6 +1027,7 @@ void CBatchNamerDlg::ApplyChange_Start()
 
 UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 {
+	//CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
 	CBatchNamerDlg* dlg = (CBatchNamerDlg*)lParam;
 	st_bIsThreadWorking = TRUE;
 	APP()->UpdateThreadLocale();
