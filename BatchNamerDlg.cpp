@@ -521,7 +521,7 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 		if (nLoadType == 1) //폴더 내의 파일들을 추가하기로 선택한 경우 
 		{
 			CString strName, strFolder, strSize, strTimeCreate, strTimeModify, strFind;
-			int nLen = 0;
+			size_t nLen = 0;
 			strFind = strPath + _T("\\*");
 			TCHAR fullpath[MAX_PATH];
 			hFind = FindFirstFileExW(strFind, FindExInfoBasic, &fd, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
@@ -1030,7 +1030,6 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	//CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
 	CBatchNamerDlg* dlg = (CBatchNamerDlg*)lParam;
 	st_bIsThreadWorking = TRUE;
-	APP()->UpdateThreadLocale();
 	APP()->UpdateThreadLocale();
 	dlg->ArrangeCtrl();
 	dlg->m_list.EnableWindow(FALSE);

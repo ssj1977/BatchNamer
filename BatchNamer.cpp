@@ -181,8 +181,8 @@ void CBatchNamerApp::INISave(CString strFile)
 			PresetTask& pt = ps.m_aTask[j];
 			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
 			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg1=%s\r\n"), pt.m_str1);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg2=%s\r\n"), pt.m_str2);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), pt.m_str1);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
 		}
 	}
 	WriteCStringToFile(strFile, strData);
@@ -244,12 +244,22 @@ void CBatchNamerApp::INILoad(CString strFile)
 		{
 			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
 				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+					if (str2.GetLength() >= 2 && str2.GetAt(0) == _T('<'))
+					{
+						str2.Delete(str2.GetLength() - 1, 1);
+						str2.Delete(0, 1);
+					}
 					m_aPreset[nPreset].m_aTask[nTask].m_str1 = str2;
 		}
 		else if (str1.CompareNoCase(_T("PresetTask_Arg2")) == 0)
 		{
 			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
 				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+					if (str2.GetLength() >= 2 && str2.GetAt(0) == _T('<'))
+					{
+						str2.Delete(str2.GetLength() - 1, 1);
+						str2.Delete(0, 1);
+					}
 					m_aPreset[nPreset].m_aTask[nTask].m_str2 = str2;
 		}
 

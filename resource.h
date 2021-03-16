@@ -102,6 +102,7 @@
 #define IDS_PRESET_SUBCOMMAND           97
 #define IDS_PRESET_ARG1                 98
 #define IDS_PRESET_ARG2                 99
+#define IDS_INVALID_CHAR                100
 #define IDD_BATCHNAMER                  102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
@@ -113,6 +114,7 @@
 #define IDD_SORT                        149
 #define IDD_PRESET                      151
 #define IDR_TOOLBAR_PRESET              153
+#define IDD_MSG                         155
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001
@@ -151,6 +153,7 @@
 #define IDC_BTN_PRESET_UP2              1060
 #define IDC_BTN_PRESET_UP               1060
 #define IDC_ST_PRESET_ADD               1061
+#define IDC_EDIT_MSG                    1062
 #define IDM_APPLY_CHANGE                32771
 #define IDM_NAME_REPLACE                32772
 #define IDM_NAME_ADD_FRONT              32773
@@ -199,9 +202,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        155
+#define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         32837
-#define _APS_NEXT_CONTROL_VALUE         1062
+#define _APS_NEXT_CONTROL_VALUE         1063
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

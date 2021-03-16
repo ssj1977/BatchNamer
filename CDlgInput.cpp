@@ -86,12 +86,33 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 	SetDlgItemText(IDC_EDIT_2, L"");
 }
 
+BOOL CheckInvalidCharForFile(CString str)
+{
+	if (str.Find(_T('\\')) != -1) return TRUE;
+	if (str.Find(_T('\"')) != -1) return TRUE;
+	if (str.Find(_T('/')) != -1) return TRUE;
+	if (str.Find(_T('|')) != -1) return TRUE;
+	if (str.Find(_T('<')) != -1) return TRUE;
+	if (str.Find(_T('>')) != -1) return TRUE;
+	if (str.Find(_T(':')) != -1) return TRUE;
+	if (str.Find(_T('?')) != -1) return TRUE;
+	if (str.Find(_T('*')) != -1) return TRUE;
+	return FALSE;
+}
+
 void CDlgInput::OnOK()
 {
 	if (GetDlgItem(IDC_EDIT_1)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_1, m_strReturn1);
 	else m_strReturn1.Empty();
 	if (GetDlgItem(IDC_EDIT_2)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
 	else m_strReturn2.Empty();
+	//파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
+	if (CheckInvalidCharForFile(m_strReturn1) || CheckInvalidCharForFile(m_strReturn2))
+	{
+		AfxMessageBox(IDSTR(IDS_INVALID_CHAR));
+		return;
+	}
+
 	m_nCB = m_cb.GetCurSel();
 	CDialogEx::OnOK();
 }

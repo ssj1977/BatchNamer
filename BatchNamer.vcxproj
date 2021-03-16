@@ -54,7 +54,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -165,6 +165,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -188,6 +189,7 @@
     <ClInclude Include="CDlgCFG_Load.h" />
     <ClInclude Include="CDlgCFG_View.h" />
     <ClInclude Include="CDlgInput.h" />
+    <ClInclude Include="CDlgMsg.h" />
     <ClInclude Include="CDlgPreset.h" />
     <ClInclude Include="CDlgSort.h" />
     <ClInclude Include="CNameListCtrl.h" />
@@ -203,6 +205,7 @@
     <ClCompile Include="CDlgCFG_Load.cpp" />
     <ClCompile Include="CDlgCFG_View.cpp" />
     <ClCompile Include="CDlgInput.cpp" />
+    <ClCompile Include="CDlgMsg.cpp" />
     <ClCompile Include="CDlgPreset.cpp" />
     <ClCompile Include="CDlgSort.cpp" />
     <ClCompile Include="CNameListCtrl.cpp" />
