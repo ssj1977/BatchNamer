@@ -43,7 +43,6 @@ public:
 
 // 구현입니다.
 protected:
-	HICON m_hIcon;
 	void AddByFileDialog();
 	void AddPath(CString strFile, BOOL bIsDirectory);
 	void AddPathStart(CString strPath);

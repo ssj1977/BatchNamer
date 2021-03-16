@@ -112,7 +112,6 @@ int GetFileImageIndexFromMap(CString strPath, BOOL bIsDirectory)
 CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_BATCHNAMER, pParent)
 {
-	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_bSelected = FALSE; //목록 중 항목 선택 여부 감지
 	m_nDefault_FontSize = 12;
 	m_clrDefault_Bk = RGB(255, 255, 255);
@@ -148,8 +147,8 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	CDialogEx::OnInitDialog();
 	// Set the icon for this dialog.  The framework does this automatically
 	//  when the application's main window is not a dialog
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
+	SetIcon(APP()->m_hIcon, TRUE);		// Set big icon
+	SetIcon(APP()->m_hIcon, FALSE);		// Set small icon
 
 	UpdateImageList();
 	DragAcceptFiles(TRUE);
@@ -342,7 +341,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: AfxMessageBox(_T("BatchNamer v1.1 (2021-03-01 Release)")); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.1 (2021-03-01 Release)"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
@@ -716,7 +715,7 @@ void CBatchNamerDlg::AddByFileDialog()
 		UpdateMenu();
 	}
 	delete[] buf;
-	if (nCount > 10000) AfxMessageBox(IDSTR(IDS_ERR_TOOMANYITEMS));
+	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
 }
 
 
@@ -1068,7 +1067,7 @@ void CBatchNamerDlg::ApplyChange()
 		strTemp = m_list.GetItemText(i, COL_NEWNAME);
 		if (strTemp.IsEmpty() == TRUE)
 		{
-			AfxMessageBox(IDSTR(IDS_MSG_NONAME));
+			APP()->ShowMsg(IDSTR(IDS_MSG_NONAME), IDSTR(IDS_MSG_ERROR));
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_list.EnsureVisible(i, FALSE);
@@ -1085,7 +1084,7 @@ void CBatchNamerDlg::ApplyChange()
 		else
 		{
 			strTemp.Format(_T("%s\n%s"), IDSTR(IDS_MSG_DUPNAME), strNewPath);
-			AfxMessageBox(strTemp);
+			APP()->ShowMsg(strTemp, IDSTR(IDS_MSG_ERROR));
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_list.EnsureVisible(i, FALSE);
@@ -1093,7 +1092,7 @@ void CBatchNamerDlg::ApplyChange()
 		}
 		aNewPath.push_back(strNewPath); // Array에 추가
 	}
-	if (aNewPath.size() != nCount) { AfxMessageBox(IDSTR(IDS_MSG_MISMATCH)); return; }
+	if (aNewPath.size() != nCount) { APP()->ShowMsg(IDSTR(IDS_MSG_MISMATCH), IDSTR(IDS_MSG_ERROR)); return; }
 
 	//실제 파일이름을 바꾸는 곳
 	CString strOldPath, strOldExt, strNewExt, strBar;
@@ -1111,7 +1110,8 @@ void CBatchNamerDlg::ApplyChange()
 			{
 				if (MoveFileExW(strOldPath, aNewPath[i], MOVEFILE_COPY_ALLOWED) == FALSE)
 				{
-					strTemp.Format(_T("%s -> %s %s\n"), strOldPath, aNewPath.at(i), IDSTR(IDS_MSG_CHANGEFAIL));
+					DWORD err = GetLastError();
+					strTemp.Format(_T("(0x%x) %s -> %s %s\r\n"), err, (LPCTSTR)strOldPath, aNewPath.at(i), IDSTR(IDS_MSG_CHANGEFAIL));
 					strLog += strTemp;
 				}
 				else
@@ -1134,18 +1134,24 @@ void CBatchNamerDlg::ApplyChange()
 					nChanged++;
 				}
 			}
+			else
+			{
+				strTemp.Format(_T("Same %s\r\n"), (LPCTSTR)strOldPath);
+				strLog += strTemp;
+			}
 		}
 		catch (CFileException* e)
 		{
-			e->ReportError();
+			TCHAR pBufMsg[1000];
+			e->GetErrorMessage(pBufMsg, 1000);
 			e->Delete();
-			strTemp.Format(_T("%s -> %s %s\n"), (LPCTSTR)strOldPath, (LPCTSTR)aNewPath.at(i), (LPCTSTR)IDSTR(IDS_MSG_CHANGEFAIL));
+			strTemp.Format(_T("(%s) %s -> %s %s\r\n"), pBufMsg, (LPCTSTR)strOldPath, (LPCTSTR)aNewPath.at(i), (LPCTSTR)IDSTR(IDS_MSG_CHANGEFAIL));
 			strLog += strTemp;
 		}
 		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nChanged, i + 1, nCount);
 		SetDlgItemText(IDC_ST_BAR, strBar);
 	}
-	if (strLog.IsEmpty() == FALSE) AfxMessageBox(strLog);
+	if (strLog.IsEmpty() == FALSE) APP()->ShowMsg(strLog, IDSTR(IDS_MSG_ERROR));
 	else
 	{
 		strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nChanged, nCount);
@@ -1602,10 +1608,6 @@ void CBatchNamerDlg::UpdateMenu()
 		pMenu->ModifyMenu(IDM_PRESET_APPLY1 + i, MF_BYCOMMAND | MF_STRING, IDM_PRESET_APPLY1 + i, strTemp);
 		pMenu->EnableMenuItem(IDM_PRESET_APPLY1 + i, (ps.m_aTask.GetSize()>0) ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	}
-
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
-
 }
 
 void CBatchNamerDlg::UpdateCount()

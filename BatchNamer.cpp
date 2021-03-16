@@ -7,6 +7,7 @@
 #include "BatchNamer.h"
 #include "BatchNamerDlg.h"
 #include "EtcFunctions.h"
+#include "CDlgMsg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -104,7 +105,7 @@ BOOL CBatchNamerApp::InitInstance()
 	CString strExePath = szBuff;
 	m_strINIPath = Get_Folder(strExePath) + L"\\" + Get_Name(strExePath, FALSE) + L".ini";
 	INILoad(m_strINIPath);
-
+	m_hIcon = LoadIcon(IDR_MAINFRAME);
 	if (m_bEnglishUI == TRUE) SetLocale(LANG_ENGLISH);
 	// 애플리케이션 매니페스트가 ComCtl32.dll 버전 6 이상을 사용하여 비주얼 스타일을
 	// 사용하도록 지정하는 경우, Windows XP 상에서 반드시 InitCommonControlsEx()가 필요합니다.
@@ -271,4 +272,12 @@ void CBatchNamerApp::SetLocale(int nLanguageID)
 {
 	//LANG_KOREAN / LANG_ENGLISH
 	SetThreadLocaleEx(MAKELCID(MAKELANGID(nLanguageID, SUBLANG_DEFAULT), SORT_DEFAULT));
+}
+
+void CBatchNamerApp::ShowMsg(CString strMsg, CString strTitle)
+{
+	CDlgMsg dlg;
+	dlg.m_strTitle = strTitle;
+	dlg.m_strMsg = strMsg;
+	dlg.DoModal();
 }

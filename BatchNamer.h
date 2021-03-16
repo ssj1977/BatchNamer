@@ -75,6 +75,7 @@ class CBatchNamerApp : public CWinAppEx
 {
 public:
 	CBatchNamerApp();
+	HICON m_hIcon;
 	BOOL m_bEnglishUI;
 	CString m_strINIPath;
 	BOOL m_bShowEverytime;
@@ -93,7 +94,7 @@ public:
 	void INILoad(CString strFile);
 	void SetLocale(int nLanguageID);
 	void UpdateThreadLocale();
-
+	void ShowMsg(CString strMsg, CString strTitle);
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();

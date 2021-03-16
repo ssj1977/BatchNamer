@@ -47,6 +47,8 @@ END_MESSAGE_MAP()
 BOOL CDlgPreset::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
+	SetIcon(APP()->m_hIcon, TRUE);		// Set big icon
+	SetIcon(APP()->m_hIcon, FALSE);		// Set small icon
 
 	m_toolPreset.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST | TBSTYLE_WRAPABLE, WS_CHILD | WS_VISIBLE | CBRS_BORDER_ANY);
 	m_toolPreset.LoadToolBar(IDR_TOOLBAR_PRESET);

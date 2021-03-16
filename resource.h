@@ -103,7 +103,9 @@
 #define IDS_PRESET_ARG1                 98
 #define IDS_PRESET_ARG2                 99
 #define IDS_INVALID_CHAR                100
+#define IDS_MSG_ERROR                   101
 #define IDD_BATCHNAMER                  102
+#define IDS_MSG_VERSION                 102
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130

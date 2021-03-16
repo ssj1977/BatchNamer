@@ -109,6 +109,7 @@ void CDlgInput::OnOK()
 	//파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
 	if (CheckInvalidCharForFile(m_strReturn1) || CheckInvalidCharForFile(m_strReturn2))
 	{
+		//APP()->ShowMsg(IDSTR(IDS_INVALID_CHAR), IDSTR(IDS_MSG_ERROR));
 		AfxMessageBox(IDSTR(IDS_INVALID_CHAR));
 		return;
 	}
