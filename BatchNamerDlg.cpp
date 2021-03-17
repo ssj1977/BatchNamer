@@ -656,7 +656,8 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 {
 	WORD cFiles;
 	TCHAR szFilePath[_MAX_PATH];
-	memset(szFilePath, 0, sizeof(szFilePath));
+	int bufsize = sizeof(TCHAR) * MAX_PATH;
+	memset(szFilePath, 0, bufsize);
 	CString strPath;
 	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
 	cFiles = DragQueryFile(hDropInfo, (UINT)-1, NULL, 0);
@@ -665,7 +666,7 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 	m_list.SetRedraw(FALSE);
 	for (int i = 0; i < cFiles; i++)
 	{
-		DragQueryFile(hDropInfo, i, szFilePath, sizeof(szFilePath));
+		DragQueryFile(hDropInfo, i, szFilePath, bufsize);
 		strPath = (LPCTSTR)szFilePath;
 		AddPathStart(strPath);
 	}
@@ -1049,7 +1050,7 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
 void CBatchNamerDlg::ApplyChange()
 {
-	CString strNewPath, strTemp, strLog;
+	CString strNewPath, strTemp, strLog, strErr;
 	//선택된 부분 초기화
 	int nItemSel = m_list.GetNextItem(-1, LVNI_SELECTED);
 	while (nItemSel != -1)
@@ -1083,8 +1084,9 @@ void CBatchNamerDlg::ApplyChange()
 		}
 		else
 		{
-			strTemp.Format(_T("%s\n%s"), IDSTR(IDS_MSG_DUPNAME), strNewPath);
-			APP()->ShowMsg(strTemp, IDSTR(IDS_MSG_ERROR));
+			strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), 
+				IDSTR(IDS_MSG_DUPNAME),	strTemp, strNewPath);
+			APP()->ShowMsg(strErr, IDSTR(IDS_MSG_ERROR));
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_list.EnsureVisible(i, FALSE);
@@ -1096,10 +1098,10 @@ void CBatchNamerDlg::ApplyChange()
 
 	//실제 파일이름을 바꾸는 곳
 	CString strOldPath, strOldExt, strNewExt, strBar;
-	int nImage = 0;
+	int i=0, nImage = 0;
 	int nChanged = 0;
 	BOOL bIsDir = FALSE;
-	for (int i = 0; i < nCount; i++)
+	for (i = 0; i < nCount; i++)
 	{
 		if (st_bIsThreadWorking == FALSE) break;
 		strOldPath = m_list.GetOldPath(i);
@@ -1110,8 +1112,19 @@ void CBatchNamerDlg::ApplyChange()
 			{
 				if (MoveFileExW(strOldPath, aNewPath[i], MOVEFILE_COPY_ALLOWED) == FALSE)
 				{
+					LPVOID lpMsgBuf;
 					DWORD err = GetLastError();
-					strTemp.Format(_T("(0x%x) %s -> %s %s\r\n"), err, (LPCTSTR)strOldPath, aNewPath.at(i), IDSTR(IDS_MSG_CHANGEFAIL));
+					FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+						FORMAT_MESSAGE_FROM_SYSTEM |
+						FORMAT_MESSAGE_IGNORE_INSERTS,
+						NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+						(LPTSTR)&lpMsgBuf, 0, NULL);
+					strErr = (LPCTSTR)lpMsgBuf;
+					LocalFree(lpMsgBuf);
+					if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n'))
+						strErr += _T("\r\n");
+					strTemp.Format(_T("(%s) %s → %s\r\n%s"), 
+						IDSTR(IDS_MSG_CHANGEFAIL), (LPCTSTR)strOldPath, aNewPath.at(i),	strErr);
 					strLog += strTemp;
 				}
 				else
@@ -1136,7 +1149,7 @@ void CBatchNamerDlg::ApplyChange()
 			}
 			else
 			{
-				strTemp.Format(_T("Same %s\r\n"), (LPCTSTR)strOldPath);
+				strTemp.Format(_T("%s (%s)\r\n"), IDSTR(IDS_MSG_SAMENAME), Get_Name(strOldPath));
 				strLog += strTemp;
 			}
 		}
@@ -1145,18 +1158,17 @@ void CBatchNamerDlg::ApplyChange()
 			TCHAR pBufMsg[1000];
 			e->GetErrorMessage(pBufMsg, 1000);
 			e->Delete();
-			strTemp.Format(_T("(%s) %s -> %s %s\r\n"), pBufMsg, (LPCTSTR)strOldPath, (LPCTSTR)aNewPath.at(i), (LPCTSTR)IDSTR(IDS_MSG_CHANGEFAIL));
+			strTemp.Format(_T("(%s) %s → %s\r\n%s\r\n"),
+				IDSTR(IDS_MSG_CHANGEFAIL), (LPCTSTR)strOldPath, aNewPath.at(i), pBufMsg);
 			strLog += strTemp;
 		}
-		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nChanged, i + 1, nCount);
+		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nCount, i + 1, nChanged);
 		SetDlgItemText(IDC_ST_BAR, strBar);
 	}
-	if (strLog.IsEmpty() == FALSE) APP()->ShowMsg(strLog, IDSTR(IDS_MSG_ERROR));
-	else
-	{
-		strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nChanged, nCount);
-		AfxMessageBox(strTemp);
-	}
+	strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
+	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n------------------------------------------------\r\n");
+	strLog = strTemp + strLog;
+	APP()->ShowMsg(strLog, IDSTR(IDS_RESULT_REPORT));
 }
 
 //두개의 아이템 교환

@@ -106,6 +106,8 @@
 #define IDS_MSG_ERROR                   101
 #define IDD_BATCHNAMER                  102
 #define IDS_MSG_VERSION                 102
+#define IDS_MSG_SAMENAME                103
+#define IDS_RESULT_REPORT               104
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
