@@ -1121,10 +1121,8 @@ void CBatchNamerDlg::ApplyChange()
 						(LPTSTR)&lpMsgBuf, 0, NULL);
 					strErr = (LPCTSTR)lpMsgBuf;
 					LocalFree(lpMsgBuf);
-					if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n'))
-						strErr += _T("\r\n");
-					strTemp.Format(_T("(%s) %s → %s\r\n%s"), 
-						IDSTR(IDS_MSG_CHANGEFAIL), (LPCTSTR)strOldPath, aNewPath.at(i),	strErr);
+					if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n')) strErr += _T("\r\n");
+					strTemp.Format(_T("(%s) %s → %s\r\n - %s"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath.at(i)), strErr);
 					strLog += strTemp;
 				}
 				else
@@ -1149,7 +1147,7 @@ void CBatchNamerDlg::ApplyChange()
 			}
 			else
 			{
-				strTemp.Format(_T("%s (%s)\r\n"), IDSTR(IDS_MSG_SAMENAME), Get_Name(strOldPath));
+				strTemp.Format(_T("(%s) %s\r\n - %s\r\n"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), IDSTR(IDS_MSG_SAMENAME));
 				strLog += strTemp;
 			}
 		}
@@ -1158,15 +1156,16 @@ void CBatchNamerDlg::ApplyChange()
 			TCHAR pBufMsg[1000];
 			e->GetErrorMessage(pBufMsg, 1000);
 			e->Delete();
-			strTemp.Format(_T("(%s) %s → %s\r\n%s\r\n"),
-				IDSTR(IDS_MSG_CHANGEFAIL), (LPCTSTR)strOldPath, aNewPath.at(i), pBufMsg);
+			strErr = pBufMsg;
+			if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n')) strErr += _T("\r\n");
+			strTemp.Format(_T("(%s) %s → %s\r\n - %s\r\n"),IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath.at(i)), strErr);
 			strLog += strTemp;
 		}
 		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nCount, i + 1, nChanged);
 		SetDlgItemText(IDC_ST_BAR, strBar);
 	}
 	strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
-	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n------------------------------------------------\r\n");
+	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n\r\n");
 	strLog = strTemp + strLog;
 	APP()->ShowMsg(strLog, IDSTR(IDS_RESULT_REPORT));
 }
