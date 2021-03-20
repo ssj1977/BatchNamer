@@ -84,8 +84,8 @@ int GetFileImageIndexFromMap(CString strPath, BOOL bIsDirectory)
 {
 	if (bIsDirectory)
 	{
-		return GetFileImageIndex(_T(""));
-		//return SI_FOLDER_OPEN;
+		//return GetFileImageIndex(_T(""));
+		return 3;		// SI_FOLDER_CLOSE
 	}
 	CPath path = CPath(strPath);
 	CString strExt = path.GetExtension();
