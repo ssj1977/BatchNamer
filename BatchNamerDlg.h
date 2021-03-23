@@ -21,6 +21,7 @@ public:
 	CFont m_font;
 	int m_lfHeight;
 	HIMAGELIST* m_pSysImgList;
+	int m_nTempLoadType;
 	void UpdateImageList();
 	void UpdateFontSize();
 	void ConfigLoadType();
