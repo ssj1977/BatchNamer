@@ -14,7 +14,7 @@ IMPLEMENT_DYNAMIC(CDlgCFG_Load, CDialogEx)
 CDlgCFG_Load::CDlgCFG_Load(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CFG_LOAD, pParent)
 {
-	m_nLoadType = 0; // 0 = Add a Folder itself, 1 = Add Files in a Folder
+	m_nLoadType = 2; // 0 = Add a Folder itself, 1 = Add Files in a Folder
 	m_bShowEverytime = FALSE;
 	m_bAutoSort = TRUE;
 }
@@ -43,6 +43,7 @@ BOOL CDlgCFG_Load::OnInitDialog()
 
 	if (m_nLoadType == 0)		((CButton*)GetDlgItem(IDC_RADIO_LOAD_0))->SetCheck(TRUE);
 	else if (m_nLoadType == 1)	((CButton*)GetDlgItem(IDC_RADIO_LOAD_1))->SetCheck(TRUE);
+	else if (m_nLoadType == 2)	((CButton*)GetDlgItem(IDC_RADIO_LOAD_2))->SetCheck(TRUE);
 
 	if (m_bAutoSort == 0)		((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_0))->SetCheck(TRUE);
 	else if (m_bAutoSort == 1)	((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_1))->SetCheck(TRUE);
@@ -59,6 +60,7 @@ void CDlgCFG_Load::OnOK()
 {
 	if (((CButton*)GetDlgItem(IDC_RADIO_LOAD_0))->GetCheck()==TRUE) m_nLoadType = 0;
 	else if (((CButton*)GetDlgItem(IDC_RADIO_LOAD_1))->GetCheck() == TRUE) m_nLoadType = 1;
+	else if (((CButton*)GetDlgItem(IDC_RADIO_LOAD_2))->GetCheck() == TRUE) m_nLoadType = 2;
 
 	if (((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_0))->GetCheck() == TRUE) m_bAutoSort = FALSE;
 	else if (((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_1))->GetCheck() == TRUE) m_bAutoSort = TRUE;
@@ -72,3 +74,4 @@ void CDlgCFG_Load::OnCancel()
 {
 	CDialogEx::OnCancel();
 }
+

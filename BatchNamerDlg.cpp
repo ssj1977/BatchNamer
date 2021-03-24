@@ -84,8 +84,8 @@ int GetFileImageIndexFromMap(CString strPath, BOOL bIsDirectory)
 {
 	if (bIsDirectory)
 	{
-		return GetFileImageIndex(_T(""));
-		//return SI_FOLDER_OPEN;
+		//return GetFileImageIndex(_T(""));
+		return 3;		// SI_FOLDER_CLOSE
 	}
 	CPath path = CPath(strPath);
 	CString strExt = path.GetExtension();
@@ -119,6 +119,7 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_lfHeight = 0;
 	m_pSysImgList = NULL;
 	st_bIsThreadWorking = FALSE;
+	m_nTempLoadType = -1;
 }
 
 void CBatchNamerDlg::DoDataExchange(CDataExchange* pDX)
@@ -341,7 +342,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.1 (2021-03-01 Release)"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.2 (2021-03-18 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
@@ -517,6 +518,22 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 	int nLoadType = APP()->m_nLoadType;
 	if (bIsDirectory) //폴더인 경우의 처리 
 	{
+		if (APP()->m_nLoadType == 2)
+		{
+			if (m_nTempLoadType == -1) // 처음 한번만 물어보기
+			{
+				//폴더를 직접 추가하려면 YES / 폴더 안의 파일을 추가하려면 NO를 선택하세요.
+				if (AfxMessageBox(IDSTR(IDS_ASK_FOLDERLOADING), MB_YESNO) == IDNO)
+					m_nTempLoadType = 1;
+				else 
+					m_nTempLoadType = 0;
+				nLoadType = m_nTempLoadType;
+			}
+			else
+			{
+				nLoadType = m_nTempLoadType;
+			}
+		}
 		if (nLoadType == 1) //폴더 내의 파일들을 추가하기로 선택한 경우 
 		{
 			CString strName, strFolder, strSize, strTimeCreate, strTimeModify, strFind;
@@ -664,6 +681,7 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 	if (APP()->m_bShowEverytime) ConfigLoadType();
 	//clock_t timestart = clock();
 	m_list.SetRedraw(FALSE);
+	m_nTempLoadType = -1;
 	for (int i = 0; i < cFiles; i++)
 	{
 		DragQueryFile(hDropInfo, i, szFilePath, bufsize);
@@ -704,6 +722,7 @@ void CBatchNamerDlg::AddByFileDialog()
 		CString strPath;
 		POSITION pos = dlg.GetStartPosition();
 		m_list.SetRedraw(FALSE);
+		m_nTempLoadType = -1;
 		while (pos)
 		{
 			strPath = dlg.GetNextPathName(pos);
@@ -1144,10 +1163,8 @@ void CBatchNamerDlg::ApplyChange()
 						(LPTSTR)&lpMsgBuf, 0, NULL);
 					strErr = (LPCTSTR)lpMsgBuf;
 					LocalFree(lpMsgBuf);
-					if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n'))
-						strErr += _T("\r\n");
-					strTemp.Format(_T("(%s) %s → %s\r\n%s"), 
-						IDSTR(IDS_MSG_CHANGEFAIL), (LPCTSTR)strOldPath, aNewPath.at(i),	strErr);
+					if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n')) strErr += _T("\r\n");
+					strTemp.Format(_T("(%s) %s → %s\r\n - %s"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath.at(i)), strErr);
 					strLog += strTemp;
 				}
 				else
@@ -1172,7 +1189,7 @@ void CBatchNamerDlg::ApplyChange()
 			}
 			else
 			{
-				strTemp.Format(_T("%s (%s)\r\n"), IDSTR(IDS_MSG_SAMENAME), Get_Name(strOldPath));
+				strTemp.Format(_T("(%s) %s\r\n - %s\r\n"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), IDSTR(IDS_MSG_SAMENAME));
 				strLog += strTemp;
 			}
 		}
@@ -1181,15 +1198,16 @@ void CBatchNamerDlg::ApplyChange()
 			TCHAR pBufMsg[1000];
 			e->GetErrorMessage(pBufMsg, 1000);
 			e->Delete();
-			strTemp.Format(_T("(%s) %s → %s\r\n%s\r\n"),
-				IDSTR(IDS_MSG_CHANGEFAIL), (LPCTSTR)strOldPath, aNewPath.at(i), pBufMsg);
+			strErr = pBufMsg;
+			if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n')) strErr += _T("\r\n");
+			strTemp.Format(_T("(%s) %s → %s\r\n - %s\r\n"),IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath.at(i)), strErr);
 			strLog += strTemp;
 		}
 		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nCount, i + 1, nChanged);
 		SetDlgItemText(IDC_ST_BAR, strBar);
 	}
 	strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
-	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n------------------------------------------------\r\n");
+	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n\r\n");
 	strLog = strTemp + strLog;
 	APP()->ShowMsg(strLog, IDSTR(IDS_RESULT_REPORT));
 }
@@ -1432,6 +1450,7 @@ void CBatchNamerDlg::ImportPath()
 	int nPos = 0;
 	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
 	m_list.SetRedraw(FALSE);
+	m_nTempLoadType = -1;
 	while (nPos != -1)
 	{
 		nPos = GetLine(strData, nPos, strPath, _T("\n"));

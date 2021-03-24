@@ -108,8 +108,12 @@
 #define IDS_MSG_VERSION                 102
 #define IDS_MSG_SAMENAME                103
 #define IDS_RESULT_REPORT               104
+<<<<<<< HEAD
 #define IDS_FLIPSTRING                  106
 #define IDS_FLIPPIVOT                   107
+=======
+#define IDS_ASK_FOLDERLOADING           105
+>>>>>>> 897a286f01953542041b1a5cb9f8ef037f8161ba
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
@@ -134,6 +138,7 @@
 #define IDC_TOOLBORDER_2                1013
 #define IDC_RADIO_LOAD_0                1014
 #define IDC_RADIO_LOAD_1                1015
+#define IDC_RADIO_LOAD_2                1016
 #define IDC_RADIO_AUTOSORT_0            1019
 #define IDC_RADIO_AUTOSORT_1            1020
 #define IDC_CHECK_DEFAULT_COLOR         1023
