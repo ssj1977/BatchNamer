@@ -672,7 +672,7 @@ void CBatchNamerDlg::AddPathStart(CString strPath)
 void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 {
 	WORD cFiles;
-	TCHAR szFilePath[_MAX_PATH];
+	TCHAR szFilePath[MAX_PATH];
 	int bufsize = sizeof(TCHAR) * MAX_PATH;
 	memset(szFilePath, 0, bufsize);
 	CString strPath;
@@ -684,7 +684,7 @@ void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 	m_nTempLoadType = -1;
 	for (int i = 0; i < cFiles; i++)
 	{
-		DragQueryFile(hDropInfo, i, szFilePath, bufsize);
+		DragQueryFile(hDropInfo, i, szFilePath, MAX_PATH);
 		strPath = (LPCTSTR)szFilePath;
 		AddPathStart(strPath);
 	}
@@ -774,37 +774,122 @@ void CBatchNamerDlg::ManualChange()
 	}
 }
 
-void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
+int GetStringTokens(CStringArray& aRet, CString str)
 {
-	CString strTemp;
-	if (nSubCommand == IDS_REPLACESTRING)
+	TCHAR c;
+	BOOL bToken = FALSE;
+	CString strToken, strWild; 
+	for (int i = 0; i < str.GetLength(); i++)
 	{
-		for (int i = 0; i < m_list.GetItemCount(); i++)
+		c = str.GetAt(i);
+		if (c == _T('?') || c == _T('*'))
 		{
-			strTemp = m_list.GetItemText(i, COL_NEWNAME);
-			strTemp.Replace(str1, str2);
-			m_list.SetItemText(i, COL_NEWNAME, strTemp);
+			if (strToken.IsEmpty() == FALSE)
+			{
+				aRet.Add(strToken);
+				strToken.Empty();
+			}
+			strWild = c;
+			aRet.Add(strWild);
+		}
+		else
+		{
+			strToken += c;
 		}
 	}
-	else if (nSubCommand == IDS_FLIPSTRING)
+	if (strToken.IsEmpty() == FALSE) aRet.Add(strToken);
+	return (int)aRet.GetSize();
+}
+
+CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
+{
+	//원본 문자열을 와일드카드와 비와일드카드 단위 토큰으로 쪼갠다
+	CStringArray aStr1, aStr2, aRet;
+	int nLen1 = GetStringTokens(aStr1, str1);
+	int nLen2 = GetStringTokens(aStr2, str2);
+	int nPos = 0, n1 = 0, nBegin = 0;
+	//if (nLen1 != nLen2) return;// 항상 같아야 함
+	aRet.SetSize(nLen1);
+	CString strRet;
+	for (int i = 0; i < nLen1; i++)
 	{
-		int nPos = -1, nRight = -1;
-		CString strLeft, strRight, strExt;
-		for (int i = 0; i < m_list.GetItemCount(); i++)
+		if (aStr1[i] == _T("?"))
 		{
-			strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), FALSE);
-			strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), (BOOL)m_list.GetItemData(i));
-			nPos = strTemp.Find(str1);
+			aRet[i] = strSrc.GetAt(nPos);
+			nPos += 1;
+		}
+		else if (aStr1[i] == _T("*"))
+		{ 
+			n1 = nPos;
+		}
+		else
+		{
+			nPos = strSrc.Find(aStr1[i], nPos);
+			if (nPos == -1) return strSrc;
+			if (i == 0) strRet = strSrc.Mid(n1, nPos - n1);
+			else aRet[i - 1] = strSrc.Mid(n1, nPos - n1);
+			if (nLen1 == nLen2)
+			{
+				aRet[i] = aStr2[i];
+			}
+			nPos += aStr1[i].GetLength();
+			n1 = nPos;
+		}
+		if (i == 0) nBegin = nPos;
+	}
+	if (nLen1 == nLen2)
+	{
+		for (int i = 0; i < aRet.GetSize(); i++)
+		{
+			strRet += aRet[i];
+		}
+	}
+	else if (aStr2.GetSize() == 1)
+	{
+		strRet.Empty();
+		if (nBegin > 1) strRet = strSrc.Left(nBegin - 1);
+		strRet += aStr2[0];
+	}
+	strRet += strSrc.Mid(nPos);
+	return strRet;
+}
+
+void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
+{
+	CString strTemp, strName, strExt, strLeft, strRight;
+	int nPos = -1;
+	for (int i = 0; i < m_list.GetItemCount(); i++)
+	{
+		strTemp = m_list.GetItemText(i, COL_NEWNAME);
+		strName = Get_Name(strTemp, FALSE);
+		strExt = Get_Ext(strTemp, (BOOL)m_list.GetItemData(i));
+		if (nSubCommand == IDS_REPLACESTRING)
+		{
+			if (str1.Find(_T('?')) != -1 || str1.Find(_T('*')) != -1)	
+				strName = ReplaceWithWildCards(strName, str1, str2);
+			else													
+				strName.Replace(str1, str2);
+			strTemp = strName + strExt;
+		}
+		else if (nSubCommand == IDS_FLIPSTRING)
+		{
+			nPos = strName.Find(str1);
 			if (nPos != -1)
 			{
-				strLeft = strTemp.Left(nPos);
-				nRight = strTemp.GetLength() - nPos - str1.GetLength();
-				if (nRight > 0)	strRight = strTemp.Right(nRight);
-				else strRight.Empty();
+				strLeft = strName.Left(nPos);
+				strRight = strName.Mid(nPos + str1.GetLength());
 				strTemp = strRight + str1 + strLeft + strExt;
-				m_list.SetItemText(i, COL_NEWNAME, strTemp);
 			}
 		}
+		else if (nSubCommand == IDS_LOWERCASE)
+		{
+			strTemp = strName.MakeLower() + strExt;
+		}
+		else if (nSubCommand == IDS_UPPERCASE)
+		{
+			strTemp = strName.MakeUpper() + strExt;
+		}
+		m_list.SetItemText(i, COL_NEWNAME, strTemp);
 	}
 }
 
@@ -1150,7 +1235,8 @@ void CBatchNamerDlg::ApplyChange()
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		try
 		{
-			if (aNewPath.at(i).CompareNoCase(strOldPath) != 0)
+			if (aNewPath.at(i).Compare(strOldPath) != 0)
+			//if (aNewPath.at(i).CompareNoCase(strOldPath) != 0)
 			{
 				if (MoveFileExW(strOldPath, aNewPath[i], MOVEFILE_COPY_ALLOWED) == FALSE)
 				{

@@ -111,6 +111,10 @@
 #define IDS_ASK_FOLDERLOADING           105
 #define IDS_FLIPSTRING                  106
 #define IDS_FLIPPIVOT                   107
+#define IDS_INVALID_WILDCARD            108
+#define IDS_INVALID_WILDCARD_PAIR       109
+#define IDS_LOWERCASE                   110
+#define IDS_UPPERCASE                   111
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130

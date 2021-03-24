@@ -101,6 +101,43 @@ BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
 	return FALSE;
 }
 
+
+CString ExtractWildCard(CString str, BOOL bAddToken)
+{
+	CString strRet;
+	TCHAR c;
+	BOOL bToken = FALSE;
+	for (int i = 0; i < str.GetLength(); i++)
+	{
+		c = str.GetAt(i);
+		if (c == _T('?') || c == _T('*'))
+		{
+			strRet += c;
+			bToken = FALSE;
+		}
+		else if (bToken == FALSE && bAddToken == TRUE)
+		{
+			bToken = TRUE;
+			strRet += _T('_');
+		}
+	}
+	return strRet;
+}
+
+BOOL ValidateWildCard(CString str)
+{
+	if (str.IsEmpty() == FALSE)
+	{
+		// ** , ?*, ?* 는 비정상
+		if (str.Find(_T("**")) != -1 ||
+			str.Find(_T("*?")) != -1 ||
+			str.Find(_T("?*")) != -1) return FALSE;
+		// 상수 문자열 토큰(_)이 하나도 없으면 비정상
+		if (str.Find(_T("_")) == -1) return FALSE;
+	}
+	return TRUE;
+}
+
 void CDlgInput::OnOK()
 {
 	if (GetDlgItem(IDC_EDIT_1)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_1, m_strReturn1);
@@ -118,7 +155,22 @@ void CDlgInput::OnOK()
 	{
 		//str1과 str2의 wildcard 종류, 개수, 순서가 일치하여야 함
 		//wild카드 이외의 문자를 지우고 난후 값이 일치하는지 본다
-		//
+		CString strWild1 = ExtractWildCard(m_strReturn1, TRUE);
+		CString strWild2 = ExtractWildCard(m_strReturn2, TRUE);
+		if (strWild1 != strWild2)
+		{
+			if (strWild2 != _T("_") && strWild2.IsEmpty() == FALSE)
+			{
+				AfxMessageBox(IDSTR(IDS_INVALID_WILDCARD_PAIR));
+				return;
+			}
+		}
+		//Wildcard 자체의 문법적 오류가 있는 경우를 판별한다.
+		if (ValidateWildCard(strWild1) == FALSE || ValidateWildCard(strWild2) == FALSE)
+		{
+			AfxMessageBox(IDSTR(IDS_INVALID_WILDCARD));
+			return;
+		}
 	}
 	m_nCB = m_cb.GetCurSel();
 	CDialogEx::OnOK();
@@ -184,6 +236,14 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strItemName = IDSTR(IDS_FLIPSTRING);
 		item.m_nSubCommand = IDS_FLIPSTRING;
 		item.m_strLabel1 = IDSTR(IDS_FLIPPIVOT);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_LOWERCASE);
+		item.m_nSubCommand = IDS_LOWERCASE;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_UPPERCASE);
+		item.m_nSubCommand = IDS_UPPERCASE;
 		m_aInput.Add(item);
 		break;
 	case IDS_TB_02: //Add Front
@@ -325,7 +385,10 @@ BOOL CDlgInput::VerifyReturnValue()
 	switch (nCommand)
 	{
 	case IDS_TB_01: //Replace
-		if (m_strReturn1.IsEmpty()) return FALSE;
+		if (nSubCommand == IDS_REPLACESTRING || nSubCommand == IDS_FLIPSTRING)
+		{
+			if (m_strReturn1.IsEmpty()) return FALSE;
+		}
 		break;
 	case IDS_TB_02: //Add Front
 	case IDS_TB_03: //Add End
