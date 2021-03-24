@@ -86,7 +86,8 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 	SetDlgItemText(IDC_EDIT_2, L"");
 }
 
-BOOL CheckInvalidCharForFile(CString str)
+//파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
+BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
 {
 	if (str.Find(_T('\\')) != -1) return TRUE;
 	if (str.Find(_T('\"')) != -1) return TRUE;
@@ -95,8 +96,8 @@ BOOL CheckInvalidCharForFile(CString str)
 	if (str.Find(_T('<')) != -1) return TRUE;
 	if (str.Find(_T('>')) != -1) return TRUE;
 	if (str.Find(_T(':')) != -1) return TRUE;
-	if (str.Find(_T('?')) != -1) return TRUE;
-	if (str.Find(_T('*')) != -1) return TRUE;
+	if (bPassWildCard == FALSE && str.Find(_T('?')) != -1) return TRUE;
+	if (bPassWildCard == FALSE && str.Find(_T('*')) != -1) return TRUE;
 	return FALSE;
 }
 
@@ -106,14 +107,19 @@ void CDlgInput::OnOK()
 	else m_strReturn1.Empty();
 	if (GetDlgItem(IDC_EDIT_2)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
 	else m_strReturn2.Empty();
-	//파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
-	if (CheckInvalidCharForFile(m_strReturn1) || CheckInvalidCharForFile(m_strReturn2))
+	BOOL bWildCard = (GetSubCommand() == IDS_REPLACESTRING) ? TRUE : FALSE;
+	if (CheckInvalidCharForFile(m_strReturn1, bWildCard) 
+		|| CheckInvalidCharForFile(m_strReturn2, bWildCard))
 	{
-		//APP()->ShowMsg(IDSTR(IDS_INVALID_CHAR), IDSTR(IDS_MSG_ERROR));
 		AfxMessageBox(IDSTR(IDS_INVALID_CHAR));
 		return;
 	}
-
+	if (bWildCard)
+	{
+		//str1과 str2의 wildcard 종류, 개수, 순서가 일치하여야 함
+		//wild카드 이외의 문자를 지우고 난후 값이 일치하는지 본다
+		//
+	}
 	m_nCB = m_cb.GetCurSel();
 	CDialogEx::OnOK();
 }
@@ -173,6 +179,11 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_nSubCommand = IDS_REPLACESTRING;
 		item.m_strLabel1 = IDSTR(IDS_REPLACEOLD);
 		item.m_strLabel2 = IDSTR(IDS_REPLACENEW);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FLIPSTRING);
+		item.m_nSubCommand = IDS_FLIPSTRING;
+		item.m_strLabel1 = IDSTR(IDS_FLIPPIVOT);
 		m_aInput.Add(item);
 		break;
 	case IDS_TB_02: //Add Front

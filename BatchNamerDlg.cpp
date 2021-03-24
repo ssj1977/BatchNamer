@@ -758,11 +758,34 @@ void CBatchNamerDlg::ManualChange()
 void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 {
 	CString strTemp;
-	for (int i = 0; i < m_list.GetItemCount(); i++)
+	if (nSubCommand == IDS_REPLACESTRING)
 	{
-		strTemp = m_list.GetItemText(i, COL_NEWNAME);
-		strTemp.Replace(str1, str2);
-		m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			strTemp = m_list.GetItemText(i, COL_NEWNAME);
+			strTemp.Replace(str1, str2);
+			m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		}
+	}
+	else if (nSubCommand == IDS_FLIPSTRING)
+	{
+		int nPos = -1, nRight = -1;
+		CString strLeft, strRight, strExt;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), FALSE);
+			strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), (BOOL)m_list.GetItemData(i));
+			nPos = strTemp.Find(str1);
+			if (nPos != -1)
+			{
+				strLeft = strTemp.Left(nPos);
+				nRight = strTemp.GetLength() - nPos - str1.GetLength();
+				if (nRight > 0)	strRight = strTemp.Right(nRight);
+				else strRight.Empty();
+				strTemp = strRight + str1 + strLeft + strExt;
+				m_list.SetItemText(i, COL_NEWNAME, strTemp);
+			}
+		}
 	}
 }
 

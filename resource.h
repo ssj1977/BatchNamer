@@ -108,6 +108,8 @@
 #define IDS_MSG_VERSION                 102
 #define IDS_MSG_SAMENAME                103
 #define IDS_RESULT_REPORT               104
+#define IDS_FLIPSTRING                  105
+#define IDS_FLIPPIVOT                   106
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
@@ -207,7 +209,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        157
-#define _APS_NEXT_COMMAND_VALUE         32837
+#define _APS_NEXT_COMMAND_VALUE         32838
 #define _APS_NEXT_CONTROL_VALUE         1063
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
