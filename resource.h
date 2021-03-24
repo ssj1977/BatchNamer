@@ -108,8 +108,8 @@
 #define IDS_MSG_VERSION                 102
 #define IDS_MSG_SAMENAME                103
 #define IDS_RESULT_REPORT               104
-#define IDS_FLIPSTRING                  105
-#define IDS_FLIPPIVOT                   106
+#define IDS_FLIPSTRING                  106
+#define IDS_FLIPPIVOT                   107
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
