@@ -195,6 +195,14 @@ BOOL CBatchNamerDlg::OnInitDialog()
 		m_list.SetTextColor(APP()->m_clrText);
 	}
 	if (APP()->m_bUseDefaultFont == FALSE) UpdateFontSize();
+	int nIconWidth = 0;
+	switch (APP()->m_nIconType)
+	{
+	case SHIL_SMALL: nIconWidth = 16; break;
+	case SHIL_LARGE: nIconWidth = 32; break;
+	case SHIL_EXTRALARGE: nIconWidth = 48; break;
+	case SHIL_JUMBO: nIconWidth = 256; break;
+	}
 	m_list.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 	m_list.InsertColumn(COL_OLDNAME, IDSTR(IDS_COL_OLDNAME)); //_T("현재이름")
 	m_list.InsertColumn(COL_NEWNAME, IDSTR(IDS_COL_NEWNAME)); //_T("바뀔이름"));
@@ -205,7 +213,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	m_list.InsertColumn(COL_TIMECREATE, IDSTR(IDS_COL_TIMECREATE)); //_T("생성시각")); 
 	m_list.InsertColumn(COL_FULLPATH, IDSTR(IDS_COL_FULLPATH)); //_T("전체경로")); 
 	int HU = m_lfHeight;
-	m_list.SetColumnWidth(COL_OLDNAME, HU * 16 * FlagGET(APP()->m_nShowFlag, COL_OLDNAME));
+	m_list.SetColumnWidth(COL_OLDNAME, nIconWidth + HU * 16 * FlagGET(APP()->m_nShowFlag, COL_OLDNAME));
 	m_list.SetColumnWidth(COL_NEWNAME, HU * 16 * FlagGET(APP()->m_nShowFlag, COL_NEWNAME));
 	m_list.SetColumnWidth(COL_OLDFOLDER, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_OLDFOLDER));
 	m_list.SetColumnWidth(COL_NEWFOLDER, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_NEWFOLDER));
