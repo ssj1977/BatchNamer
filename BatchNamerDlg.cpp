@@ -815,19 +815,122 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 	CStringArray aStr1, aStr2, aRet;
 	int nLen1 = GetStringTokens(aStr1, str1);
 	int nLen2 = GetStringTokens(aStr2, str2);
-	int nPos = 0, n1 = 0;
+	int nPos = 0, nTokenPos = 0, nBeginPos = 0, nMaxPos = strSrc.GetLength() - 1;
+	int nLen = strSrc.GetLength(), i=0;
 	aRet.SetSize(nLen1);
 	CString strRet;
+	TCHAR cToken = _T('_');
+	while (nPos < nLen)
+	{
+		nBeginPos = nPos;
+		for (i = 0; i < nLen1; i++)
+		{
+			if (aStr1[i] == _T("?")) 
+			{
+				aRet[i] = strSrc.GetAt(nPos); //추가할 글자 쌓기
+				nTokenPos = nPos;
+				nPos += 1;
+				cToken = _T('?');
+			}
+			else if (aStr1[i] == _T("*"))
+			{
+				nTokenPos = nPos;
+				cToken = _T('*');
+			}
+			else
+			{
+				nPos = strSrc.Find(aStr1[i], nPos);
+				// 상수 토큰이 없다면 매칭되는 내용이 없으므로 무조건 중단
+				if (nPos == -1)
+				{
+					aRet.RemoveAll();
+					aRet.SetSize(nLen1);
+					break;
+				}
+				//매칭되는 상수 토큰이 있는 상황
+				if (cToken == _T('?')) //앞의 토큰이 ? 일때
+				{
+					if (nPos == nTokenPos + 1) //nPos가 nTokenPos보다 한글자 뒤인 경우만 참
+					{
+						if (nLen1 == nLen2)	aRet[i] = aStr2[i]; //와일드카드 조건식인 경우 추가
+					}
+					else //아닌 경우에는 한글자만 앞으로 이동해서 전체 조건식을 처음부터 다시 적용
+					{
+						aRet.RemoveAll();
+						aRet.SetSize(nLen1);
+						strRet += strSrc.GetAt(nBeginPos);
+						nPos = nBeginPos + 1;
+						break;
+					}
+				}
+				else //앞의 토큰이 ?가 아닐때 즉  * 또는 맨 앞인 경우
+				{
+					if (i == 0 && nPos > nTokenPos)
+					{
+						strRet += strSrc.Mid(nTokenPos, nPos - nTokenPos);
+						nPos = nTokenPos;
+					}
+					else if (nPos > nTokenPos) aRet[i - 1] = strSrc.Mid(nTokenPos, nPos - nTokenPos);
+					if (nLen1 == nLen2)	aRet[i] = aStr2[i];
+					nPos += aStr1[i].GetLength();
+				}
+			}
+		}
+		if (nLen1 == nLen2) // 와일드카드 이용해서 가변 문자열로 바꾸는 경우
+		{
+			for (int j = 0; j < aRet.GetSize(); j++)
+			{
+				strRet += aRet[j];
+			}
+			aRet.RemoveAll();
+			aRet.SetSize(nLen1);
+		}
+		else if (nLen2 == 1) // 항상 동일한 고정 문자열로 바꾸는 경우
+		{
+			strRet += aStr2[0];
+		}
+		if (aStr1[nLen1-1] == _T("*") && nLen1 != nLen2) nPos = strSrc.GetLength();
+		if (aStr1[nLen1-1] == _T("*") || nPos == -1) break;
+	}
+	if (nPos == -1) nPos = 0;
+	strRet += strSrc.Mid(nPos);
+	return strRet;
+
+/*				if (nPos <= nMaxPos)
+				{
+
+				}
+				else
+				{
+					//if (nPos > n1) strRet += strSrc.Mid(n1, nPos - n1);
+					aRet.RemoveAll();
+					aRet.SetSize(nLen1);
+					i = -1;
+					nPos = nBeginPos + 1;
+					n1 = nPos;
+				}
+				nMaxPos = strSrc.GetLength() - 1;
+				cToken = _T('_');
+			}
+
+		}
+	}
+
+
 	for (int i = 0; i < nLen1; i++)
 	{
+		if (i == 0) nBeginPos = nPos;
 		if (aStr1[i] == _T("?"))
 		{
 			aRet[i] = strSrc.GetAt(nPos);
 			nPos += 1;
+			nMaxPos = nPos;
+			n1 = nPos;
 		}
 		else if (aStr1[i] == _T("*"))
 		{ 
 			n1 = nPos;
+			nMaxPos = strSrc.GetLength() - 1;
 		}
 		else
 		{
@@ -837,18 +940,28 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 				nPos = n1;
 				break;
 			}
-			if (i == 0) strRet += strSrc.Mid(n1, nPos - n1);
-			else aRet[i - 1] = strSrc.Mid(n1, nPos - n1);
-			if (nLen1 == nLen2)
+			if (nPos <= nMaxPos)
 			{
-				aRet[i] = aStr2[i];
+				if (i == 0 && nPos > n1) strRet += strSrc.Mid(n1, nPos - n1);
+				else if (nPos > n1) aRet[i - 1] = strSrc.Mid(n1, nPos - n1);
+				if (nLen1 == nLen2)	aRet[i] = aStr2[i];
+				nPos += aStr1[i].GetLength();
+				n1 = nPos;
 			}
-			nPos += aStr1[i].GetLength();
-			n1 = nPos;
+			else
+			{
+				//if (nPos > n1) strRet += strSrc.Mid(n1, nPos - n1);
+				aRet.RemoveAll();
+				aRet.SetSize(nLen1);
+				i = -1;
+				nPos = nBeginPos + 1;
+				n1 = nPos;
+			}
+			nMaxPos = strSrc.GetLength() - 1;
 		}
 		if (i == nLen1 - 1)
 		{
-			if (nLen1 == nLen2)
+			if (nLen2 != 1) // 와일드카드 이용해서 가변 문자열로 바꾸는 경우
 			{
 				for (int j = 0; j < aRet.GetSize(); j++)
 				{
@@ -857,17 +970,18 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 				aRet.RemoveAll();
 				aRet.SetSize(nLen1);
 			}
-			else if (aStr2.GetSize() == 1)
+			else if (nLen2 == 1) // 항상 동일한 고정 문자열로 바꾸는 경우
 			{
 				strRet += aStr2[0];
 			}
 			//문자열 끝날때까지 앞으로 다시 돌아가서 반복 처리
 			if (aStr1[i] != _T("*") && nPos < strSrc.GetLength() - 1) i = -1;
+			else if (aStr1[i] == _T("*") && nLen1 != nLen2) nPos = strSrc.GetLength();
 			n1 = nPos;
 		}
 	}
 	strRet += strSrc.Mid(nPos);
-	return strRet;
+	return strRet;*/
 }
 
 void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
