@@ -815,8 +815,7 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 	CStringArray aStr1, aStr2, aRet;
 	int nLen1 = GetStringTokens(aStr1, str1);
 	int nLen2 = GetStringTokens(aStr2, str2);
-	int nPos = 0, n1 = 0, nBegin = 0;
-	//if (nLen1 != nLen2) return;// 항상 같아야 함
+	int nPos = 0, n1 = 0;
 	aRet.SetSize(nLen1);
 	CString strRet;
 	for (int i = 0; i < nLen1; i++)
@@ -833,8 +832,12 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 		else
 		{
 			nPos = strSrc.Find(aStr1[i], nPos);
-			if (nPos == -1) return strSrc;
-			if (i == 0) strRet = strSrc.Mid(n1, nPos - n1);
+			if (nPos == -1)
+			{
+				nPos = n1;
+				break;
+			}
+			if (i == 0) strRet += strSrc.Mid(n1, nPos - n1);
 			else aRet[i - 1] = strSrc.Mid(n1, nPos - n1);
 			if (nLen1 == nLen2)
 			{
@@ -843,20 +846,25 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 			nPos += aStr1[i].GetLength();
 			n1 = nPos;
 		}
-		if (i == 0) nBegin = nPos;
-	}
-	if (nLen1 == nLen2)
-	{
-		for (int i = 0; i < aRet.GetSize(); i++)
+		if (i == nLen1 - 1)
 		{
-			strRet += aRet[i];
+			if (nLen1 == nLen2)
+			{
+				for (int j = 0; j < aRet.GetSize(); j++)
+				{
+					strRet += aRet[j];
+				}
+				aRet.RemoveAll();
+				aRet.SetSize(nLen1);
+			}
+			else if (aStr2.GetSize() == 1)
+			{
+				strRet += aStr2[0];
+			}
+			//문자열 끝날때까지 앞으로 다시 돌아가서 반복 처리
+			if (aStr1[i] != _T("*") && nPos < strSrc.GetLength() - 1) i = -1;
+			n1 = nPos;
 		}
-	}
-	else if (aStr2.GetSize() == 1)
-	{
-		strRet.Empty();
-		if (nBegin > 1) strRet = strSrc.Left(nBegin - 1);
-		strRet += aStr2[0];
 	}
 	strRet += strSrc.Mid(nPos);
 	return strRet;
