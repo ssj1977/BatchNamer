@@ -350,7 +350,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.2 (2021-03-18 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.3 (2021-03-27 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
@@ -837,10 +837,10 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 				if (i==0) nBlockBeginPos = nPos;
 				aRet[i] = strSrc.GetAt(nPos); //추가할 글자 쌓기
 				nPrevTokenPos = nPos;
+				nBlockEndPos = nPos;
 				nPos += 1;
 				nMaxPos = nPos; //한글자 이내에서 검색하여야 함
 				cToken = _T('?');
-				nBlockEndPos = nPos;
 			}
 			else if (aStr1[i] == _T("*"))
 			{
@@ -870,7 +870,7 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 				}
 				else //매칭되는 상수토큰을 찾은 경우
 				{
-					if (i == 0) 	nBlockBeginPos = nPos;
+					if (i == 0) nBlockBeginPos = nPos;
 					if (nLen1 == nLen2) //1:1매칭형
 					{
 						if (i > 0 && cToken == _T('*')) //앞의 토큰이 * 였던 경우 추출하여 추가
