@@ -815,27 +815,39 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 	CStringArray aStr1, aStr2, aRet;
 	int nLen1 = GetStringTokens(aStr1, str1);
 	int nLen2 = GetStringTokens(aStr2, str2);
-	int nPos = 0, nTokenPos = 0, nBeginPos = 0, nMaxPos = strSrc.GetLength() - 1;
-	int nLen = strSrc.GetLength(), i=0;
+	int nPos = 0, nPrevTokenPos = -1;
+	int nLen = strSrc.GetLength();
+	int nMaxPos = nLen - 1;
+	int nBlockBeginPos = -1; //검색된 블록의 시작점
+	int nBlockEndPos = -1; //검색된 블록의 끝점
+	int nBlockPrevEndPos = -1; //직전 발견한 블록의 끝점
+	int i =0 ;
 	aRet.SetSize(nLen1);
 	CString strRet;
 	TCHAR cToken = _T('_');
-	while (nPos < nLen)
+	while (nPos < nLen) //블록을 여러번 반복해서 찾기
 	{
-		nBeginPos = nPos;
-		for (i = 0; i < nLen1; i++)
+		nBlockBeginPos = -1;
+		nBlockEndPos = -1;
+		nMaxPos = nLen - 1;
+		for (i = 0; i < nLen1; i++) //단위 블록 검색
 		{
 			if (aStr1[i] == _T("?")) 
 			{
+				if (i==0) nBlockBeginPos = nPos;
 				aRet[i] = strSrc.GetAt(nPos); //추가할 글자 쌓기
-				nTokenPos = nPos;
+				nPrevTokenPos = nPos;
 				nPos += 1;
+				nMaxPos = nPos; //한글자 이내에서 검색하여야 함
 				cToken = _T('?');
+				nBlockEndPos = nPos;
 			}
 			else if (aStr1[i] == _T("*"))
 			{
-				nTokenPos = nPos;
+				if (i == 0) nBlockBeginPos = nPos;
+				nPrevTokenPos = nPos;
 				cToken = _T('*');
+				nMaxPos = nLen - 1; //끝가지 검색 가능
 			}
 			else
 			{
@@ -847,141 +859,63 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 					aRet.SetSize(nLen1);
 					break;
 				}
-				//매칭되는 상수 토큰이 있는 상황
-				if (cToken == _T('?')) //앞의 토큰이 ? 일때
+				//매칭되는 상수 토큰이 범위 이후인 경우 ('?' 사용시) 중단
+				if (nPos > nMaxPos)
 				{
-					if (nPos == nTokenPos + 1) //nPos가 nTokenPos보다 한글자 뒤인 경우만 참
-					{
-						if (nLen1 == nLen2)	aRet[i] = aStr2[i]; //와일드카드 조건식인 경우 추가
-					}
-					else //아닌 경우에는 한글자만 앞으로 이동해서 전체 조건식을 처음부터 다시 적용
-					{
-						aRet.RemoveAll();
-						aRet.SetSize(nLen1);
-						strRet += strSrc.GetAt(nBeginPos);
-						nPos = nBeginPos + 1;
-						break;
-					}
-				}
-				else //앞의 토큰이 ?가 아닐때 즉  * 또는 맨 앞인 경우
-				{
-					if (i == 0 && nPos > nTokenPos)
-					{
-						strRet += strSrc.Mid(nTokenPos, nPos - nTokenPos);
-						nPos = nTokenPos;
-					}
-					else if (nPos > nTokenPos) aRet[i - 1] = strSrc.Mid(nTokenPos, nPos - nTokenPos);
-					if (nLen1 == nLen2)	aRet[i] = aStr2[i];
-					nPos += aStr1[i].GetLength();
-				}
-			}
-		}
-		if (nLen1 == nLen2) // 와일드카드 이용해서 가변 문자열로 바꾸는 경우
-		{
-			for (int j = 0; j < aRet.GetSize(); j++)
-			{
-				strRet += aRet[j];
-			}
-			aRet.RemoveAll();
-			aRet.SetSize(nLen1);
-		}
-		else if (nLen2 == 1) // 항상 동일한 고정 문자열로 바꾸는 경우
-		{
-			strRet += aStr2[0];
-		}
-		if (aStr1[nLen1-1] == _T("*") && nLen1 != nLen2) nPos = strSrc.GetLength();
-		if (aStr1[nLen1-1] == _T("*") || nPos == -1) break;
-	}
-	if (nPos == -1) nPos = 0;
-	strRet += strSrc.Mid(nPos);
-	return strRet;
-
-/*				if (nPos <= nMaxPos)
-				{
-
-				}
-				else
-				{
-					//if (nPos > n1) strRet += strSrc.Mid(n1, nPos - n1);
+					nPos = nBlockBeginPos + 1; //다음번 검색 시작점을 앞으로 이동
 					aRet.RemoveAll();
 					aRet.SetSize(nLen1);
-					i = -1;
-					nPos = nBeginPos + 1;
-					n1 = nPos;
+					nBlockEndPos = -1;
+					break;
 				}
-				nMaxPos = strSrc.GetLength() - 1;
-				cToken = _T('_');
-			}
-
-		}
-	}
-
-
-	for (int i = 0; i < nLen1; i++)
-	{
-		if (i == 0) nBeginPos = nPos;
-		if (aStr1[i] == _T("?"))
-		{
-			aRet[i] = strSrc.GetAt(nPos);
-			nPos += 1;
-			nMaxPos = nPos;
-			n1 = nPos;
-		}
-		else if (aStr1[i] == _T("*"))
-		{ 
-			n1 = nPos;
-			nMaxPos = strSrc.GetLength() - 1;
-		}
-		else
-		{
-			nPos = strSrc.Find(aStr1[i], nPos);
-			if (nPos == -1)
-			{
-				nPos = n1;
-				break;
-			}
-			if (nPos <= nMaxPos)
-			{
-				if (i == 0 && nPos > n1) strRet += strSrc.Mid(n1, nPos - n1);
-				else if (nPos > n1) aRet[i - 1] = strSrc.Mid(n1, nPos - n1);
-				if (nLen1 == nLen2)	aRet[i] = aStr2[i];
-				nPos += aStr1[i].GetLength();
-				n1 = nPos;
-			}
-			else
-			{
-				//if (nPos > n1) strRet += strSrc.Mid(n1, nPos - n1);
-				aRet.RemoveAll();
-				aRet.SetSize(nLen1);
-				i = -1;
-				nPos = nBeginPos + 1;
-				n1 = nPos;
-			}
-			nMaxPos = strSrc.GetLength() - 1;
-		}
-		if (i == nLen1 - 1)
-		{
-			if (nLen2 != 1) // 와일드카드 이용해서 가변 문자열로 바꾸는 경우
-			{
-				for (int j = 0; j < aRet.GetSize(); j++)
+				else //매칭되는 상수토큰을 찾은 경우
 				{
-					strRet += aRet[j];
+					if (i == 0) 	nBlockBeginPos = nPos;
+					if (nLen1 == nLen2) //1:1매칭형
+					{
+						if (i > 0 && cToken == _T('*')) //앞의 토큰이 * 였던 경우 추출하여 추가
+						{
+							aRet[i - 1] = strSrc.Mid(nPrevTokenPos, nPos - nPrevTokenPos);
+						}
+						aRet[i] = aStr2[i];	//해당 상수토큰 추가
+					} 
+					//교체할 스트링블록의 끝지점 이동
+					nPos += aStr1[i].GetLength();
+					nBlockEndPos = nPos - 1;
+					nMaxPos = nPos;
 				}
+			}
+		}
+		//블록 검색 종료하였으나 하나도 찾지 못한 경우는 중단
+		if (nPos == -1)
+		{
+			nBlockEndPos = -1;
+			break;
+		}
+		//블록을 찾은 경우
+		if (nPos <= nMaxPos && nBlockEndPos >= 0)
+		{
+			//찾아낸 블록과 이전 블록 간 사이의 문자는 그냥 추가
+			strRet += strSrc.Mid(nBlockPrevEndPos + 1, nBlockBeginPos - nBlockPrevEndPos - 1);
+			if (nLen1 == nLen2) //1:1 매칭인 경우
+			{
+				for (int j = 0; j < aRet.GetSize(); j++) strRet += aRet[j];
 				aRet.RemoveAll();
 				aRet.SetSize(nLen1);
 			}
-			else if (nLen2 == 1) // 항상 동일한 고정 문자열로 바꾸는 경우
+			else  //단일 상수 교체인 경우
 			{
 				strRet += aStr2[0];
 			}
-			//문자열 끝날때까지 앞으로 다시 돌아가서 반복 처리
-			if (aStr1[i] != _T("*") && nPos < strSrc.GetLength() - 1) i = -1;
-			else if (aStr1[i] == _T("*") && nLen1 != nLen2) nPos = strSrc.GetLength();
-			n1 = nPos;
 		}
+		if (nPos >= nLen) break;
+		if (nBlockEndPos != -1) nBlockPrevEndPos = nBlockEndPos;
 	}
-	strRet += strSrc.Mid(nPos);
-	return strRet;*/
+	//뒤에 남은 문자열 추가
+	if (nPos == -1) nPos = 0;
+	if (nBlockEndPos == -1) nBlockEndPos = nBlockPrevEndPos;
+	strRet += strSrc.Mid(nBlockEndPos + 1);
+	return strRet;
 }
 
 void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
