@@ -905,7 +905,7 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 			}
 			else  //단일 상수 교체인 경우
 			{
-				strRet += aStr2[0];
+				if (nLen2 == 1) strRet += aStr2[0];
 			}
 		}
 		if (nPos >= nLen) break;
