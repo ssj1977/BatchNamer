@@ -59,7 +59,7 @@ protected:
 	void SwapItem(int n1, int n2);
 	void ApplyChange();
 	void ApplyChange_Start();
-	void UndoChanges();
+	void UndoChanges(BOOL bSelectedOnly = FALSE);
 	void PresetEdit();
 	void PresetApply(BatchNamerPreset& preset);
 	CString GetItemFullPath(int nItem, BOOL bOld = TRUE);

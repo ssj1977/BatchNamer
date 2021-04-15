@@ -209,13 +209,15 @@
 #define IDM_PRESET_APPLY3               32823
 #define IDM_PRESET_APPLY4               32824
 #define IDM_PRESET_APPLY5               32825
+#define ID_Menu                         32838
+#define IDM_UNDO_SELECTED               32839
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        157
-#define _APS_NEXT_COMMAND_VALUE         32838
+#define _APS_NEXT_COMMAND_VALUE         32840
 #define _APS_NEXT_CONTROL_VALUE         1063
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

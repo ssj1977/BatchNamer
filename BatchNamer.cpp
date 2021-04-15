@@ -17,7 +17,7 @@
 // CBatchNamerApp
 
 BEGIN_MESSAGE_MAP(CBatchNamerApp, CWinAppEx)
-	ON_COMMAND(ID_HELP, &CWinAppEx::OnHelp)
+	//ON_COMMAND(ID_HELP, &CWinAppEx::OnHelp)
 END_MESSAGE_MAP()
 
 

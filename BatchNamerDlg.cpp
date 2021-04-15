@@ -254,7 +254,7 @@ void CBatchNamerDlg::UpdateImageList()
 
 void CBatchNamerDlg::OnOK()
 {
-	CDialogEx::OnOK();
+	//CDialogEx::OnOK();
 }
 
 void CBatchNamerDlg::OnCancel()
@@ -315,7 +315,8 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	switch (wParam)
 	{
 	case IDM_CLEAR_LIST:		ClearList();		break;
-	case IDM_UNDO_CHANGE:		UndoChanges();		break;
+	case IDM_UNDO_SELECTED:		UndoChanges(TRUE);	break;
+	case IDM_UNDO_CHANGE:		UndoChanges(((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE);;	break;
 	case IDM_SORT_LIST:			SortList();		break;
 	case IDM_NAME_REPLACE:		NameReplace();	break;
 	case IDM_NAME_ADD_FRONT:	NameAdd(TRUE);	break;
@@ -350,7 +351,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.3 (2021-03-27 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.3 (2021-03-31 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
@@ -434,6 +435,17 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 			// <>를 이용해 리스트상에서 이동 가능
 			if (pMsg->wParam == 188) { ListUp(); return TRUE; }
 			if (pMsg->wParam == 190) { ListDown(); return TRUE; }
+			if (pMsg->wParam >= VK_F1 && pMsg->wParam <= VK_F5)
+			{
+				int nPreset = int(pMsg->wParam - VK_F1);
+				PresetApply(APP()->m_aPreset[nPreset]);
+				return TRUE;
+			}
+			if (pMsg->wParam == VK_F11)
+			{
+				PresetEdit();
+				return TRUE;
+			}
 		}
 		else //st_bIsThreadWorking == TRUE
 		{
@@ -448,9 +460,13 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 		if (m_list.GetItemCount() > 0)
 		{
 			if (pMsg->wParam == _T('S')) { ApplyChange_Start(); return TRUE; }
-			else if (pMsg->wParam == _T('Z')) { UndoChanges(); return TRUE; }
+			else if (pMsg->wParam == _T('Z')) 
+			{
+				UndoChanges( ((GetKeyState(VK_SHIFT) & 0xFF00) != 0 ) ? TRUE : FALSE);
+				return TRUE; 
+			}
 			else if (pMsg->wParam == _T('L')) { ClearList(); return TRUE; }
-			else if (pMsg->wParam == _T('A')) { SortList(); return TRUE; }
+			else if (pMsg->wParam == _T('R')) { SortList(); return TRUE; }
 			else if (pMsg->wParam == _T('C'))
 			{
 				if ((GetKeyState(VK_SHIFT) & 0xFF00) != 0)	Export(2);
@@ -475,6 +491,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 	BOOL b = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
 	if (b != m_bSelected)
 	{
+		GetMenu()->EnableMenuItem(IDM_UNDO_SELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 		GetMenu()->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 		GetMenu()->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 		GetMenu()->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
@@ -582,7 +599,7 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 	{
 		AddListItem(fd, Get_Folder(strPath));
 	}
-
+	FindClose(hFind);
 }
 
 CString CBatchNamerDlg::GetItemFullPath(int nItem, BOOL bOld)
@@ -757,13 +774,22 @@ void CBatchNamerDlg::ClearList()
 }
 
 //바뀔 이름을 원래 이름으로 다시 복구
-void CBatchNamerDlg::UndoChanges()
+void CBatchNamerDlg::UndoChanges(BOOL bSelectedOnly)
 {
+	BOOL bUndo = TRUE;
 	m_list.SetRedraw(FALSE);
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		m_list.SetItemText(i, COL_NEWNAME, m_list.GetItemText(i, COL_OLDNAME));
-		m_list.SetItemText(i, COL_NEWFOLDER, m_list.GetItemText(i, COL_OLDFOLDER));
+		bUndo = !bSelectedOnly;
+		if (bSelectedOnly == TRUE)
+		{
+			if (m_list.GetItemState(i, LVNI_SELECTED) == LVNI_SELECTED) bUndo = TRUE;
+		}
+		if (bUndo)
+		{
+			m_list.SetItemText(i, COL_NEWNAME, m_list.GetItemText(i, COL_OLDNAME));
+			m_list.SetItemText(i, COL_NEWFOLDER, m_list.GetItemText(i, COL_OLDFOLDER));
+		}
 	}
 	m_list.SetRedraw(TRUE);
 }
@@ -1784,6 +1810,7 @@ void CBatchNamerDlg::UpdateMenu()
 	pMenu->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_UNDO_SELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_MANUAL_CHANGE, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_UP, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_DOWN, b);
@@ -1807,8 +1834,8 @@ void CBatchNamerDlg::UpdateMenu()
 	for (int i=0; i<aPS.GetSize(); i++) //현재는 5개로 고정, 수정하는 경우 동적 메뉴로 바꾸어야 함
 	{
 		BatchNamerPreset& ps = aPS[i];
-		if (ps.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1 , IDSTR(IDS_PRESET_NONAME));
-		else strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1 ,ps.m_strName);
+		if (ps.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, IDSTR(IDS_PRESET_NONAME), i+1);
+		else strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, ps.m_strName, i + 1);;
 		pMenu->ModifyMenu(IDM_PRESET_APPLY1 + i, MF_BYCOMMAND | MF_STRING, IDM_PRESET_APPLY1 + i, strTemp);
 		pMenu->EnableMenuItem(IDM_PRESET_APPLY1 + i, (ps.m_aTask.GetSize()>0) ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	}
