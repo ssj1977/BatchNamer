@@ -351,7 +351,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.3 (2021-03-31 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.4 (2021-04-17 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
@@ -978,6 +978,27 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 		else if (nSubCommand == IDS_UPPERCASE)
 		{
 			strTemp = strName.MakeUpper() + strExt;
+		}
+		else if (nSubCommand == IDS_UPPERCASE_FIRST)
+		{
+			strName = strName.MakeLower();
+			strName.SetAt(0, towupper(strName.GetAt(0)));
+			strTemp = strName + strExt;
+		}
+		else if (nSubCommand == IDS_UPPERCASE_WORD)
+		{
+			BOOL bIsAlphabet = FALSE, bIsAlphabetPrev = FALSE;
+			for (int i = 0; i < strName.GetLength(); i++)
+			{
+				if (iswalpha(strName.GetAt(i)) != 0)
+				{
+					if (bIsAlphabet == FALSE)	strName.SetAt(i, towupper(strName.GetAt(i)));
+					else						strName.SetAt(i, towlower(strName.GetAt(i)));
+					bIsAlphabet = TRUE;
+				}
+				else bIsAlphabet = FALSE;
+			}
+			strTemp = strName + strExt;
 		}
 		m_list.SetItemText(i, COL_NEWNAME, strTemp);
 	}

@@ -126,7 +126,6 @@ BOOL WriteCStringToFile(CString strFile, CString& strContent)
 
 BOOL ReadFileToCString(CString strFile, CString& strData)
 {
-	//Unicode 식별해서 읽기
 	try
 	{
 		CFile file;
@@ -136,33 +135,30 @@ BOOL ReadFileToCString(CString strFile, CString& strData)
 		{
 			BYTE uidf[2];
 			file.Read(uidf, 2);
-			if (uidf[0]==0xff && uidf[1]==0xfe)	
+			if (uidf[0]==0xff && uidf[1]==0xfe)	 //UTF-16LE
 			{
 				filesize-=2;
-#ifdef _UNICODE
 				int nStrLen = int( filesize / sizeof(TCHAR) ) + 1;
 				TCHAR* pBuf = strData.GetBufferSetLength(nStrLen);
 				memset(pBuf, 0, filesize + sizeof(TCHAR));
 				file.Read(pBuf, (UINT)filesize);
 				strData.ReleaseBuffer();
 				file.Close();
-#else
-				int nStrLen = ( filesize / sizeof(WCHAR) ) + 1;
-				WCHAR* pBuf=new WCHAR[nStrLen];
-				memset(pBuf, 0, filesize + sizeof(WCHAR));
-				file.Read(pBuf, filesize);
-				file.Close();
-				strData=pBuf;
-				delete[] pBuf;
-#endif 
 			}
-			else								
+			else //Others includng UTF-8							
 			{
 				file.SeekToBegin();
 				char* pBuf=new char[filesize + 1];
 				memset(pBuf, 0, filesize + 1);
 				file.Read(pBuf, (UINT)filesize);
-				strData = pBuf;	
+				int nBufSize_W = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, pBuf, -1, NULL, 0);
+				if (nBufSize_W - 1 > 0)
+				{
+					WCHAR* pBufW = new WCHAR[nBufSize_W];
+					MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, pBuf, -1, pBufW, nBufSize_W);
+					strData = pBufW;
+					delete[] pBufW;
+				}
 				file.Close();
 				delete[] pBuf;
 			}

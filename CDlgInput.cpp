@@ -245,6 +245,14 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strItemName = IDSTR(IDS_UPPERCASE);
 		item.m_nSubCommand = IDS_UPPERCASE;
 		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_UPPERCASE_FIRST);
+		item.m_nSubCommand = IDS_UPPERCASE_FIRST;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_UPPERCASE_WORD);
+		item.m_nSubCommand = IDS_UPPERCASE_WORD;
+		m_aInput.Add(item);
 		break;
 	case IDS_TB_02: //Add Front
 	case IDS_TB_03: //Add End

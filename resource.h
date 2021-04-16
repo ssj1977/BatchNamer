@@ -115,6 +115,8 @@
 #define IDS_INVALID_WILDCARD_PAIR       109
 #define IDS_LOWERCASE                   110
 #define IDS_UPPERCASE                   111
+#define IDS_UPPERCASE_FIRST             112
+#define IDS_UPPERCASE_WORD              113
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130

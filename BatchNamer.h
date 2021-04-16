@@ -75,6 +75,7 @@ class CBatchNamerApp : public CWinAppEx
 {
 public:
 	CBatchNamerApp();
+//	ULONG_PTR m_gdiplusToken;
 	HICON m_hIcon;
 	BOOL m_bEnglishUI;
 	CString m_strINIPath;
@@ -95,6 +96,7 @@ public:
 	void SetLocale(int nLanguageID);
 	void UpdateThreadLocale();
 	void ShowMsg(CString strMsg, CString strTitle);
+
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();
