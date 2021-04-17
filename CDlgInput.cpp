@@ -259,6 +259,9 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strItemName = IDSTR(IDS_ADDSTRING);
 		item.m_nSubCommand = IDS_ADDSTRING;
 		item.m_strLabel1 = IDSTR(IDS_STRINGTOADD);
+		if (nCommand == IDS_TB_02)	item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_FRONT);
+		else						item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_BACK);
+		item.m_bIsNumber2 = TRUE;
 		m_aInput.Add(item);
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_ADDPARENT);

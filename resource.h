@@ -117,6 +117,8 @@
 #define IDS_UPPERCASE                   111
 #define IDS_UPPERCASE_FIRST             112
 #define IDS_UPPERCASE_WORD              113
+#define IDS_INSERT_BYPOS_FRONT          114
+#define IDS_INSERT_BYPOS_BACK           115
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130

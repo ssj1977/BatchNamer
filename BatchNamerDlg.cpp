@@ -1020,12 +1020,14 @@ void CBatchNamerDlg::NameReplace()
 void CBatchNamerDlg::NameAdd(int nSubCommand, CString str1, CString str2, BOOL bFront = TRUE)
 {
 	CString strTemp;
+	int nPos = 0;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		switch (nSubCommand)
 		{
 		case IDS_ADDSTRING: //직접 입력
 			strTemp = str1;
+			nPos = _ttoi(str2);
 			break;
 		case IDS_ADDPARENT: //폴더명
 			strTemp = GetFolderName(m_list.GetItemText(i, COL_OLDFOLDER));
@@ -1047,19 +1049,31 @@ void CBatchNamerDlg::NameAdd(int nSubCommand, CString str1, CString str2, BOOL b
 		}
 		//앞뒤에 추가로 지정된 문자열 붙이기
 		if (nSubCommand != IDS_ADDSTRING) strTemp = str1 + strTemp + str2;
+		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+		CString strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+		CString	strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		if (bFront)
 		{
-			strTemp += m_list.GetItemText(i, COL_NEWNAME);
-			m_list.SetItemText(i, COL_NEWNAME, strTemp);
+			if (nPos != 0)
+			{
+				CString strHead = strName.Left(nPos);
+				CString strTail = strName.Mid(nPos);
+				strName = strHead + strTemp + strTail;
+			}
+			else strName = strTemp + strName;
 		}
 		else
 		{
-			BOOL bIsDir =(BOOL) m_list.GetItemData(i);
-			CString strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir) + strTemp;
-			CString	strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-			if (strExt.IsEmpty() == FALSE) strName += strExt;
-			m_list.SetItemText(i, COL_NEWNAME, strName);
+			if (nPos != 0)
+			{
+				CString strHead = strName.Left(strName.GetLength() - nPos);
+				CString strTail = strName.Right(nPos);
+				strName = strHead + strTemp + strTail;
+			}
+			else strName = strName + strTemp;
 		}
+		if (strExt.IsEmpty() == FALSE) strName += strExt;
+		m_list.SetItemText(i, COL_NEWNAME, strName);
 	}
 }
 
