@@ -981,16 +981,27 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 		}
 		else if (nSubCommand == IDS_UPPERCASE_FIRST)
 		{
+			TCHAR c; 
 			strName = strName.MakeLower();
-			strName.SetAt(0, towupper(strName.GetAt(0)));
+			for (int i = 0; i < strName.GetLength(); i++)
+			{
+				c = strName.GetAt(i);
+				if ((c>='a' && c<='z') || (c >= 'A' && c <= 'Z'))
+				{
+					strName.SetAt(i, towupper(strName.GetAt(i)));
+					break;
+				}
+			}
 			strTemp = strName + strExt;
 		}
 		else if (nSubCommand == IDS_UPPERCASE_WORD)
 		{
+			TCHAR c;
 			BOOL bIsAlphabet = FALSE, bIsAlphabetPrev = FALSE;
 			for (int i = 0; i < strName.GetLength(); i++)
 			{
-				if (iswalpha(strName.GetAt(i)) != 0)
+				c = strName.GetAt(i);
+				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 				{
 					if (bIsAlphabet == FALSE)	strName.SetAt(i, towupper(strName.GetAt(i)));
 					else						strName.SetAt(i, towlower(strName.GetAt(i)));
