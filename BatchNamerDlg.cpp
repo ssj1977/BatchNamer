@@ -986,7 +986,7 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 			for (int i = 0; i < strName.GetLength(); i++)
 			{
 				c = strName.GetAt(i);
-				if ((c>='a' && c<='z') || (c >= 'A' && c <= 'Z'))
+				if ((c >= _T('a') && c <= _T('z')) || (c >= _T('A') && c <= _T('Z')))
 				{
 					strName.SetAt(i, towupper(strName.GetAt(i)));
 					break;
@@ -1001,7 +1001,7 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 			for (int i = 0; i < strName.GetLength(); i++)
 			{
 				c = strName.GetAt(i);
-				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+				if ((c >= _T('a') && c <= _T('z')) || (c >= _T('A') && c <= _T('Z')))
 				{
 					if (bIsAlphabet == FALSE)	strName.SetAt(i, towupper(strName.GetAt(i)));
 					else						strName.SetAt(i, towlower(strName.GetAt(i)));
