@@ -598,8 +598,8 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		AddListItem(fd, Get_Folder(strPath));
+		FindClose(hFind);
 	}
-	FindClose(hFind);
 }
 
 CString CBatchNamerDlg::GetItemFullPath(int nItem, BOOL bOld)
