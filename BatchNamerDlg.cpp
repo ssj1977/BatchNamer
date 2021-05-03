@@ -351,7 +351,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.4 (2021-04-18 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.4 (2021-05-03 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
@@ -517,7 +517,7 @@ void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 	CPathSet::iterator it = m_list.m_setPath.find(fullpath);
 	if (it == m_list.m_setPath.end()) m_list.m_setPath.insert(fullpath);
 	else return; // 이미 존재하는 이름
-	BOOL bIsDir = fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY;
+	BOOL bIsDir = (BOOL)((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 	int nImage = GetFileImageIndexFromMap(fullpath, bIsDir);
 	CTime tTemp;
 	tTemp = CTime(fd.ftCreationTime);
@@ -948,11 +948,13 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 {
 	CString strTemp, strName, strExt, strLeft, strRight;
 	int nPos = -1;
+	BOOL bIsDir = FALSE;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
+		bIsDir = (BOOL)m_list.GetItemData(i);
 		strTemp = m_list.GetItemText(i, COL_NEWNAME);
-		strName = Get_Name(strTemp, FALSE);
-		strExt = Get_Ext(strTemp, (BOOL)m_list.GetItemData(i));
+		strName = Get_Name(strTemp, bIsDir);
+		strExt = Get_Ext(strTemp, bIsDir);
 		if (nSubCommand == IDS_REPLACESTRING)
 		{
 			if (str1.Find(_T('?')) != -1 || str1.Find(_T('*')) != -1)	
@@ -1045,16 +1047,16 @@ void CBatchNamerDlg::NameAdd(int nSubCommand, CString str1, CString str2, BOOL b
 			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
 			if (strTemp.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strTemp.Empty();
 			break;
-		case IDS_ADDDATECREATE: //변경일시
+		case IDS_ADDDATEMODIFY: //변경일시
 			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE);
 			break;
-		case IDS_ADDDATEMODIFY: //생성일시
+		case IDS_ADDDATECREATE: //생성일시
 			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE);
 			break;
-		case IDS_ADDTIMECREATE: //변경일시
+		case IDS_ADDTIMEMODIFY: //변경일시
 			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE);
 			break;
-		case IDS_ADDTIMEMODIFY: //생성일시
+		case IDS_ADDTIMECREATE: //생성일시
 			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE);
 			break;
 		}
@@ -1200,10 +1202,15 @@ void CBatchNamerDlg::ExtDel(BOOL bToggleRedraw) //확장자 삭제
 {
 	CString strTemp;
 	if (bToggleRedraw == TRUE) m_list.SetRedraw(FALSE);
+	BOOL bIsDir = FALSE;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), ((BOOL)m_list.GetItemData(i)));
-		m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		bIsDir = (BOOL)m_list.GetItemData(i);
+		if (bIsDir == FALSE)
+		{
+			strTemp = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		}
 	}
 	if (bToggleRedraw == TRUE) m_list.SetRedraw(TRUE);
 }
@@ -1214,11 +1221,16 @@ void CBatchNamerDlg::ExtAdd(int nSubCommand, CString str1, CString str2)
 	CString strExt = str1;
 	if (strExt.IsEmpty()) return;
 	if (strExt.GetAt(0) != _T('.')) strExt = _T(".") + strExt;
+	BOOL bIsDir = FALSE;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		strTemp = m_list.GetItemText(i, COL_NEWNAME);
-		strTemp += strExt;
-		m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		bIsDir = (BOOL)m_list.GetItemData(i);
+		if (bIsDir == FALSE)
+		{
+			strTemp = m_list.GetItemText(i, COL_NEWNAME);
+			strTemp += strExt;
+			m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		}
 	}
 }
 
@@ -1245,9 +1257,10 @@ void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
 	{
 		if (strOldExt.GetAt(0) != _T('.')) strOldExt = _T(".") + strOldExt;
 	}
+	BOOL bIsDir = FALSE;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+		bIsDir = (BOOL)m_list.GetItemData(i);
 		if (bIsDir == FALSE)
 		{
 			if (strOldExt.IsEmpty() == FALSE)
