@@ -417,11 +417,13 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 			if (pMsg->wParam == VK_DELETE)
 			{
 				int nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+				m_list.SetRedraw(FALSE);
 				while (nItem != -1)
 				{
 					m_list.DeleteListItem(nItem);
 					nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
 				}
+				m_list.SetRedraw(TRUE);
 				UpdateCount();
 				return TRUE;
 			}
