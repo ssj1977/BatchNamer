@@ -48,7 +48,7 @@ inline CString GetTimeStringToShow(FILETIME& dt)
 	return strRet;
 }
 
-inline CString GetTimeStringToAdd(FILETIME& dt, BOOL bAddTime)
+/*inline CString GetTimeStringToAdd(FILETIME& dt, BOOL bAddDate, BOOL bAddTime)
 {
 	CString strRet;
 	SYSTEMTIME systime;
@@ -63,14 +63,23 @@ inline CString GetTimeStringToAdd(FILETIME& dt, BOOL bAddTime)
 		strRet.Format(_T("%d-%02d-%02d"), systime.wYear, systime.wMonth, systime.wDay);
 	}
 	return strRet;
-}
+}*/
 
-inline CString GetTimeStringToAdd(CString strTime, BOOL bAddTime)
+inline CString GetTimeStringToAdd(CString strDateTime, BOOL bAddDate, BOOL bAddTime)
 {
-	strTime.Replace(_T(' '), _T('_'));
-	if (bAddTime == TRUE) strTime.Remove(_T(':'));
-	else strTime = strTime.Left(strTime.ReverseFind(_T('_')));
-	return strTime;
+	if (strDateTime.IsEmpty()) return strDateTime;
+	strDateTime.Replace(_T(' '), _T('_'));
+	strDateTime.Remove(_T(':'));
+	if (bAddDate == TRUE && bAddTime == TRUE) return strDateTime;
+	if (bAddDate == TRUE && bAddTime == FALSE)
+	{
+		return strDateTime.Left(strDateTime.ReverseFind(_T('_')));
+	}
+	else if (bAddDate == FALSE && bAddTime == TRUE)
+	{
+		return strDateTime.Mid(strDateTime.ReverseFind(_T('_')) + 1);
+	}
+	return _T("");
 }
 
 int GetFileImageIndex(CString strPath)
@@ -951,6 +960,10 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 	CString strTemp, strName, strExt, strLeft, strRight;
 	int nPos = -1;
 	BOOL bIsDir = FALSE;
+	BOOL bUseWildCard = FALSE;
+	if (nSubCommand == IDS_REPLACESTRING &&
+		(str1.Find(_T('?')) != -1 || str1.Find(_T('*')) != -1) ) bUseWildCard = TRUE;
+
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		bIsDir = (BOOL)m_list.GetItemData(i);
@@ -959,7 +972,7 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 		strExt = Get_Ext(strTemp, bIsDir);
 		if (nSubCommand == IDS_REPLACESTRING)
 		{
-			if (str1.Find(_T('?')) != -1 || str1.Find(_T('*')) != -1)	
+			if (bUseWildCard == TRUE)
 				strName = ReplaceWithWildCards(strName, str1, str2);
 			else													
 				strName.Replace(str1, str2);
@@ -1049,17 +1062,23 @@ void CBatchNamerDlg::NameAdd(int nSubCommand, CString str1, CString str2, BOOL b
 			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
 			if (strTemp.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strTemp.Empty();
 			break;
-		case IDS_ADDDATEMODIFY: //변경일시
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE);
+		case IDS_ADDDATEMODIFY: //변경날짜
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE);
 			break;
-		case IDS_ADDDATECREATE: //생성일시
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE);
+		case IDS_ADDDATECREATE: //생성날짜
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
 			break;
-		case IDS_ADDTIMEMODIFY: //변경일시
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE);
+		case IDS_ADDDATETIMEMODIFY: //변경날짜+시각
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, TRUE);
 			break;
-		case IDS_ADDTIMECREATE: //생성일시
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE);
+		case IDS_ADDDATETIMECREATE: //생성날짜+시각
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, TRUE);
+			break;
+		case IDS_ADDTIMEMODIFY: //변경시각만
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE, TRUE);
+			break;
+		case IDS_ADDTIMECREATE: //생성시각만
+			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE, TRUE);
 			break;
 		}
 		//앞뒤에 추가로 지정된 문자열 붙이기
@@ -1325,6 +1344,40 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	return 0;
 }
 
+void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard)
+{
+	str.Remove(_T('\\'));
+	str.Remove(_T('\"'));
+	str.Remove(_T('/'));
+	str.Remove(_T('|'));
+	str.Remove(_T('<'));
+	str.Remove(_T('>'));
+	str.Remove(_T(':'));
+	str.Remove(_T('\r'));
+	str.Remove(_T('\n'));
+	str.Remove(_T('\t'));
+	if (bPassWildCard == FALSE)
+	{
+		str.Remove(_T('?'));
+		str.Remove(_T('*'));
+	}
+}
+
+//파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
+BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
+{
+	if (str.Find(_T('\\')) != -1) return TRUE;
+	if (str.Find(_T('\"')) != -1) return TRUE;
+	if (str.Find(_T('/')) != -1) return TRUE;
+	if (str.Find(_T('|')) != -1) return TRUE;
+	if (str.Find(_T('<')) != -1) return TRUE;
+	if (str.Find(_T('>')) != -1) return TRUE;
+	if (str.Find(_T(':')) != -1) return TRUE;
+	if (bPassWildCard == FALSE && str.Find(_T('?')) != -1) return TRUE;
+	if (bPassWildCard == FALSE && str.Find(_T('*')) != -1) return TRUE;
+	return FALSE;
+}
+
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
 void CBatchNamerDlg::ApplyChange()
 {
@@ -1341,12 +1394,17 @@ void CBatchNamerDlg::ApplyChange()
 	CPathSet::iterator it;
 	CStrArray aNewPath;
 	int nCount = m_list.GetItemCount();
+	int nMsg = 0;
 	for (int i = 0; i < nCount; i++)
 	{
 		strTemp = m_list.GetItemText(i, COL_NEWNAME);
-		if (strTemp.IsEmpty() == TRUE)
+		nMsg = 0;
+		//변경할 이름이 비어있어나 잘못된 문자가 포함된 경우를 검사한다.
+		if (strTemp.IsEmpty() == TRUE) nMsg = IDS_MSG_NONAME;
+		else if (CheckInvalidCharForFile(strTemp, FALSE)) nMsg = IDS_INVALID_CHAR;
+		if (nMsg != 0)
 		{
-			APP()->ShowMsg(IDSTR(IDS_MSG_NONAME), IDSTR(IDS_MSG_ERROR));
+			APP()->ShowMsg(IDSTR(nMsg), IDSTR(IDS_MSG_ERROR));
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_list.EnsureVisible(i, FALSE);

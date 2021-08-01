@@ -87,20 +87,8 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 }
 
 //파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
-BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
-{
-	if (str.Find(_T('\\')) != -1) return TRUE;
-	if (str.Find(_T('\"')) != -1) return TRUE;
-	if (str.Find(_T('/')) != -1) return TRUE;
-	if (str.Find(_T('|')) != -1) return TRUE;
-	if (str.Find(_T('<')) != -1) return TRUE;
-	if (str.Find(_T('>')) != -1) return TRUE;
-	if (str.Find(_T(':')) != -1) return TRUE;
-	if (bPassWildCard == FALSE && str.Find(_T('?')) != -1) return TRUE;
-	if (bPassWildCard == FALSE && str.Find(_T('*')) != -1) return TRUE;
-	return FALSE;
-}
-
+BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard);
+void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard);
 
 CString ExtractWildCard(CString str, BOOL bAddToken)
 {
@@ -138,6 +126,14 @@ BOOL ValidateWildCard(CString str)
 	return TRUE;
 }
 
+
+inline void RemoveEnter(CString& str)
+{
+	str.Remove(_T('\r'));
+	str.Remove(_T('\n'));
+	str.Remove(_T('\t'));
+}
+
 void CDlgInput::OnOK()
 {
 	if (GetDlgItem(IDC_EDIT_1)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_1, m_strReturn1);
@@ -145,11 +141,21 @@ void CDlgInput::OnOK()
 	if (GetDlgItem(IDC_EDIT_2)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
 	else m_strReturn2.Empty();
 	BOOL bWildCard = (GetSubCommand() == IDS_REPLACESTRING) ? TRUE : FALSE;
-	if (CheckInvalidCharForFile(m_strReturn1, bWildCard) 
-		|| CheckInvalidCharForFile(m_strReturn2, bWildCard))
+	RemoveEnter(m_strReturn1);
+	RemoveEnter(m_strReturn2);
+	if (APP()->m_bNameAutoFix)
 	{
-		AfxMessageBox(IDSTR(IDS_INVALID_CHAR));
-		return;
+		RemoveInvalidCharForFile(m_strReturn1, bWildCard);
+		RemoveInvalidCharForFile(m_strReturn2, bWildCard);
+	}
+	else
+	{
+		if (CheckInvalidCharForFile(m_strReturn1, bWildCard)
+			|| CheckInvalidCharForFile(m_strReturn2, bWildCard))
+		{
+			APP()->ShowMsg(IDSTR(IDS_INVALID_CHAR), IDSTR(IDS_MSG_ERROR));
+			return;
+		}
 	}
 	if (bWildCard)
 	{
@@ -290,6 +296,18 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_ADDTIMEMODIFY);
 		item.m_nSubCommand = IDS_ADDTIMEMODIFY;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDDATETIMECREATE);
+		item.m_nSubCommand = IDS_ADDDATETIMECREATE;
+		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
+		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDDATETIMEMODIFY);
+		item.m_nSubCommand = IDS_ADDDATETIMEMODIFY;
 		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
 		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
 		m_aInput.Add(item);

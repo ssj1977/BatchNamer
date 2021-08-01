@@ -81,6 +81,7 @@ public:
 	CString m_strINIPath;
 	BOOL m_bShowEverytime;
 	BOOL m_bAutoSort;
+	BOOL m_bNameAutoFix;
 	int m_nLoadType;
 	int m_nShowFlag;
 	CRect m_rcMain;
