@@ -108,6 +108,7 @@ BOOL CBatchNamerApp::InitInstance()
 	GetModuleFileName(m_hInstance, szBuff, MAX_PATH);
 	CString strExePath = szBuff;
 	m_strINIPath = Get_Folder(strExePath) + L"\\" + Get_Name(strExePath, FALSE) + L".ini";
+	InitHotKey();
 	INILoad(m_strINIPath);
 	m_hIcon = LoadIcon(IDR_MAINFRAME);
 	if (m_bEnglishUI == TRUE) SetLocale(LANG_ENGLISH);
@@ -293,4 +294,21 @@ void CBatchNamerApp::ShowMsg(CString strMsg, CString strTitle)
 	dlg.m_strTitle = strTitle;
 	dlg.m_strMsg = strMsg;
 	dlg.DoModal();
+}
+
+void CBatchNamerApp::InitHotKey()
+{
+	int aCommand[] = { IDM_PRESET_APPLY1, IDM_PRESET_APPLY2, IDM_PRESET_APPLY3, IDM_PRESET_APPLY4, IDM_PRESET_APPLY5 };
+	int aKeyCode[] = { VK_F1, VK_F2, VK_F3, VK_F4, VK_F5 };
+	BOOL aCtrl[] = { FALSE, FALSE, FALSE, FALSE, FALSE };
+	BOOL aShift[] = { FALSE, FALSE, FALSE, FALSE, FALSE };
+	int nCount = sizeof(aShift) / sizeof(BOOL);
+	HotKey hk;
+	for(int i = 0; i < nCount; i++)
+	{
+		hk.nKeyCode = aKeyCode[i];
+		hk.bCtrl = aCtrl[i];
+		hk.bShift = aShift[i];
+		m_mapHotKey.insert(CHotKeyMap::value_type(aCommand[i], hk));
+	}
 }

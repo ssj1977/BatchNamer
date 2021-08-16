@@ -214,3 +214,84 @@ CString Get_Ext(CString strFile, BOOL bIsDirectory)
 	strReturn = strFile.Right(strFile.GetLength() - n);
 	return strReturn;
 }
+
+CString ConvertKeyCodeToName(DWORD code)
+{
+	CString strKey;
+
+	if (_T('0') <= code && code <= _T('9')) strKey = (TCHAR)code;
+	else if (_T('A') <= code && code <= _T('Z')) strKey = (TCHAR)code;
+	else if (code == _T(' ')) strKey = _T("Space");
+	else if (code == VK_RETURN) strKey = _T("Enter");
+	else if (code == VK_DELETE) strKey = _T("Delete");
+	else if (code == VK_BACK)	strKey = _T("Backspace");
+	else if (code == VK_INSERT) strKey = _T("Insert");
+	else if (code == VK_TAB) strKey = _T("Tab");
+	else if (code == VK_SHIFT) strKey = _T("Shift");
+	else if (code == VK_LSHIFT) strKey = _T("Left Shift");
+	else if (code == VK_RSHIFT) strKey = _T("Right Shift");
+	else if (code == VK_CONTROL) strKey = _T("NULL");//strKey=_T("Ctrl");
+	else if (code == VK_LCONTROL) strKey = _T("NULL");//strKey=_T("Left Ctrl");
+	else if (code == VK_RCONTROL) strKey = _T("NULL");//strKey=_T("Right Ctrl");
+	else if (code == VK_UP) strKey = _T("Up Arrow");
+	else if (code == VK_DOWN) strKey = _T("Down Arrow");
+	else if (code == VK_LEFT) strKey = _T("Left Arrow");
+	else if (code == VK_RIGHT) strKey = _T("Right Arrow");
+	else if (code == VK_HOME) strKey = _T("Home");
+	else if (code == VK_END) strKey = _T("End");
+	else if (code == VK_PRIOR) strKey = _T("Page Up");
+	else if (code == VK_NEXT) strKey = _T("Page Down");
+	else if (code == VK_F1) strKey = _T("F1");
+	else if (code == VK_F2) strKey = _T("F2");
+	else if (code == VK_F3) strKey = _T("F3");
+	else if (code == VK_F4) strKey = _T("F4");
+	else if (code == VK_F5) strKey = _T("F5");
+	else if (code == VK_F6) strKey = _T("F6");
+	else if (code == VK_F7) strKey = _T("F7");
+	else if (code == VK_F8) strKey = _T("F8");
+	else if (code == VK_F9) strKey = _T("F9");
+	else if (code == VK_F10) strKey = _T("F10");
+	else if (code == VK_F11) strKey = _T("F11");
+	else if (code == VK_F12) strKey = _T("F12");
+	else if (code == VK_F12) strKey = _T("F12");
+	else if (code == VK_F12) strKey = _T("F12");
+	else if (code == VK_NUMPAD0) strKey = _T("Numpad 0");
+	else if (code == VK_NUMPAD1) strKey = _T("Numpad 1");
+	else if (code == VK_NUMPAD2) strKey = _T("Numpad 2");
+	else if (code == VK_NUMPAD3) strKey = _T("Numpad 3");
+	else if (code == VK_NUMPAD4) strKey = _T("Numpad 4");
+	else if (code == VK_NUMPAD5) strKey = _T("Numpad 5");
+	else if (code == VK_NUMPAD6) strKey = _T("Numpad 6");
+	else if (code == VK_NUMPAD7) strKey = _T("Numpad 7");
+	else if (code == VK_NUMPAD8) strKey = _T("Numpad 8");
+	else if (code == VK_NUMPAD9) strKey = _T("Numpad 9");
+	else if (code == VK_MULTIPLY) strKey = _T("Numpad *");
+	else if (code == VK_DIVIDE)	strKey = _T("Numpad /");
+	else if (code == VK_ADD)		strKey = _T("Numpad +");
+	else if (code == VK_SUBTRACT) strKey = _T("Numpad -");
+	else if (code == VK_DECIMAL)	strKey = _T("Numpad .");
+
+	else if (code == 0xbb) strKey = _T("=");
+	else if (code == 0xbd) strKey = _T("-");
+	else if (code == 0xc0) strKey = _T("~");
+	else if (code == 0xdb) strKey = _T("[");
+	else if (code == 0xdc) strKey = _T("\\");
+	else if (code == 0xdd) strKey = _T("]");
+	else if (code == 0xba) strKey = _T(";");
+	else if (code == 0xde) strKey = _T("'");
+	else if (code == 0xbc) strKey = _T("<");
+	else if (code == 0xbe) strKey = _T(">");
+	else if (code == 0xbf) strKey = _T("?");
+	else if (code == VK_ESCAPE)	strKey = _T("NULL");
+	else if (code == VK_CAPITAL)	strKey = _T("NULL");
+	else if (code == VK_NUMLOCK)	strKey = _T("NULL");
+	else if (code == VK_SCROLL)	strKey = _T("NULL");
+	else if (code == VK_CLEAR)	strKey = _T("NULL");
+	else if (code == VK_PAUSE)	strKey = _T("NULL");
+	else if (code == VK_SNAPSHOT) strKey = _T("NULL");
+	else if (code == -1) strKey = _T("지정 안함");
+	else strKey.Format(_T("0x%x"), code);
+
+	return strKey;
+
+}

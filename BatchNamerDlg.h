@@ -26,6 +26,7 @@ public:
 	void UpdateFontSize();
 	void ConfigLoadType();
 	void ConfigViewOption();
+	void ConfigEtc();
 	void UpdateCount();
 	void UpdateMenu();
 	void ArrangeCtrl();

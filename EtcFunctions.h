@@ -13,4 +13,5 @@ void GetToken(CString& strLine, CString& str1, CString& str2, TCHAR cSplit, BOOL
 CString Get_Folder(CString strFile);
 CString Get_Name(CString strFile, BOOL bKeepExt = TRUE);
 CString Get_Ext(CString strFile, BOOL bIsDirectory = FALSE);
+CString ConvertKeyCodeToName(DWORD code);
 #endif

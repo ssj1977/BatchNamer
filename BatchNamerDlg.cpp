@@ -15,11 +15,12 @@
 #include "EtcFunctions.h"
 #include "CDlgCFG_Load.h"
 #include "CDlgCFG_View.h"
+#include "CDlgCFG_Etc.h"
 #include "CDlgInput.h"
 #include "CDlgSort.h"
 #include "CDlgPreset.h"
 #pragma warning(disable:4786)
-#include <map>
+//#include <map>
 #include <vector>
 using namespace std;
 
@@ -363,6 +364,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.4 (2021-05-03 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
+	case IDM_CFG_ETC: ConfigEtc(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
 	case IDM_PRESET_APPLY1: PresetApply(APP()->m_aPreset[0]); break;
 	case IDM_PRESET_APPLY2: PresetApply(APP()->m_aPreset[1]); break;
@@ -690,6 +692,17 @@ void CBatchNamerDlg::ConfigViewOption()
 			UpdateImageList();
 		}
 		RedrawWindow();
+	}
+}
+
+void CBatchNamerDlg::ConfigEtc()
+{
+	CDlgCFG_Etc dlg;
+	dlg.m_bNameAutoFix = APP()->m_bNameAutoFix;
+	dlg.m_pMenu = GetMenu();
+	if (dlg.DoModal() == IDOK)
+	{
+		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
 	}
 }
 

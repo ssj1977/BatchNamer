@@ -10,6 +10,7 @@
 
 #include "resource.h"		// 주 기호입니다.
 #include <afxwinappex.h>
+#include <map>
 
 //CDlgInput 및 CDlgPreset에 사용되는 입력창 설정용 구조체
 struct InputItem
@@ -65,7 +66,32 @@ struct BatchNamerPreset
 	PresetTaskArray m_aTask;
 };
 
+
 typedef CArray<BatchNamerPreset, BatchNamerPreset&> PresetArray;
+
+//단축키를 나타내는 구조체
+class HotKey
+{
+public:
+	int nKeyCode;
+	BOOL bCtrl;
+	BOOL bShift;
+	HotKey() { nKeyCode = 0; bCtrl = FALSE; bShift = FALSE;}
+	HotKey(int nKeyCode_Val, BOOL bCtrl_Val, BOOL bShift_Val)
+	{ 
+		nKeyCode = nKeyCode_Val;
+		bCtrl = bCtrl_Val;
+		bShift = bShift_Val;
+	}
+	HotKey(HotKey& hk)
+	{
+		nKeyCode = hk.nKeyCode;
+		bCtrl = hk.bCtrl;
+		bShift = hk.bShift;
+	}
+};
+
+typedef std::map<int, HotKey> CHotKeyMap;
 
 // CBatchNamerApp:
 // 이 클래스의 구현에 대해서는 BatchNamer.cpp을(를) 참조하세요.
@@ -97,6 +123,7 @@ public:
 	void SetLocale(int nLanguageID);
 	void UpdateThreadLocale();
 	void ShowMsg(CString strMsg, CString strTitle);
+	CHotKeyMap m_mapHotKey;
 
 // 재정의입니다.
 public:
@@ -105,6 +132,7 @@ public:
 // 구현입니다.
 
 	DECLARE_MESSAGE_MAP()
+	void InitHotKey();
 };
 inline CBatchNamerApp* APP() { return (CBatchNamerApp*)AfxGetApp(); };
 
