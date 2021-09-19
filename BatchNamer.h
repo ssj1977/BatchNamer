@@ -69,6 +69,8 @@ struct BatchNamerPreset
 
 typedef CArray<BatchNamerPreset, BatchNamerPreset&> PresetArray;
 
+CString ConvertKeyCodeToName(DWORD code);
+
 //단축키를 나타내는 구조체
 class HotKey
 {
@@ -88,6 +90,14 @@ public:
 		nKeyCode = hk.nKeyCode;
 		bCtrl = hk.bCtrl;
 		bShift = hk.bShift;
+	}
+	CString GetKeyString()
+	{
+		CString strRet;
+		if (bCtrl) strRet += "Ctrl＋";
+		if (bShift) strRet += "Shift＋";
+		if (nKeyCode != 0) strRet += ConvertKeyCodeToName((DWORD)nKeyCode);
+		return strRet;
 	}
 };
 

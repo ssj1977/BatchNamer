@@ -190,6 +190,7 @@
     <ClInclude Include="CDlgCFG_Etc.h" />
     <ClInclude Include="CDlgCFG_Load.h" />
     <ClInclude Include="CDlgCFG_View.h" />
+    <ClInclude Include="CDlgHotKey.h" />
     <ClInclude Include="CDlgInput.h" />
     <ClInclude Include="CDlgMsg.h" />
     <ClInclude Include="CDlgPreset.h" />
@@ -207,6 +208,7 @@
     <ClCompile Include="CDlgCFG_Etc.cpp" />
     <ClCompile Include="CDlgCFG_Load.cpp" />
     <ClCompile Include="CDlgCFG_View.cpp" />
+    <ClCompile Include="CDlgHotKey.cpp" />
     <ClCompile Include="CDlgInput.cpp" />
     <ClCompile Include="CDlgMsg.cpp" />
     <ClCompile Include="CDlgPreset.cpp" />

@@ -1963,13 +1963,31 @@ void CBatchNamerDlg::UpdateMenu()
 	PresetArray& aPS = APP()->m_aPreset;
 	CString strTemp;
 	int n = 0;
-	for (int i=0; i<aPS.GetSize(); i++) //현재는 5개로 고정, 수정하는 경우 동적 메뉴로 바꾸어야 함
+	for (int i=0; i<aPS.GetSize(); i++) //프리셋은 5개로 고정, 대신 프리셋 5개 묶음을 파일로 저장하고 불러올 수 있도록 함
 	{
 		BatchNamerPreset& ps = aPS[i];
 		if (ps.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, IDSTR(IDS_PRESET_NONAME), i+1);
 		else strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, ps.m_strName, i + 1);;
 		pMenu->ModifyMenu(IDM_PRESET_APPLY1 + i, MF_BYCOMMAND | MF_STRING, IDM_PRESET_APPLY1 + i, strTemp);
 		pMenu->EnableMenuItem(IDM_PRESET_APPLY1 + i, (ps.m_aTask.GetSize()>0) ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	}
+
+	// 단축키를 메뉴에 표시하기
+	CHotKeyMap& hkm = APP()->m_mapHotKey;
+	CHotKeyMap::iterator i;
+	CString strCmd;
+	int nPos = -1;
+	for (i = hkm.begin(); i != hkm.end(); i++)
+	{
+		int nCommand = i->first;
+		HotKey hk = i->second;
+		strCmd.Empty();
+		pMenu->GetMenuString(nCommand, strCmd, MF_BYCOMMAND);
+		nPos = strCmd.Find(L'\t');
+		if (nPos != -1) strCmd = strCmd.Left(nPos);
+		strCmd += (L'\t');
+		strCmd += hk.GetKeyString();
+		pMenu->ModifyMenu(nCommand, MF_BYCOMMAND | MF_STRING, nCommand, strCmd);
 	}
 }
 

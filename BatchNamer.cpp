@@ -187,6 +187,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("UseDefaultFont=%d\r\n"), m_bUseDefaultFont);	strData += strLine;
 	strLine.Format(_T("FontSize=%d\r\n"), m_nFontSize);	strData += strLine;
 	strLine.Format(_T("IconType=%d\r\n"), m_nIconType);	strData += strLine;
+	strLine.Format(_T("NameAutoFix=%d\r\n"), m_bNameAutoFix);	strData += strLine;
 	for (int i = 0; i < m_aPreset.GetSize(); i++)
 	{
 		BatchNamerPreset& ps = m_aPreset[i];
@@ -231,6 +232,7 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("UseDefaultFont")) == 0) m_bUseDefaultFont = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("FontSize")) == 0) m_nFontSize = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = _ttoi(str2);
 		}
 		//이 부분은 str2가 비어 있더라도 받는다
@@ -298,12 +300,29 @@ void CBatchNamerApp::ShowMsg(CString strMsg, CString strTitle)
 
 void CBatchNamerApp::InitHotKey()
 {
-	int aCommand[] = { IDM_PRESET_APPLY1, IDM_PRESET_APPLY2, IDM_PRESET_APPLY3, IDM_PRESET_APPLY4, IDM_PRESET_APPLY5 };
-	int aKeyCode[] = { VK_F1, VK_F2, VK_F3, VK_F4, VK_F5 };
-	BOOL aCtrl[] = { FALSE, FALSE, FALSE, FALSE, FALSE };
-	BOOL aShift[] = { FALSE, FALSE, FALSE, FALSE, FALSE };
+	int aCommand[] = {	IDM_PRESET_APPLY1, IDM_PRESET_APPLY2, IDM_PRESET_APPLY3, IDM_PRESET_APPLY4, IDM_PRESET_APPLY5, IDM_PRESET_EDIT,
+						IDM_EDIT_UP, IDM_EDIT_DOWN, IDM_APPLY_CHANGE, IDM_UNDO_CHANGE, IDM_UNDO_SELECTED,
+						IDM_LIST_ADD, IDM_CLEAR_LIST, IDM_SORT_LIST,
+						IDM_EXPORT_CLIP, IDM_EXPORT_CLIP2, IDM_EXPORT_FILE, IDM_EXPORT_FILE2, IDM_IMPORT_FILE, IDM_IMPORT_FILE2, 		
+		};
+	int aKeyCode[] = {	VK_F1, VK_F2, VK_F3, VK_F4, VK_F5, VK_F11,
+						188, 190, 0x53, 0x5A, 0x5A,
+						0x4F, 0x4C, 0x52,
+						0x43, 0x43, 0x58, 0x58,	0x56, 0x56,
+	};
+	BOOL aCtrl[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, TRUE, TRUE, TRUE,
+						TRUE, TRUE, TRUE,
+						TRUE, TRUE, TRUE, TRUE,	TRUE, TRUE,
+	};
+	BOOL aShift[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE, TRUE,
+						FALSE, FALSE, FALSE,
+						FALSE, TRUE, FALSE, TRUE, FALSE, TRUE,
+	};
 	int nCount = sizeof(aShift) / sizeof(BOOL);
 	HotKey hk;
+	m_mapHotKey.clear();
 	for(int i = 0; i < nCount; i++)
 	{
 		hk.nKeyCode = aKeyCode[i];

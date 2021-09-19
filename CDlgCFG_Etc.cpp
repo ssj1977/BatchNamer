@@ -6,7 +6,7 @@
 #include "CDlgCFG_Etc.h"
 #include "afxdialogex.h"
 #include "EtcFunctions.h"
-
+#include "CDlgHotKey.h"
 
 // CDlgCFG_Etc 대화 상자
 
@@ -30,6 +30,10 @@ void CDlgCFG_Etc::DoDataExchange(CDataExchange* pDX)
 
 
 BEGIN_MESSAGE_MAP(CDlgCFG_Etc, CDialogEx)
+	ON_NOTIFY(NM_DBLCLK, IDC_LIST_HOTKEY, &CDlgCFG_Etc::OnDblclkListHotkey)
+	ON_BN_CLICKED(IDC_BTN_EDIT_HOTKEY, &CDlgCFG_Etc::OnBnClickedBtnEditHotkey)
+	ON_BN_CLICKED(IDC_BTN_CLEAR_HOTKEY, &CDlgCFG_Etc::OnBnClickedBtnClearHotkey)
+	ON_BN_CLICKED(IDC_BTN_DEFAULT_HOTKEY, &CDlgCFG_Etc::OnBnClickedBtnDefaultHotkey)
 END_MESSAGE_MAP()
 
 
@@ -42,10 +46,8 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 	m_listHotKey.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
 	((CButton*)GetDlgItem(IDC_CHK_NAMEAUTOFIX))->SetCheck(m_bNameAutoFix);
-	m_listHotKey.InsertColumn(0, L"Command", LVCFMT_LEFT, 200);
-	m_listHotKey.InsertColumn(1, L"Key", LVCFMT_LEFT, 100);
-	m_listHotKey.InsertColumn(2, L"Shift", LVCFMT_CENTER, 50);
-	m_listHotKey.InsertColumn(3, L"Ctrl", LVCFMT_CENTER, 50);
+	m_listHotKey.InsertColumn(0, L"Command", LVCFMT_LEFT, 250);
+	m_listHotKey.InsertColumn(1, L"Key", LVCFMT_LEFT, 150);
 
 	CHotKeyMap& hkm = APP()->m_mapHotKey;
 	CHotKeyMap::iterator i;
@@ -63,9 +65,8 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 			if (nPos != -1) strCmd = strCmd.Left(nPos);
 		}
 		int nItem = m_listHotKey.InsertItem(m_listHotKey.GetItemCount(), strCmd);
-		m_listHotKey.SetItemText(nItem, 1, ConvertKeyCodeToName(hk.nKeyCode));
-		m_listHotKey.SetItemText(nItem, 2, (hk.bShift ? L"O" : L""));
-		m_listHotKey.SetItemText(nItem, 3, (hk.bCtrl ? L"O" : L""));
+		m_listHotKey.SetItemText(nItem, 1, hk.GetKeyString());
+		m_listHotKey.SetItemData(nItem, nCommand);
 	}
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -94,4 +95,46 @@ BOOL CDlgCFG_Etc::PreTranslateMessage(MSG* pMsg)
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
 
 	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+
+void CDlgCFG_Etc::OnDblclkListHotkey(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	OnBnClickedBtnEditHotkey();
+	*pResult = 0;
+}
+
+
+void CDlgCFG_Etc::OnBnClickedBtnEditHotkey()
+{
+	int nItem = m_listHotKey.GetNextItem(-1, LVNI_SELECTED);
+	if (nItem == -1) return;
+	CHotKeyMap& hkm = APP()->m_mapHotKey;;
+	int nCommand = (int)m_listHotKey.GetItemData(nItem);
+	CHotKeyMap::iterator i;
+	i = hkm.find(nCommand);
+	if (i != hkm.end())
+	{
+		CDlgHotKey dlg;
+		dlg.m_hk = i->second;
+		if (dlg.DoModal() == IDOK)
+		{
+			i->second = dlg.m_hk;
+			m_listHotKey.SetItemText(nItem, 1, i->second.GetKeyString());
+		}
+	}
+
+}
+
+
+void CDlgCFG_Etc::OnBnClickedBtnClearHotkey()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+}
+
+
+void CDlgCFG_Etc::OnBnClickedBtnDefaultHotkey()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 }

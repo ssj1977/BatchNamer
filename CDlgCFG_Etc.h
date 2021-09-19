@@ -27,4 +27,8 @@ public:
 	virtual void OnCancel();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	CListCtrl m_listHotKey;
+	afx_msg void OnDblclkListHotkey(NMHDR* pNMHDR, LRESULT* pResult);
+	afx_msg void OnBnClickedBtnEditHotkey();
+	afx_msg void OnBnClickedBtnClearHotkey();
+	afx_msg void OnBnClickedBtnDefaultHotkey();
 };
