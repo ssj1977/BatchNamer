@@ -121,6 +121,7 @@
 #define IDS_INSERT_BYPOS_BACK           115
 #define IDS_ADDDATETIMECREATE           116
 #define IDS_ADDDATETIMEMODIFY           117
+#define IDS_NOHOTKEY                    118
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
@@ -134,6 +135,10 @@
 #define IDD_MSG                         155
 #define IDD_CFG_ETC                     157
 #define IDD_HOTKEY                      159
+#define IDS_HOTKEY_COMMAND              161
+#define IDS_HOTKEY_KEY                  162
+#define IDS_PRESET_EXPORT               163
+#define IDS_PRESET_IMPORT               164
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001
@@ -194,8 +199,9 @@
 #define IDM_LIST_ADD                    32790
 #define IDM_CLEAR_LIST                  32791
 #define IDM_SORT_LIST                   32792
-#define IDM_EDIT_UP                     32793
-#define IDM_EDIT_DOWN                   32794
+#define IDM_REMOVE_ITEM                 32793
+#define IDM_EDIT_UP                     32794
+#define IDM_EDIT_DOWN                   32795
 #define IDM_EXPORT_CLIP                 32800
 #define IDM_EXPORT_CLIP2                32801
 #define IDM_EXPORT_FILE                 32802
@@ -234,8 +240,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        161
-#define _APS_NEXT_COMMAND_VALUE         32845
+#define _APS_NEXT_RESOURCE_VALUE        165
+#define _APS_NEXT_COMMAND_VALUE         32846
 #define _APS_NEXT_CONTROL_VALUE         1070
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

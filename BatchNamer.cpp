@@ -201,6 +201,14 @@ void CBatchNamerApp::INISave(CString strFile)
 			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
 		}
 	}
+	// 단축키 저장
+	CHotKeyMap& hkm = APP()->m_mapHotKey;
+	CHotKeyMap::iterator i;
+	int nPos = -1;
+	for (i = hkm.begin(); i != hkm.end(); i++)
+	{
+		strLine.Format(_T("Hotkey=%d,%d,%d,%d\r\n"), i->first, i->second.nKeyCode, i->second.bCtrl, i->second.bShift); strData += strLine;
+	}
 	WriteCStringToFile(strFile, strData);
 }
 
@@ -234,6 +242,24 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("Hotkey")) == 0)
+			{
+				CString strCmd, strKey, strCtrl, strShift;
+				AfxExtractSubString(strCmd, str2, 0, L',');
+				AfxExtractSubString(strKey, str2, 1, L',');
+				AfxExtractSubString(strCtrl, str2, 2, L',');
+				AfxExtractSubString(strShift, str2, 3, L',');
+				int nCommand = _ttoi(str2);
+				CHotKeyMap& hkm = APP()->m_mapHotKey;
+				CHotKeyMap::iterator i;
+				i = hkm.find(nCommand);
+				if (i != hkm.end())
+				{
+					i->second.nKeyCode = _ttoi(strKey);
+					i->second.bCtrl = _ttoi(strCtrl);
+					i->second.bShift = _ttoi(strShift);
+				}
+			}
 		}
 		//이 부분은 str2가 비어 있더라도 받는다
 		if (str1.CompareNoCase(_T("Preset_Name")) == 0)
@@ -279,7 +305,6 @@ void CBatchNamerApp::INILoad(CString strFile)
 					}
 					m_aPreset[nPreset].m_aTask[nTask].m_str2 = str2;
 		}
-
 	}
 }
 
@@ -300,25 +325,45 @@ void CBatchNamerApp::ShowMsg(CString strMsg, CString strTitle)
 
 void CBatchNamerApp::InitHotKey()
 {
-	int aCommand[] = {	IDM_PRESET_APPLY1, IDM_PRESET_APPLY2, IDM_PRESET_APPLY3, IDM_PRESET_APPLY4, IDM_PRESET_APPLY5, IDM_PRESET_EDIT,
+	int aCommand[] = {	IDM_PRESET_APPLY1, IDM_PRESET_APPLY2, IDM_PRESET_APPLY3, IDM_PRESET_APPLY4, IDM_PRESET_APPLY5, 
+						IDM_PRESET_EDIT, IDM_PRESET_EXPORT, IDM_PRESET_IMPORT,
 						IDM_EDIT_UP, IDM_EDIT_DOWN, IDM_APPLY_CHANGE, IDM_UNDO_CHANGE, IDM_UNDO_SELECTED,
-						IDM_LIST_ADD, IDM_CLEAR_LIST, IDM_SORT_LIST,
-						IDM_EXPORT_CLIP, IDM_EXPORT_CLIP2, IDM_EXPORT_FILE, IDM_EXPORT_FILE2, IDM_IMPORT_FILE, IDM_IMPORT_FILE2, 		
+						IDM_LIST_ADD, IDM_CLEAR_LIST, IDM_SORT_LIST, IDM_REMOVE_ITEM,
+						IDM_EXPORT_CLIP, IDM_EXPORT_CLIP2, IDM_EXPORT_FILE, IDM_EXPORT_FILE2, IDM_IMPORT_FILE, IDM_IMPORT_FILE2, 
+						IDM_CFG_LOAD, IDM_CFG_VIEW, IDM_CFG_ETC, IDM_VERSION,
+						IDM_NAME_REPLACE, IDM_NAME_ADD_FRONT, IDM_NAME_ADD_REAR, 
+						IDM_NAME_EMPTY, IDM_NAME_REMOVESELECTED, IDM_NAME_EXTRACTNUMBER, IDM_NAME_REMOVENUMBER, IDM_NAME_DIGIT, IDM_NAME_ADDNUM,
+						IDM_EXT_DEL, IDM_EXT_ADD, IDM_EXT_REPLACE, IDM_NAME_SETPARENT
 		};
-	int aKeyCode[] = {	VK_F1, VK_F2, VK_F3, VK_F4, VK_F5, VK_F11,
+	int aKeyCode[] = {	VK_F1, VK_F2, VK_F3, VK_F4, VK_F5, 
+						VK_F11, VK_F7, VK_F8,
 						188, 190, 0x53, 0x5A, 0x5A,
-						0x4F, 0x4C, 0x52,
+						0x4F, 0x4C, 0x52, VK_DELETE,
 						0x43, 0x43, 0x58, 0x58,	0x56, 0x56,
+						0, 0, 0, 0,
+						0, 0, 0,
+						0, 0, 0, 0, 0, 0,
+						0, 0, 0, 0
 	};
-	BOOL aCtrl[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-						FALSE, FALSE, TRUE, TRUE, TRUE,
-						TRUE, TRUE, TRUE,
-						TRUE, TRUE, TRUE, TRUE,	TRUE, TRUE,
-	};
-	BOOL aShift[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE, FALSE, TRUE,
+	BOOL aCtrl[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, 
 						FALSE, FALSE, FALSE,
+						FALSE, FALSE, TRUE, TRUE, TRUE,
+						TRUE, TRUE, TRUE, FALSE,
+						TRUE, TRUE, TRUE, TRUE,	TRUE, TRUE,
+						FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE
+	};
+	BOOL aShift[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, 
+						FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE, TRUE,
+						FALSE, FALSE, FALSE, FALSE,
 						FALSE, TRUE, FALSE, TRUE, FALSE, TRUE,
+						FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE
 	};
 	int nCount = sizeof(aShift) / sizeof(BOOL);
 	HotKey hk;
@@ -330,4 +375,42 @@ void CBatchNamerApp::InitHotKey()
 		hk.bShift = aShift[i];
 		m_mapHotKey.insert(CHotKeyMap::value_type(aCommand[i], hk));
 	}
+}
+
+
+void CBatchNamerApp::PresetExport()
+{
+	CFileDialog dlg(FALSE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), NULL);
+	CString strTitle;
+	strTitle.LoadString(IDS_PRESET_EXPORT);
+	dlg.GetOFN().lpstrTitle = strTitle;
+	if (dlg.DoModal() == IDCANCEL) return;
+	CString strFile = dlg.GetPathName();
+
+	CString strData, strLine, str1, str2;
+	for (int i = 0; i < m_aPreset.GetSize(); i++)
+	{
+		BatchNamerPreset& ps = m_aPreset[i];
+		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
+		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
+		{
+			PresetTask& pt = ps.m_aTask[j];
+			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
+			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), pt.m_str1);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
+		}
+	}
+	WriteCStringToFile(strFile, strData);
+}
+
+void CBatchNamerApp::PresetImport()
+{
+	CFileDialog dlg(TRUE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), NULL);
+	CString strTitle;
+	strTitle.LoadString(IDS_PRESET_IMPORT);
+	dlg.GetOFN().lpstrTitle = strTitle;
+	if (dlg.DoModal() == IDCANCEL) return;
+	CString strFile = dlg.GetPathName();
+	INILoad(strFile);
 }

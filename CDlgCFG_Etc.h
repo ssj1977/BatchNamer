@@ -31,4 +31,5 @@ public:
 	afx_msg void OnBnClickedBtnEditHotkey();
 	afx_msg void OnBnClickedBtnClearHotkey();
 	afx_msg void OnBnClickedBtnDefaultHotkey();
+	void LoadHotKey();
 };

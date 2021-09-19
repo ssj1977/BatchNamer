@@ -38,18 +38,21 @@ CString ConvertKeyCodeToName(DWORD code);
 BOOL CDlgHotKey::PreTranslateMessage(MSG* pMsg)
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
+	if (pMsg->message == WM_SYSKEYDOWN && pMsg->wParam == VK_F10)
+	{
+		return TRUE;
+	}
 	if (pMsg->message == WM_KEYDOWN && 
 		pMsg->wParam != VK_CONTROL &&
 		pMsg->wParam != VK_SHIFT &&
 		pMsg->wParam != VK_ESCAPE &&
 		pMsg->wParam != VK_RETURN )
 	{
-		BOOL bCtrl = (GetKeyState(VK_CONTROL) & 0xFF00);
-		BOOL bShift = (GetKeyState(VK_SHIFT) & 0xFF00);
-		((CButton*)GetDlgItem(IDC_CHK_CTRL))->SetCheck(bCtrl);
-		((CButton*)GetDlgItem(IDC_CHK_SHIFT))->SetCheck(bShift);
+		m_hkTemp.nKeyCode = (int)pMsg->wParam;
+		m_hkTemp.bCtrl = (GetKeyState(VK_CONTROL) & 0xFF00);
+		m_hkTemp.bShift = (GetKeyState(VK_SHIFT) & 0xFF00);
 		CString strKey = ConvertKeyCodeToName((DWORD)pMsg->wParam);
-		SetDlgItemText(IDC_EDIT_HOTKEY, strKey);
+		SetDlgItemText(IDC_EDIT_HOTKEY, m_hkTemp.GetKeyString());
 		m_nKeyCode = (int)pMsg->wParam;
 		return TRUE;
 	}
@@ -60,9 +63,7 @@ BOOL CDlgHotKey::PreTranslateMessage(MSG* pMsg)
 
 void CDlgHotKey::OnOK()
 {
-	m_hk.bCtrl = ((CButton*)GetDlgItem(IDC_CHK_CTRL))->GetCheck();
-	m_hk.bShift = ((CButton*)GetDlgItem(IDC_CHK_SHIFT))->GetCheck();
-	m_hk.nKeyCode = m_nKeyCode;
+	m_hk = m_hkTemp;
 	CDialogEx::OnOK();
 }
 
@@ -76,11 +77,7 @@ void CDlgHotKey::OnCancel()
 BOOL CDlgHotKey::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-	((CButton*)GetDlgItem(IDC_CHK_CTRL))->SetCheck(m_hk.bCtrl);
-	((CButton*)GetDlgItem(IDC_CHK_SHIFT))->SetCheck(m_hk.bShift);
-	CString strKey = ConvertKeyCodeToName((DWORD)m_hk.nKeyCode);
-	SetDlgItemText(IDC_EDIT_HOTKEY, strKey);
-	m_nKeyCode = m_hk.nKeyCode;
+	m_hkTemp = m_hk;
+	SetDlgItemText(IDC_EDIT_HOTKEY, m_hkTemp.GetKeyString());
 	return TRUE;  
 }

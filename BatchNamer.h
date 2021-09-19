@@ -128,21 +128,21 @@ public:
 	BOOL m_bUseDefaultFont;
 	int m_nIconType;
 	PresetArray m_aPreset;
+	void PresetExport();
+	void PresetImport();
 	void INISave(CString strFile);
 	void INILoad(CString strFile);
 	void SetLocale(int nLanguageID);
 	void UpdateThreadLocale();
 	void ShowMsg(CString strMsg, CString strTitle);
 	CHotKeyMap m_mapHotKey;
-
+	void InitHotKey();
 // 재정의입니다.
 public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
 // 구현입니다.
-
 	DECLARE_MESSAGE_MAP()
-	void InitHotKey();
 };
 inline CBatchNamerApp* APP() { return (CBatchNamerApp*)AfxGetApp(); };
 

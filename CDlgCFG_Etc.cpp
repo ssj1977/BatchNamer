@@ -46,28 +46,10 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 	m_listHotKey.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
 	((CButton*)GetDlgItem(IDC_CHK_NAMEAUTOFIX))->SetCheck(m_bNameAutoFix);
-	m_listHotKey.InsertColumn(0, L"Command", LVCFMT_LEFT, 250);
-	m_listHotKey.InsertColumn(1, L"Key", LVCFMT_LEFT, 150);
+	m_listHotKey.InsertColumn(0, IDSTR(IDS_HOTKEY_COMMAND), LVCFMT_LEFT, 250);
+	m_listHotKey.InsertColumn(1, IDSTR(IDS_HOTKEY_KEY), LVCFMT_LEFT, 150);
 
-	CHotKeyMap& hkm = APP()->m_mapHotKey;
-	CHotKeyMap::iterator i;
-	CString strCmd;
-	int nPos = -1;
-	for(i = hkm.begin(); i != hkm.end(); i++)
-	{
-		int nCommand = i->first;
-		HotKey hk = i->second;
-		if (m_pMenu == NULL) strCmd.Empty();
-		else
-		{
-			m_pMenu->GetMenuString(nCommand, strCmd, MF_BYCOMMAND);
-			nPos = strCmd.Find(L'\t');
-			if (nPos != -1) strCmd = strCmd.Left(nPos);
-		}
-		int nItem = m_listHotKey.InsertItem(m_listHotKey.GetItemCount(), strCmd);
-		m_listHotKey.SetItemText(nItem, 1, hk.GetKeyString());
-		m_listHotKey.SetItemData(nItem, nCommand);
-	}
+	LoadHotKey();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -110,7 +92,7 @@ void CDlgCFG_Etc::OnBnClickedBtnEditHotkey()
 {
 	int nItem = m_listHotKey.GetNextItem(-1, LVNI_SELECTED);
 	if (nItem == -1) return;
-	CHotKeyMap& hkm = APP()->m_mapHotKey;;
+	CHotKeyMap& hkm = APP()->m_mapHotKey;
 	int nCommand = (int)m_listHotKey.GetItemData(nItem);
 	CHotKeyMap::iterator i;
 	i = hkm.find(nCommand);
@@ -124,17 +106,55 @@ void CDlgCFG_Etc::OnBnClickedBtnEditHotkey()
 			m_listHotKey.SetItemText(nItem, 1, i->second.GetKeyString());
 		}
 	}
-
 }
 
 
 void CDlgCFG_Etc::OnBnClickedBtnClearHotkey()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	int nItem = m_listHotKey.GetNextItem(-1, LVNI_SELECTED);
+	if (nItem == -1) return;
+	CHotKeyMap& hkm = APP()->m_mapHotKey;
+	int nCommand = (int)m_listHotKey.GetItemData(nItem);
+	CHotKeyMap::iterator i;
+	i = hkm.find(nCommand);
+	i->second.nKeyCode = 0;
+	i->second.bCtrl = FALSE;
+	i->second.bShift = FALSE;
+	CString strKey = i->second.GetKeyString();
+	if (strKey.IsEmpty()) strKey.LoadStringW(IDS_NOHOTKEY);
+	m_listHotKey.SetItemText(nItem, 1, strKey);
 }
 
 
 void CDlgCFG_Etc::OnBnClickedBtnDefaultHotkey()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	APP()->InitHotKey();
+	LoadHotKey();
+}
+
+
+void CDlgCFG_Etc::LoadHotKey()
+{
+	m_listHotKey.DeleteAllItems();
+	CHotKeyMap& hkm = APP()->m_mapHotKey;
+	CHotKeyMap::iterator i;
+	CString strCmd, strKey;
+	int nPos = -1;
+	for (i = hkm.begin(); i != hkm.end(); i++)
+	{
+		int nCommand = i->first;
+		HotKey hk = i->second;
+		if (m_pMenu == NULL) strCmd.Empty();
+		else
+		{
+			m_pMenu->GetMenuString(nCommand, strCmd, MF_BYCOMMAND);
+			nPos = strCmd.Find(L'\t');
+			if (nPos != -1) strCmd = strCmd.Left(nPos);
+		}
+		int nItem = m_listHotKey.InsertItem(m_listHotKey.GetItemCount(), strCmd);
+		strKey = hk.GetKeyString();
+		if (strKey.IsEmpty()) strKey.LoadStringW(IDS_NOHOTKEY);
+		m_listHotKey.SetItemText(nItem, 1, strKey);
+		m_listHotKey.SetItemData(nItem, nCommand);
+	}
 }

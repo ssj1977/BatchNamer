@@ -371,7 +371,21 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_PRESET_APPLY3: PresetApply(APP()->m_aPreset[2]); break;
 	case IDM_PRESET_APPLY4: PresetApply(APP()->m_aPreset[3]); break;
 	case IDM_PRESET_APPLY5: PresetApply(APP()->m_aPreset[4]); break;
-
+	case IDM_PRESET_EXPORT: APP()->PresetExport(); break;
+	case IDM_PRESET_IMPORT: APP()->PresetImport(); break;
+	case IDM_REMOVE_ITEM:
+	{
+		int nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+		m_list.SetRedraw(FALSE);
+		while (nItem != -1)
+		{
+			m_list.DeleteListItem(nItem);
+			nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+		}
+		m_list.SetRedraw(TRUE);
+		UpdateCount();
+	}
+	break;
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
@@ -425,19 +439,21 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 	{
 		if (st_bIsThreadWorking == FALSE)
 		{
-			if (pMsg->wParam == VK_DELETE)
+			CHotKeyMap& hkm = APP()->m_mapHotKey;
+			CHotKeyMap::iterator i;
+			int nPos = -1;
+			BOOL bOK = FALSE;
+			for (i = hkm.begin(); i != hkm.end(); i++)
 			{
-				int nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
-				m_list.SetRedraw(FALSE);
-				while (nItem != -1)
+				if ((i->second.nKeyCode == (int)pMsg->wParam)
+					&& (i->second.bCtrl == ((GetKeyState(VK_CONTROL) & 0xFF00)))
+					&& (i->second.bShift == ((GetKeyState(VK_SHIFT) & 0xFF00))))
 				{
-					m_list.DeleteListItem(nItem);
-					nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
+					OnCommand(i->first, 0);
+					return TRUE;
 				}
-				m_list.SetRedraw(TRUE);
-				UpdateCount();
-				return TRUE;
 			}
+			//종료시 확인처리
 			if (pMsg->wParam == VK_ESCAPE)
 			{
 				if (m_list.GetItemCount() > 0)
@@ -445,20 +461,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 					if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return TRUE;
 				}
 			}
-			// <>를 이용해 리스트상에서 이동 가능
-			if (pMsg->wParam == 188) { ListUp(); return TRUE; }
-			if (pMsg->wParam == 190) { ListDown(); return TRUE; }
-			if (pMsg->wParam >= VK_F1 && pMsg->wParam <= VK_F5)
-			{
-				int nPreset = int(pMsg->wParam - VK_F1);
-				PresetApply(APP()->m_aPreset[nPreset]);
-				return TRUE;
-			}
-			if (pMsg->wParam == VK_F11)
-			{
-				PresetEdit();
-				return TRUE;
-			}
+
 		}
 		else //st_bIsThreadWorking == TRUE
 		{
@@ -467,7 +470,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
-	if (pMsg->message == WM_KEYUP && (GetKeyState(VK_CONTROL) & 0xFF00) != 0 && st_bIsThreadWorking == FALSE)
+/*	if (pMsg->message == WM_KEYUP && (GetKeyState(VK_CONTROL) & 0xFF00) != 0 && st_bIsThreadWorking == FALSE)
 	{
 		if (pMsg->wParam == _T('O')) { AddByFileDialog(); return TRUE; }
 		if (m_list.GetItemCount() > 0)
@@ -499,7 +502,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 			else if (m_list.GetItemCount() > 0)		ImportNewName();
 			return TRUE;
 		}
-	}
+	}*/
 
 	BOOL b = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
 	if (b != m_bSelected)
@@ -1899,6 +1902,7 @@ void CBatchNamerDlg::UpdateMenu()
 	pMenu->EnableMenuItem(IDM_APPLY_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_CLEAR_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_SORT_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_REMOVE_ITEM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_UNDO_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_NAME_REPLACE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_NAME_ADD_FRONT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);

@@ -282,14 +282,14 @@ CString ConvertKeyCodeToName(DWORD code)
 	else if (code == 0xbc) strKey = _T("<");
 	else if (code == 0xbe) strKey = _T(">");
 	else if (code == 0xbf) strKey = _T("?");
-	else if (code == VK_ESCAPE)	strKey = _T("NULL");
-	else if (code == VK_CAPITAL)	strKey = _T("NULL");
-	else if (code == VK_NUMLOCK)	strKey = _T("NULL");
-	else if (code == VK_SCROLL)	strKey = _T("NULL");
-	else if (code == VK_CLEAR)	strKey = _T("NULL");
-	else if (code == VK_PAUSE)	strKey = _T("NULL");
-	else if (code == VK_SNAPSHOT) strKey = _T("NULL");
-	else if (code == -1) strKey = _T("지정 안함");
+	else if (code == VK_ESCAPE)	strKey = _T("Escape");
+	else if (code == VK_CAPITAL)	strKey = _T("CapsLock");
+	else if (code == VK_NUMLOCK)	strKey = _T("NumLock");
+	else if (code == VK_SCROLL)	strKey = _T("ScrollLock");
+	else if (code == VK_CLEAR)	strKey = _T("Clear");
+	else if (code == VK_PAUSE)	strKey = _T("PAUSE");
+	else if (code == VK_SNAPSHOT) strKey = _T("PrintScreen");
+	else if (code <= 0) strKey = _T("(N/A)");
 	else strKey.Format(_T("0x%x"), code);
 
 	return strKey;

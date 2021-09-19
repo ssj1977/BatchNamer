@@ -11,6 +11,7 @@ public:
 	CDlgHotKey(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgHotKey();
 	HotKey m_hk;
+	HotKey m_hkTemp;
 	int m_nKeyCode;
 
 // 대화 상자 데이터입니다.
