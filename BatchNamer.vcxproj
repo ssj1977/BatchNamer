@@ -190,6 +190,7 @@
     <ClInclude Include="CDlgCFG_Etc.h" />
     <ClInclude Include="CDlgCFG_Load.h" />
     <ClInclude Include="CDlgCFG_View.h" />
+    <ClInclude Include="CDlgFolderSelect.h" />
     <ClInclude Include="CDlgHotKey.h" />
     <ClInclude Include="CDlgInput.h" />
     <ClInclude Include="CDlgMsg.h" />
@@ -208,6 +209,7 @@
     <ClCompile Include="CDlgCFG_Etc.cpp" />
     <ClCompile Include="CDlgCFG_Load.cpp" />
     <ClCompile Include="CDlgCFG_View.cpp" />
+    <ClCompile Include="CDlgFolderSelect.cpp" />
     <ClCompile Include="CDlgHotKey.cpp" />
     <ClCompile Include="CDlgInput.cpp" />
     <ClCompile Include="CDlgMsg.cpp" />

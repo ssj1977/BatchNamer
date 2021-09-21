@@ -70,7 +70,7 @@
 #define IDS_BRACKET1                    66
 #define IDS_BRACKET2                    67
 #define IDS_MSG_BRACKETLEN              68
-#define IDS_SETPARENT                   69
+#define IDS_FOLDER_SPECIFIC             69
 #define IDS_IMPORTNAME                  70
 #define IDS_EXPORTNAME                  71
 #define IDS_EXPORTFULLPATH              72
@@ -122,6 +122,8 @@
 #define IDS_ADDDATETIMECREATE           116
 #define IDS_ADDDATETIMEMODIFY           117
 #define IDS_NOHOTKEY                    118
+#define IDS_INVALID_FOLDER              119
+#define IDS_FOLDER_PARENT               120
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
@@ -139,6 +141,7 @@
 #define IDS_HOTKEY_KEY                  162
 #define IDS_PRESET_EXPORT               163
 #define IDS_PRESET_IMPORT               164
+#define IDD_FOLDER_SELECT               165
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001
@@ -187,6 +190,13 @@
 #define IDC_BTN_EDIT_HOTKEY             1068
 #define IDC_BTN_CLEAR_HOTKEY            1069
 #define IDC_BTN_DEFAULT_HOTKEY          1070
+#define IDC_EDIT1                       1070
+#define IDC_EDIT_PARENT_FOLDER          1070
+#define IDC_RADIO_PARENT_FOLDER         1071
+#define IDC_RADIO_SPECIFIC_FOLDER       1072
+#define IDC_BTN_FOLDER_SELECT           1073
+#define IDC_EDIT2                       1074
+#define IDC_EDIT_PARENT_LEVEL           1074
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
 #define IDM_PRESET_APPLY2               32772
@@ -202,14 +212,16 @@
 #define IDM_REMOVE_ITEM                 32793
 #define IDM_EDIT_UP                     32794
 #define IDM_EDIT_DOWN                   32795
-#define IDM_EXPORT_CLIP                 32800
-#define IDM_EXPORT_CLIP2                32801
-#define IDM_EXPORT_FILE                 32802
-#define IDM_EXPORT_FILE2                32803
-#define IDM_IMPORT_FILE                 32804
-#define IDM_IMPORT_FILE2                32805
-#define IDM_PRESET_EXPORT               32806
-#define IDM_PRESET_IMPORT               32807
+#define IDM_EXPORT_CLIP_NEWNAME         32800
+#define IDM_IMPORT_CLIP_NEWNAME         32801
+#define IDM_EXPORT_FILE_NEWNAME         32802
+#define IDM_IMPORT_FILE_NEWNAME         32803
+#define IDM_EXPORT_CLIP_PATH            32804
+#define IDM_IMPORT_CLIP_PATH            32805
+#define IDM_EXPORT_FILE_PATH            32806
+#define IDM_IMPORT_FILE_PATH            32807
+#define IDM_PRESET_EXPORT               32808
+#define IDM_PRESET_IMPORT               32809
 #define IDM_CFG_LOAD                    32810
 #define IDM_CFG_VIEW                    32811
 #define IDM_CFG_ETC                     32812
@@ -224,7 +236,7 @@
 #define IDM_NAME_REMOVENUMBER           32827
 #define IDM_NAME_DIGIT                  32828
 #define IDM_NAME_ADDNUM                 32829
-#define IDM_NAME_SETPARENT              32830
+#define IDM_NAME_SETFOLDER              32830
 #define IDM_EXT_DEL                     32831
 #define IDM_EXT_ADD                     32832
 #define IDM_EXT_REPLACE                 32833
@@ -240,9 +252,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        165
-#define _APS_NEXT_COMMAND_VALUE         32846
-#define _APS_NEXT_CONTROL_VALUE         1070
+#define _APS_NEXT_RESOURCE_VALUE        167
+#define _APS_NEXT_COMMAND_VALUE         32854
+#define _APS_NEXT_CONTROL_VALUE         1075
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

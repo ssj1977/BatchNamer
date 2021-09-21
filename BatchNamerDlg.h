@@ -29,6 +29,8 @@ public:
 	void ConfigEtc();
 	void UpdateCount();
 	void UpdateMenu();
+	void UpdateMenuPreset();
+	void UpdateMenuHotkey();
 	void ArrangeCtrl();
 	static UINT ApplyChange_Thread(void* lParam);
 // 대화 상자 데이터입니다.
@@ -53,8 +55,8 @@ protected:
 	void ClearList();
 	void ToggleListColumn(int nCol);
 	void Export(int nMode);
-	void ImportNewName();
-	void ImportPath();
+	void ImportNewName(BOOL bFromFile);
+	void ImportPath(BOOL bFromFile);
 	void ListDown();
 	void ListUp();
 	void SwapItem(int n1, int n2);
@@ -71,8 +73,8 @@ protected:
 	void NameAdd(int nSubCommand, CString str1, CString str2, BOOL bFront);
 	void NameRemoveSelected();
 	void NameRemoveSelected(int nSubCommand, CString str1, CString str2);
-	void NameSetParent();
-	void NameSetParent(int nSubCommand, CString str1, CString str2);
+	void NameSetFolder();
+	void NameSetFolder(int nSubCommand, CString str1, CString str2);
 	void NameAddNum();
 	void NameAddNum(int nSubCommand, CString str1, CString str2);
 	void NameDigit();
@@ -84,6 +86,8 @@ protected:
 	void ExtAdd();
 	void ExtAdd(int nSubCommand, CString str1, CString str2);
 	void ExtDel(BOOL bToggleRedraw = TRUE);
+	CString ProcessDropFiles(HDROP hDropInfo, int nActionType); // nActionType 0:목록에 추가, 1:경로를 텍스트로 반환, 2:이름을 텍스트로 반환
+	void LoadPathArray(CStringArray& aPath);
 	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();

@@ -19,6 +19,7 @@
 #include "CDlgInput.h"
 #include "CDlgSort.h"
 #include "CDlgPreset.h"
+#include "CDlgFolderSelect.h"
 #pragma warning(disable:4786)
 //#include <map>
 #include <vector>
@@ -27,6 +28,11 @@ using namespace std;
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+//Actions of ProcessDropFiles()
+#define DF_ADDLIST 0
+#define DF_READNEWNAME 1
+#define DF_READFULLPATH 2
 
 typedef vector<CString> CStrArray;
 typedef map<CString, int> CExtMap; //확장자에 해당하는 이미지맵의 번호를 기억
@@ -234,6 +240,8 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	m_list.GetHeaderCtrl().SetSortColumn(COL_OLDNAME, TRUE);
 
 	UpdateMenu();
+	UpdateMenuPreset();
+	UpdateMenuHotkey();
 	UpdateCount();
 
 	if (APP()->m_rcMain.IsRectEmpty() == FALSE)
@@ -322,6 +330,10 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	{
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
+	CMenu* pMenu = GetMenu();
+	UINT state = pMenu->GetMenuState((UINT)wParam, MF_BYCOMMAND);
+	if ((state & MF_GRAYED) != 0) 
+		return TRUE;
 	switch (wParam)
 	{
 	case IDM_CLEAR_LIST:		ClearList();		break;
@@ -344,14 +356,16 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_NAME_EMPTY:		NameEmpty();		break;
 	case IDM_EDIT_UP:			ListUp();			break;
 	case IDM_EDIT_DOWN:			ListDown();		break;
-	case IDM_NAME_SETPARENT:	NameSetParent();	break;
+	case IDM_NAME_SETFOLDER:	NameSetFolder();	break;
 
-	case IDM_EXPORT_CLIP:		Export(0);		break;
-	case IDM_EXPORT_FILE:		Export(1);		break;
-	case IDM_EXPORT_CLIP2:		Export(2);		break;
-	case IDM_EXPORT_FILE2:		Export(3);		break;
-	case IDM_IMPORT_FILE:		ImportNewName();		break;
-	case IDM_IMPORT_FILE2:		ImportPath();		break;
+	case IDM_EXPORT_CLIP_NEWNAME:		Export(0);		break;
+	case IDM_IMPORT_CLIP_NEWNAME:		ImportNewName(FALSE);		break;
+	case IDM_EXPORT_FILE_NEWNAME:		Export(1);		break;
+	case IDM_IMPORT_FILE_NEWNAME:		ImportNewName(TRUE);		break;
+	case IDM_EXPORT_CLIP_PATH:		Export(2);		break;
+	case IDM_IMPORT_CLIP_PATH:		ImportPath(FALSE);		break;
+	case IDM_EXPORT_FILE_PATH:		Export(3);		break;
+	case IDM_IMPORT_FILE_PATH:		ImportPath(TRUE);		break;
 
 	case IDM_LIST_ADD:			AddByFileDialog(); break;
 	case IDM_SHOW_SIZE:			ToggleListColumn(COL_FILESIZE); break;
@@ -361,7 +375,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.4 (2021-05-03 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v1.5 (2021-09-22 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -372,7 +386,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_PRESET_APPLY4: PresetApply(APP()->m_aPreset[3]); break;
 	case IDM_PRESET_APPLY5: PresetApply(APP()->m_aPreset[4]); break;
 	case IDM_PRESET_EXPORT: APP()->PresetExport(); break;
-	case IDM_PRESET_IMPORT: APP()->PresetImport(); break;
+	case IDM_PRESET_IMPORT: APP()->PresetImport(); UpdateMenuPreset();  break;
 	case IDM_REMOVE_ITEM:
 	{
 		int nItem = m_list.GetNextItem(-1, LVNI_SELECTED);
@@ -384,12 +398,13 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 		}
 		m_list.SetRedraw(TRUE);
 		UpdateCount();
+		if (m_list.GetItemCount() == 0) UpdateMenu();
 	}
 	break;
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
-	UpdateMenu();
+	//UpdateMenu();
 	return TRUE;
 }
 
@@ -397,7 +412,7 @@ void CBatchNamerDlg::PresetEdit()
 {
 	CDlgPreset dlg;
 	dlg.DoModal();
-	UpdateMenu();
+	UpdateMenuPreset();
 }
 
 void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
@@ -417,7 +432,7 @@ void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 		case IDS_TB_07: NameNumberFilter(TRUE, FALSE); break;
 		case IDS_TB_08: NameDigit(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Digits
 		case IDS_TB_09: NameAddNum(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Add Number
-		case IDS_TB_16: NameSetParent(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Parent
+		case IDS_TB_16: NameSetFolder(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Parent
 		case IDS_TB_17: ExtDel(FALSE); break; // Delete Extension
 		case IDS_TB_18: ExtAdd(task.m_nSubCommand, task.m_str1, task.m_str2); break;// Add Extension
 		case IDS_TB_19: ExtReplace(task.m_nSubCommand, task.m_str1, task.m_str2); break;// Replace Extension
@@ -439,18 +454,24 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 	{
 		if (st_bIsThreadWorking == FALSE)
 		{
-			CHotKeyMap& hkm = APP()->m_mapHotKey;
-			CHotKeyMap::iterator i;
-			int nPos = -1;
-			BOOL bOK = FALSE;
-			for (i = hkm.begin(); i != hkm.end(); i++)
+			if (pMsg->wParam != VK_CONTROL &&
+				pMsg->wParam != VK_SHIFT &&
+				pMsg->wParam != VK_ESCAPE &&
+				pMsg->wParam != VK_RETURN)
 			{
-				if ((i->second.nKeyCode == (int)pMsg->wParam)
-					&& (i->second.bCtrl == ((GetKeyState(VK_CONTROL) & 0xFF00)))
-					&& (i->second.bShift == ((GetKeyState(VK_SHIFT) & 0xFF00))))
+				CHotKeyMap& hkm = APP()->m_mapHotKey;
+				CHotKeyMap::iterator i;
+				int nPos = -1;
+				BOOL bOK = FALSE;
+				for (i = hkm.begin(); i != hkm.end(); i++)
 				{
-					OnCommand(i->first, 0);
-					return TRUE;
+					if ((i->second.nKeyCode == (int)pMsg->wParam)
+						&& (i->second.bCtrl == (((GetKeyState(VK_CONTROL) & 0xFF00) != 0) ? TRUE : FALSE))
+						&& (i->second.bShift == (((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE)) )
+					{
+						OnCommand(i->first, 0);
+						return TRUE;
+					}
 				}
 			}
 			//종료시 확인처리
@@ -470,44 +491,11 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
-/*	if (pMsg->message == WM_KEYUP && (GetKeyState(VK_CONTROL) & 0xFF00) != 0 && st_bIsThreadWorking == FALSE)
-	{
-		if (pMsg->wParam == _T('O')) { AddByFileDialog(); return TRUE; }
-		if (m_list.GetItemCount() > 0)
-		{
-			if (pMsg->wParam == _T('S')) { ApplyChange_Start(); return TRUE; }
-			else if (pMsg->wParam == _T('Z')) 
-			{
-				UndoChanges( ((GetKeyState(VK_SHIFT) & 0xFF00) != 0 ) ? TRUE : FALSE);
-				return TRUE; 
-			}
-			else if (pMsg->wParam == _T('L')) { ClearList(); return TRUE; }
-			else if (pMsg->wParam == _T('R')) { SortList(); return TRUE; }
-			else if (pMsg->wParam == _T('C'))
-			{
-				if ((GetKeyState(VK_SHIFT) & 0xFF00) != 0)	Export(2);
-				else									Export(0);
-				return TRUE;
-			}
-			else if (pMsg->wParam == _T('X'))
-			{
-				if ((GetKeyState(VK_SHIFT) & 0xFF00) != 0)	Export(3);
-				else									Export(1);
-				return TRUE;
-			}
-		}
-		if (pMsg->wParam == _T('V'))
-		{
-			if ((GetKeyState(VK_SHIFT) & 0xFF00) != 0)	ImportPath();
-			else if (m_list.GetItemCount() > 0)		ImportNewName();
-			return TRUE;
-		}
-	}*/
-
 	BOOL b = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
 	if (b != m_bSelected)
 	{
 		GetMenu()->EnableMenuItem(IDM_UNDO_SELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+		GetMenu()->EnableMenuItem(IDM_REMOVE_ITEM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 		GetMenu()->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 		GetMenu()->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 		GetMenu()->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
@@ -706,6 +694,7 @@ void CBatchNamerDlg::ConfigEtc()
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
+		UpdateMenuHotkey();
 	}
 }
 
@@ -723,33 +712,61 @@ void CBatchNamerDlg::AddPathStart(CString strPath)
 // Drag & Drop 을 사용해서 파일을 목록에 추가한다 
 void CBatchNamerDlg::OnDropFiles(HDROP hDropInfo)
 {
+	ProcessDropFiles(hDropInfo, DF_ADDLIST);
+	DragFinish(hDropInfo); // 실제 드래깅해서 가져오는 경우만 이 방식으로 메모리 해제
+}
+
+//클립보드에서 HDROP을 가져오는 경우 DragFinish()하면 Heap 오류가 발생하는 문제를 방지하기 위해 별도로 분리
+CString CBatchNamerDlg::ProcessDropFiles(HDROP hDropInfo, int nActionType)
+{
+	CString strRet;
 	WORD cFiles;
 	TCHAR szFilePath[MAX_PATH];
 	int bufsize = sizeof(TCHAR) * MAX_PATH;
 	memset(szFilePath, 0, bufsize);
 	CString strPath;
-	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
 	cFiles = DragQueryFile(hDropInfo, (UINT)-1, NULL, 0);
-	if (APP()->m_bShowEverytime) ConfigLoadType();
-	//clock_t timestart = clock();
-	m_list.SetRedraw(FALSE);
-	m_nTempLoadType = -1;
+	CStringArray aPath;
 	for (int i = 0; i < cFiles; i++)
 	{
 		DragQueryFile(hDropInfo, i, szFilePath, MAX_PATH);
 		strPath = (LPCTSTR)szFilePath;
-		AddPathStart(strPath);
+		aPath.Add(strPath);
 	}
-	DragFinish(hDropInfo);
+	//1)드래그 앤 드롭, 2)클립보드 복사 둘다 정렬이 제대로 안되므로 이름으로 먼저 정렬한다
+	//void* pArrayStart = (void*)&aPath[0];
+	//qsort(pArrayStart, aPath.GetSize(), sizeof(CString*), CompareFileName);
+	qsort(aPath.GetData(), aPath.GetSize(), sizeof(CString*), CompareFileName);
+
+
+	//정렬된 파일 목록을 처리한다.
+	if (nActionType == DF_ADDLIST) 		//순서대로 목록에 추가하기
+	{
+		LoadPathArray(aPath);
+	}
+	else //텍스트로 만들어서 반환하기
+	{
+		for (int i = 0; i < cFiles; i++)
+		{
+			if (strRet.IsEmpty() == FALSE) strRet += L'\n';
+			if (nActionType == DF_READNEWNAME)	strRet += Get_Name(aPath[i], TRUE);
+			else if (nActionType == DF_READFULLPATH) strRet += aPath[i];
+		}
+	}
+	return strRet;
+}
+void CBatchNamerDlg::LoadPathArray(CStringArray& aPath)
+{
+	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
+	if (APP()->m_bShowEverytime) ConfigLoadType();
+	m_list.SetRedraw(FALSE);
+	m_nTempLoadType = -1;
+	INT_PTR nSize = aPath.GetSize();
+	for (int i = 0; i < nSize; i++) AddPathStart(aPath[i]);
 	if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 	m_list.SetRedraw(TRUE);
-	//clock_t timeend = clock();
 	UpdateMenu();
 	UpdateCount();
-	//double result = (double)(timeend - timestart);
-	//CString strTemp;
-	//strTemp.Format(_T("%f MSecs"), result);
-	//SetDlgItemText(IDC_ST_BAR, strTemp);
 }
 
 //파일 열기 시스템 다이얼로그를 사용해서 파일을 목록에 추가한다
@@ -1682,14 +1699,14 @@ void CBatchNamerDlg::Export(int nMode)
 	CString strData;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
+		if (strData.IsEmpty() == FALSE) strData += _T("\r\n");
 		if (nMode == 0 || nMode == 1)
 		{
-			strData += m_list.GetItemText(i, COL_NEWNAME) + _T("\r\n");
+			strData += m_list.GetItemText(i, COL_NEWNAME);
 		}
 		else if (nMode == 2 || nMode == 3)
 		{
 			strData += m_list.GetNewPath(i);
-			strData += _T("\r\n");
 		}
 	}
 
@@ -1714,86 +1731,181 @@ void CBatchNamerDlg::Export(int nMode)
 	}
 }
 
-//파일명을 텍스트 파일에서 읽어와서 차례대로 새로 바뀔 이름인 COL_NEWNAME 을 수정한다
+//파일명을 텍스트 파일 또는 클립보드에서 읽어와서 차례대로 새로 바뀔 이름인 COL_NEWNAME 을 수정한다
 //텍스트 파일은 이름 하나당 엔터(\n)로 구분해서 저장한 타입
 //현재 리스트에 있는 개수만큼 읽어온다
-void CBatchNamerDlg::ImportNewName()
+void CBatchNamerDlg::ImportNewName(BOOL bFromFile)
 {
-	CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
-	CString strTitle; 
-	strTitle.LoadString(IDS_IMPORTNAME); //"바꿀 파일 이름 불러오기"
-	dlg.GetOFN().lpstrTitle = strTitle;
-	if (dlg.DoModal() == IDCANCEL) return;
-	CString strData, strName;
-	ReadFileToCString(dlg.GetPathName(), strData);
+	CString strImportData, strName;
+	if (bFromFile == TRUE) // 파일에서 읽기
+	{
+		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
+		CString strTitle;
+		strTitle.LoadString(IDS_IMPORTNAME); //"바꿀 파일 이름 불러오기"
+		dlg.GetOFN().lpstrTitle = strTitle;
+		if (dlg.DoModal() == IDCANCEL) return;
+		ReadFileToCString(dlg.GetPathName(), strImportData);
+	}
+	else // 클립보드에서 읽기
+	{
+		UINT priority_list[] = { CF_UNICODETEXT , CF_HDROP };
+		UINT current_cf = GetPriorityClipboardFormat(priority_list, 2);
+		if (current_cf == CF_HDROP) // 파일을 복사한 경우 => 이름을 추출해서 붙여넣는다
+		{
+			if (OpenClipboard())
+			{
+				HGLOBAL hGlobal = (HGLOBAL)GetClipboardData(CF_HDROP);
+				if (hGlobal)
+				{
+					HDROP hDropInfo = (HDROP)GlobalLock(hGlobal);
+					strImportData = ProcessDropFiles(hDropInfo, DF_READNEWNAME);
+					GlobalUnlock(hGlobal);
+				}
+				CloseClipboard();
+			}
+		}
+		else if (current_cf == CF_UNICODETEXT) // 파일명 텍스트를 복사한 경우
+		{
+			if (OpenClipboard())
+			{
+				HANDLE hText = GetClipboardData(CF_UNICODETEXT);
+				if (hText)
+				{
+					strImportData = (TCHAR*)GlobalLock(hText);
+					GlobalUnlock(hText);
+				}
+				CloseClipboard();
+			}
+		}
+		else return;
+	}
+
 	int nPos = 0;
 	int i = 0;
 	m_list.SetRedraw(FALSE);
 	while (nPos != -1)
 	{
-		nPos = GetLine(strData, nPos, strName, _T("\n"));
-		strName.TrimLeft(); strName.TrimRight();
-		//if (strName.IsEmpty() == FALSE)
-		//{
-			//원래 이름이 존재해야만 하므로 맨 위부터 교체하는 형식
-			if (i >= m_list.GetItemCount()) break; //리스트 넘어가면 끝
-			m_list.SetItemText(i, COL_NEWNAME, strName);
-			i++;
-		//}
+		nPos = GetLine(strImportData, nPos, strName, _T("\n"));
+		strName.Trim();
+		if (strName.Find(L'\\')) strName = Get_Name(strName, TRUE);
+		if (i >= m_list.GetItemCount()) break; //리스트 넘어가면 끝
+		m_list.SetItemText(i, COL_NEWNAME, strName); 
+		i++;
 	}
 	m_list.SetRedraw(TRUE);
 }
 
-//경로명을 텍스트 파일에서 읽어와서 현재 목록 뒤에 추가한다
+//경로명을 클립보드 또는 텍스트 파일에서 읽어와서 현재 목록 뒤에 추가한다
 //텍스트 파일은 이름 하나당 엔터(\n)로 구분해서 저장한 타입
-void CBatchNamerDlg::ImportPath()
+void CBatchNamerDlg::ImportPath(BOOL bFromFile)
 {
-	CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
-	CString strTemp;
-	strTemp.LoadString(IDS_IMPORT_PATH);
-	dlg.GetOFN().lpstrTitle = strTemp;
-	if (dlg.DoModal() == IDCANCEL) return;
 	CString strImportData;
-	ReadFileToCString(dlg.GetPathName(), strImportData);
-
+	if (bFromFile == TRUE) // 파일에서 읽기
+	{
+		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
+		CString strTemp;
+		strTemp.LoadString(IDS_IMPORT_PATH);
+		dlg.GetOFN().lpstrTitle = strTemp;
+		if (dlg.DoModal() == IDCANCEL) return;
+		ReadFileToCString(dlg.GetPathName(), strImportData);
+	}
+	else // 클립보드에서 읽기
+	{
+		UINT priority_list[] = { CF_UNICODETEXT , CF_HDROP };
+		UINT current_cf = GetPriorityClipboardFormat(priority_list, 2);
+		if (current_cf == CF_HDROP) // 파일을 복사한 경우
+		{
+			if (OpenClipboard()) 
+			{
+				HGLOBAL hGlobal = (HGLOBAL)GetClipboardData(CF_HDROP);
+				if (hGlobal)
+				{
+					HDROP hDropInfo = (HDROP)GlobalLock(hGlobal);
+					ProcessDropFiles(hDropInfo, DF_ADDLIST);
+					GlobalUnlock(hGlobal);
+				}
+				CloseClipboard();
+			}
+			return; // 이경우에는 ProcessDropFiles 안에서 리스트에 추가해 주기 때문에 바로 리턴하면 됨
+		}
+		else if (current_cf == CF_UNICODETEXT) // 파일명 텍스트를 복사한 경우
+		{
+			if (OpenClipboard())
+			{
+				HANDLE hText = GetClipboardData(CF_UNICODETEXT);
+				if (hText)
+				{
+					strImportData = (TCHAR*)GlobalLock(hText);
+					GlobalUnlock(hText);
+				}
+				CloseClipboard();
+			}
+		}
+		else return;
+	}
+	//한줄씩 잘라서 CStringArray로 만든다
 	CString strPath;
-	CString& strData = strImportData;
 	int nPos = 0;
-	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
-	m_list.SetRedraw(FALSE);
-	m_nTempLoadType = -1;
+	CStringArray aPath;
 	while (nPos != -1)
 	{
-		nPos = GetLine(strData, nPos, strPath, _T("\n"));
-		strPath.TrimLeft(); strPath.TrimRight();
-		AddPathStart(strPath);
+		nPos = GetLine(strImportData, nPos, strPath, _T("\n"));
+		strPath.Trim();
+		aPath.Add(strPath);
 	}
-	UpdateCount();
-	m_list.SetRedraw(TRUE);
+	//목록에 추가한다
+	LoadPathArray(aPath);
 }
 
-//파일의 경로를 하나로 통일. 일종의 MoveFile이 됨. 중복 체크 필요
-void CBatchNamerDlg::NameSetParent(int nSubCommand, CString str1, CString str2)
+//파일이 저장된 폴더 변경. 일종의 MoveFile이 됨. 중복 체크 필요
+void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 {
-	CString strPath = str1;
-	//e:\ 같은 경우를 대비하여 끝에 오는 \를 삭제
-	if (strPath.GetAt(strPath.GetLength() - 1) == _T('\\')) strPath.Delete(strPath.GetLength() - 1);
-	for (int i = 0; i < m_list.GetItemCount(); i++)
+	//str1에 값이 들어간 경우에는 지정된 폴더로 이동
+	if (nSubCommand == IDS_FOLDER_SPECIFIC) //(str1.IsEmpty() == FALSE)
 	{
-		//COL_FOLDER 변경해 주면 나중에 실제 변경때 이값이 COL_NEWNAME과 결합되면서 새 경로가 된다
-		m_list.SetItemText(i, COL_NEWFOLDER, strPath);
+		CString strPath = str1;
+		//e:\ 같은 경우를 대비하여 끝에 오는 \를 삭제
+		if (strPath.GetAt(strPath.GetLength() - 1) == _T('\\')) strPath.Delete(strPath.GetLength() - 1);
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			//COL_FOLDER 변경해 주면 나중에 실제 변경때 이값이 COL_NEWNAME과 결합되면서 새 경로가 된다
+			m_list.SetItemText(i, COL_NEWFOLDER, strPath);
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_PARENT) //(str2.IsEmpty() == FALSE)
+	{
+		int nLevel = _ttoi(str2);
+		CString strNewFolder, strTemp;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			strNewFolder = m_list.GetItemText(i, COL_OLDFOLDER);
+			for (int j = 0; j < nLevel; j++)
+			{
+				strTemp = Get_Folder(strNewFolder);
+				if (strTemp.IsEmpty()) break; //더이상 상위 폴더가 없으면 중단
+				strNewFolder = strTemp;
+			}
+			m_list.SetItemText(i, COL_NEWFOLDER, strNewFolder);
+		}
 	}
 }
 
-void CBatchNamerDlg::NameSetParent()
+void CBatchNamerDlg::NameSetFolder()
 {
-	CFolderPickerDialog dlg;
-	CString strTitle; 
-	strTitle.LoadString(IDS_SETPARENT);
-	dlg.GetOFN().lpstrTitle = strTitle;
+	CDlgFolderSelect dlg;
 	if (dlg.DoModal() == IDCANCEL) return;
+
 	m_list.SetRedraw(FALSE);
-	NameSetParent(IDS_SETPARENT, dlg.GetPathName(), L"");
+	if (dlg.m_bUseParent == FALSE)
+	{
+		NameSetFolder(IDS_FOLDER_SPECIFIC, dlg.m_strFolder, L"");
+	}
+	else
+	{
+		CString strTemp;
+		strTemp.Format(L"%d", dlg.m_nLevel);
+		NameSetFolder(IDS_FOLDER_PARENT, L"", strTemp);
+	}
 	m_list.SetRedraw(TRUE);
 }
 
@@ -1913,15 +2025,16 @@ void CBatchNamerDlg::UpdateMenu()
 	pMenu->EnableMenuItem(IDM_NAME_DIGIT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_NAME_ADDNUM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_NAME_EMPTY, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	pMenu->EnableMenuItem(IDM_NAME_SETPARENT, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_NAME_SETFOLDER, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EXT_ADD, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EXT_DEL, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EXT_REPLACE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	pMenu->EnableMenuItem(IDM_EXPORT_CLIP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	pMenu->EnableMenuItem(IDM_EXPORT_FILE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	pMenu->EnableMenuItem(IDM_EXPORT_CLIP2, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	pMenu->EnableMenuItem(IDM_EXPORT_FILE2, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	pMenu->EnableMenuItem(IDM_IMPORT_FILE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_CLIP_NEWNAME, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_IMPORT_CLIP_NEWNAME, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_FILE_NEWNAME, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_IMPORT_FILE_NEWNAME, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_CLIP_PATH, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_EXPORT_FILE_PATH, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 
 	m_tool1.GetToolBarCtrl().EnableButton(IDM_APPLY_CHANGE, b);
 	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REPLACE, b);
@@ -1937,7 +2050,7 @@ void CBatchNamerDlg::UpdateMenu()
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_CLEAR_LIST, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_SORT_LIST, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_UNDO_CHANGE, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_NAME_SETPARENT, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_NAME_SETFOLDER, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_ADD, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_DEL, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_REPLACE, b);
@@ -1946,6 +2059,7 @@ void CBatchNamerDlg::UpdateMenu()
 	pMenu->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_REMOVE_ITEM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_UNDO_SELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_MANUAL_CHANGE, b);
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_UP, b);
@@ -1963,19 +2077,27 @@ void CBatchNamerDlg::UpdateMenu()
 		FlagGET(APP()->m_nShowFlag, COL_TIMEMODIFY) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
 	pMenu->CheckMenuItem(IDM_SHOW_CREATETIME,
 		FlagGET(APP()->m_nShowFlag, COL_TIMECREATE) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
+}
 
+void CBatchNamerDlg::UpdateMenuPreset()
+{
+	CMenu* pMenu = GetMenu();
 	PresetArray& aPS = APP()->m_aPreset;
 	CString strTemp;
 	int n = 0;
-	for (int i=0; i<aPS.GetSize(); i++) //프리셋은 5개로 고정, 대신 프리셋 5개 묶음을 파일로 저장하고 불러올 수 있도록 함
+	for (int i = 0; i < aPS.GetSize(); i++) //프리셋은 5개로 고정, 대신 프리셋 5개 묶음을 파일로 저장하고 불러올 수 있도록 함
 	{
 		BatchNamerPreset& ps = aPS[i];
-		if (ps.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, IDSTR(IDS_PRESET_NONAME), i+1);
+		if (ps.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, IDSTR(IDS_PRESET_NONAME), i + 1);
 		else strTemp.Format(IDSTR(IDS_PRESET_MENU_FORMAT), i + 1, ps.m_strName, i + 1);;
 		pMenu->ModifyMenu(IDM_PRESET_APPLY1 + i, MF_BYCOMMAND | MF_STRING, IDM_PRESET_APPLY1 + i, strTemp);
-		pMenu->EnableMenuItem(IDM_PRESET_APPLY1 + i, (ps.m_aTask.GetSize()>0) ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+		pMenu->EnableMenuItem(IDM_PRESET_APPLY1 + i, (ps.m_aTask.GetSize() > 0) ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	}
+}
 
+void CBatchNamerDlg::UpdateMenuHotkey()
+{
+	CMenu* pMenu = GetMenu();
 	// 단축키를 메뉴에 표시하기
 	CHotKeyMap& hkm = APP()->m_mapHotKey;
 	CHotKeyMap::iterator i;

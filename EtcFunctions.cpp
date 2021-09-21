@@ -37,16 +37,35 @@ int GetFileImageIndex(CString strPath, BOOL bIsDirectory)
 	return sfi.iIcon;
 }
 
-//두 파일명 비교하기 : Locale 고려 비교 기능
-int CompareFileName(TCHAR* name1, TCHAR* name2)
+//두 파일명 비교하기 :윈도우처럼 비교 가능, 폴더식별은 별도의 처리 필요
+int CompareFileName(const void* left, const void* right)
 {
-	int len1=(int)_tcslen(name1);
-	int len2=(int)_tcslen(name2);
-	int nRet=CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, name1, len1, name2, len2);
-	if (nRet==CSTR_LESS_THAN) return -1;
-	if (nRet==CSTR_GREATER_THAN) return 1;
-	return 0; //nRet==CSTR_EQUAL
+	CString* pStr1 = (CString*)left;
+	CString* pStr2 = (CString*)right;
+	int nRet = StrCmpLogicalW(pStr1->GetBuffer(), pStr2->GetBuffer());
+	pStr1->ReleaseBuffer();
+	pStr2->ReleaseBuffer();
+	return nRet;
 }
+/*
+int CompareFileName(TCHAR* name1, TCHAR* name2)mnujgv  
+{
+	return StrCmpLogicalW(name1, name2);
+	//int len1=(int)_tcslen(name1);
+	//int len2=(int)_tcslen(name2);
+	//int nRet=CompareString(LOCALE_USER_DEFAULT, NORM_IGNORECASE, name1, len1, name2, len2);
+	//if (nRet==CSTR_LESS_THAN) return -1;
+	//if (nRet==CSTR_GREATER_THAN) return 1;
+	//return 0; //nRet==CSTR_EQUAL
+}
+int CompareFileName(CString& name1, CString& name2)
+{
+	int nRet = StrCmpLogicalW(name1.GetBuffer(), name2.GetBuffer());
+	name1.ReleaseBuffer();
+	name2.ReleaseBuffer();
+	return nRet;
+}
+*/
 
 //파일내의 텍스트 처리를 위한 함수들
 int GetLine(CString& strText, int nPos, CString& strLine, CString strToken)
@@ -94,8 +113,8 @@ void GetToken(CString& strLine, CString& str1, CString& str2, TCHAR cSplit, BOOL
 		if ((strLine.GetLength() - n - 1) < 1) str2.Empty();
 		else str2 = strLine.Right(strLine.GetLength() - n - 1);
 	}
-	str1.TrimLeft(); str1.TrimRight();
-	str2.TrimLeft(); str2.TrimRight();
+	str1.Trim();
+	str2.Trim();
 }
 
 BOOL WriteCStringToFile(CString strFile, CString& strContent)
@@ -294,4 +313,9 @@ CString ConvertKeyCodeToName(DWORD code)
 
 	return strKey;
 
+}
+
+BOOL CString2BOOL(CString str)
+{
+	return (_ttoi(str) == 0) ? FALSE : TRUE;
 }

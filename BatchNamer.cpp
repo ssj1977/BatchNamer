@@ -226,22 +226,22 @@ void CBatchNamerApp::INILoad(CString strFile)
 		GetToken(strLine, str1, str2, _T('='), FALSE);
 		if (str2.IsEmpty() == FALSE)
 		{
-			if (str1.CompareNoCase(_T("ShowCFGLoad")) == 0) m_bShowEverytime = _ttoi(str2);
-			else if (str1.CompareNoCase(_T("AutoSort")) == 0) m_bAutoSort = _ttoi(str2);
+			if (str1.CompareNoCase(_T("ShowCFGLoad")) == 0) m_bShowEverytime = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("AutoSort")) == 0) m_bAutoSort = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("LoadType")) == 0) m_nLoadType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ShowColumnFlag")) == 0) m_nShowFlag = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainX1")) == 0) m_rcMain.left = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainY1")) == 0) m_rcMain.top = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainX2")) == 0) m_rcMain.right = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainY2")) == 0) m_rcMain.bottom = _ttoi(str2);
-			else if (str1.CompareNoCase(_T("UseDefaultColor")) == 0) m_bUseDefaultColor = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("UseDefaultColor")) == 0) m_bUseDefaultColor = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("ColorBk")) == 0) m_clrBk = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ColorText")) == 0) m_clrText = _ttoi(str2);
-			else if (str1.CompareNoCase(_T("UseDefaultFont")) == 0) m_bUseDefaultFont = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("UseDefaultFont")) == 0) m_bUseDefaultFont = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("FontSize")) == 0) m_nFontSize = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
-			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = _ttoi(str2);
-			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("Hotkey")) == 0)
 			{
 				CString strCmd, strKey, strCtrl, strShift;
@@ -256,8 +256,8 @@ void CBatchNamerApp::INILoad(CString strFile)
 				if (i != hkm.end())
 				{
 					i->second.nKeyCode = _ttoi(strKey);
-					i->second.bCtrl = _ttoi(strCtrl);
-					i->second.bShift = _ttoi(strShift);
+					i->second.bCtrl = CString2BOOL(strCtrl);
+					i->second.bShift = CString2BOOL(strShift);
 				}
 			}
 		}
@@ -329,41 +329,45 @@ void CBatchNamerApp::InitHotKey()
 						IDM_PRESET_EDIT, IDM_PRESET_EXPORT, IDM_PRESET_IMPORT,
 						IDM_EDIT_UP, IDM_EDIT_DOWN, IDM_APPLY_CHANGE, IDM_UNDO_CHANGE, IDM_UNDO_SELECTED,
 						IDM_LIST_ADD, IDM_CLEAR_LIST, IDM_SORT_LIST, IDM_REMOVE_ITEM,
-						IDM_EXPORT_CLIP, IDM_EXPORT_CLIP2, IDM_EXPORT_FILE, IDM_EXPORT_FILE2, IDM_IMPORT_FILE, IDM_IMPORT_FILE2, 
+						IDM_EXPORT_CLIP_NEWNAME, IDM_IMPORT_CLIP_NEWNAME, IDM_EXPORT_FILE_NEWNAME, IDM_IMPORT_FILE_NEWNAME, 
+						IDM_EXPORT_CLIP_PATH, IDM_IMPORT_CLIP_PATH,IDM_EXPORT_FILE_PATH, IDM_IMPORT_FILE_PATH,
 						IDM_CFG_LOAD, IDM_CFG_VIEW, IDM_CFG_ETC, IDM_VERSION,
-						IDM_NAME_REPLACE, IDM_NAME_ADD_FRONT, IDM_NAME_ADD_REAR, 
-						IDM_NAME_EMPTY, IDM_NAME_REMOVESELECTED, IDM_NAME_EXTRACTNUMBER, IDM_NAME_REMOVENUMBER, IDM_NAME_DIGIT, IDM_NAME_ADDNUM,
-						IDM_EXT_DEL, IDM_EXT_ADD, IDM_EXT_REPLACE, IDM_NAME_SETPARENT
+						IDM_NAME_REPLACE, IDM_NAME_ADD_FRONT, IDM_NAME_ADD_REAR, IDM_NAME_EMPTY, IDM_NAME_REMOVESELECTED, 
+						IDM_NAME_EXTRACTNUMBER, IDM_NAME_REMOVENUMBER, IDM_NAME_DIGIT, IDM_NAME_ADDNUM, IDM_NAME_SETFOLDER,
+						IDM_EXT_DEL, IDM_EXT_ADD, IDM_EXT_REPLACE
 		};
 	int aKeyCode[] = {	VK_F1, VK_F2, VK_F3, VK_F4, VK_F5, 
 						VK_F11, VK_F7, VK_F8,
 						188, 190, 0x53, 0x5A, 0x5A,
 						0x4F, 0x4C, 0x52, VK_DELETE,
-						0x43, 0x43, 0x58, 0x58,	0x56, 0x56,
+						0x43, 0x56, 0x44, 0x46,
+						0x43, 0x56, 0x44, 0x46,
 						0, 0, 0, 0,
-						0, 0, 0,
-						0, 0, 0, 0, 0, 0,
-						0, 0, 0, 0
+						0x31, 0x32, 0x33, 0x34, 0x35,
+						0x36, 0x37, 0x38, 0x39, 0x30,
+						0x31, 0x32, 0x33
 	};
 	BOOL aCtrl[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, 
 						FALSE, FALSE, FALSE,
 						FALSE, FALSE, TRUE, TRUE, TRUE,
 						TRUE, TRUE, TRUE, FALSE,
-						TRUE, TRUE, TRUE, TRUE,	TRUE, TRUE,
+						TRUE, TRUE, TRUE, TRUE,	
+						TRUE, TRUE, TRUE, TRUE,
 						FALSE, FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE, FALSE
+						TRUE, TRUE, TRUE, TRUE, TRUE,
+						TRUE, TRUE, TRUE, TRUE, TRUE,
+						FALSE, FALSE, FALSE
 	};
 	BOOL aShift[] = {	FALSE, FALSE, FALSE, FALSE, FALSE, 
 						FALSE, FALSE, FALSE,
 						FALSE, FALSE, FALSE, FALSE, TRUE,
 						FALSE, FALSE, FALSE, FALSE,
-						FALSE, TRUE, FALSE, TRUE, FALSE, TRUE,
 						FALSE, FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
-						FALSE, FALSE, FALSE, FALSE
+						TRUE, TRUE, TRUE, TRUE,
+						FALSE, FALSE, FALSE, FALSE,
+						FALSE, FALSE, FALSE, FALSE, FALSE, 
+						FALSE, FALSE, FALSE, FALSE, FALSE,
+						TRUE, TRUE, TRUE
 	};
 	int nCount = sizeof(aShift) / sizeof(BOOL);
 	HotKey hk;
@@ -412,5 +416,7 @@ void CBatchNamerApp::PresetImport()
 	dlg.GetOFN().lpstrTitle = strTitle;
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strFile = dlg.GetPathName();
+	m_aPreset.RemoveAll();
+	m_aPreset.SetSize(5);
 	INILoad(strFile);
 }

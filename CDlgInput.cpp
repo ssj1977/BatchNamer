@@ -480,8 +480,8 @@ BOOL CDlgInput::VerifyReturnValue()
 	case IDS_TB_19: // Replace Extension
 		if (m_strReturn2.IsEmpty()) return FALSE;
 		break;
-	case IDS_PRESET_NAME: // Add Extension
-		if (m_strReturn1.IsEmpty()) return FALSE;
+	case IDS_PRESET_NAME:
+		//if (m_strReturn1.IsEmpty()) return FALSE;
 		break;
 	}
 	return TRUE;

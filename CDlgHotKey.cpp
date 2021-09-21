@@ -49,8 +49,8 @@ BOOL CDlgHotKey::PreTranslateMessage(MSG* pMsg)
 		pMsg->wParam != VK_RETURN )
 	{
 		m_hkTemp.nKeyCode = (int)pMsg->wParam;
-		m_hkTemp.bCtrl = (GetKeyState(VK_CONTROL) & 0xFF00);
-		m_hkTemp.bShift = (GetKeyState(VK_SHIFT) & 0xFF00);
+		m_hkTemp.bCtrl = ((GetKeyState(VK_CONTROL) & 0xFF00) != 0 )? TRUE : FALSE;
+		m_hkTemp.bShift = ((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE;
 		CString strKey = ConvertKeyCodeToName((DWORD)pMsg->wParam);
 		SetDlgItemText(IDC_EDIT_HOTKEY, m_hkTemp.GetKeyString());
 		m_nKeyCode = (int)pMsg->wParam;

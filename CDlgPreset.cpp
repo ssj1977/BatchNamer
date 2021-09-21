@@ -7,6 +7,7 @@
 #include "afxdialogex.h"
 #include "EtcFunctions.h"
 #include "CDlgInput.h"
+#include "CDlgFolderSelect.h"
 
 
 // CDlgPreset 대화 상자
@@ -188,12 +189,20 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 	case IDS_TB_16:
 		if (TRUE)
 		{
-			CFolderPickerDialog dlg;
-			CString strTitle;
-			strTitle.LoadString(IDS_SETPARENT);
-			dlg.GetOFN().lpstrTitle = strTitle;
+			CDlgFolderSelect dlg;
 			if (dlg.DoModal() == IDCANCEL) return;
-			task.m_str1 = dlg.GetPathName();
+			if (dlg.m_bUseParent == FALSE) 	
+			{
+				task.m_nSubCommand = IDS_FOLDER_SPECIFIC;
+				task.m_str1 = dlg.m_strFolder;
+				task.m_str2.Empty();
+			}
+			else
+			{
+				task.m_nSubCommand = IDS_FOLDER_PARENT;
+				task.m_str1.Empty();
+				task.m_str2.Format(L"%d", dlg.m_nLevel);
+			}
 		}
 		break;
 	default:
@@ -246,16 +255,24 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_NAME_REMOVENUMBER: nCommand = IDS_TB_07;	break;
 	case IDM_NAME_DIGIT:		nCommand = IDS_TB_08;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_ADDNUM:		nCommand = IDS_TB_09;	bUseInputDlg = TRUE;		break;
-	case IDM_NAME_SETPARENT: 
+	case IDM_NAME_SETFOLDER:
 		nCommand = IDS_TB_16;
 		if (TRUE)
 		{
-			CFolderPickerDialog dlg;
-			CString strTitle;
-			strTitle.LoadString(IDS_SETPARENT);
-			dlg.GetOFN().lpstrTitle = strTitle;
+			CDlgFolderSelect dlg;
 			if (dlg.DoModal() == IDCANCEL) return TRUE;
-			str1 = dlg.GetPathName();
+			if (dlg.m_bUseParent == FALSE)
+			{
+				nSubCommand = IDS_FOLDER_SPECIFIC;
+				str1 = dlg.m_strFolder;
+				str2.Empty();
+			}
+			else
+			{
+				nSubCommand = IDS_FOLDER_PARENT;
+				str1.Empty();
+				str2.Format(L"%d", dlg.m_nLevel);
+			}
 		}
 		break;
 	case IDM_EXT_DEL:			nCommand = IDS_TB_17;	break;
@@ -402,7 +419,8 @@ void CDlgPreset::OnBnClickedBtnPresetName()
 	preset.m_strName = dlg.m_strReturn1;
 	pCB->DeleteString(nSel);
 	CString strTemp;
-	strTemp.Format(IDSTR(IDS_PRESET_NAME_FORMAT), nSel + 1, preset.m_strName);
+	if (preset.m_strName.IsEmpty()) strTemp.Format(IDSTR(IDS_PRESET_NAME_FORMAT), nSel + 1, IDSTR(IDS_PRESET_NONAME));
+	else strTemp.Format(IDSTR(IDS_PRESET_NAME_FORMAT), nSel + 1, preset.m_strName);
 	pCB->InsertString(nSel, strTemp);
 	pCB->SetCurSel(nSel);
 }

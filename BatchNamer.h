@@ -64,6 +64,14 @@ struct BatchNamerPreset
 {
 	CString m_strName;
 	PresetTaskArray m_aTask;
+	void Clear()
+	{
+		m_strName = L"";
+		for (int i = 0; i < m_aTask.GetSize(); i++)
+		{
+			m_aTask.RemoveAll();
+		}
+	};
 };
 
 
