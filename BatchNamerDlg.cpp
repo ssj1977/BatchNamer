@@ -154,6 +154,7 @@ BEGIN_MESSAGE_MAP(CBatchNamerDlg, CDialogEx)
 	ON_NOTIFY(NM_DBLCLK, IDC_LIST_FILE, OnDblclkListFile)
 	ON_BN_CLICKED(IDC_BTN_STOPTHREAD, &CBatchNamerDlg::OnBnClickedBtnStopthread)
 	ON_WM_GETMINMAXINFO()
+	ON_WM_INITMENU()
 END_MESSAGE_MAP()
 
 
@@ -229,17 +230,26 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	m_list.InsertColumn(COL_TIMECREATE, IDSTR(IDS_COL_TIMECREATE)); //_T("생성시각")); 
 	m_list.InsertColumn(COL_FULLPATH, IDSTR(IDS_COL_FULLPATH)); //_T("전체경로")); 
 	int HU = m_lfHeight;
-	m_list.SetColumnWidth(COL_OLDNAME, nIconWidth + HU * 16 * FlagGET(APP()->m_nShowFlag, COL_OLDNAME));
-	m_list.SetColumnWidth(COL_NEWNAME, HU * 16 * FlagGET(APP()->m_nShowFlag, COL_NEWNAME));
-	m_list.SetColumnWidth(COL_OLDFOLDER, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_OLDFOLDER));
-	m_list.SetColumnWidth(COL_NEWFOLDER, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_NEWFOLDER));
-	m_list.SetColumnWidth(COL_FILESIZE, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_FILESIZE));
-	m_list.SetColumnWidth(COL_TIMEMODIFY, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_TIMEMODIFY));
-	m_list.SetColumnWidth(COL_TIMECREATE, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_TIMECREATE));
-	m_list.SetColumnWidth(COL_FULLPATH, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_FULLPATH));
+	if (APP()->m_aColWidth.GetSize() != COL_TOTAL)
+	{
+		m_list.SetColumnWidth(COL_OLDNAME, nIconWidth + HU * 16 * FlagGET(APP()->m_nShowFlag, COL_OLDNAME));
+		m_list.SetColumnWidth(COL_NEWNAME, HU * 16 * FlagGET(APP()->m_nShowFlag, COL_NEWNAME));
+		m_list.SetColumnWidth(COL_OLDFOLDER, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_OLDFOLDER));
+		m_list.SetColumnWidth(COL_NEWFOLDER, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_NEWFOLDER));
+		m_list.SetColumnWidth(COL_FILESIZE, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_FILESIZE));
+		m_list.SetColumnWidth(COL_TIMEMODIFY, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_TIMEMODIFY));
+		m_list.SetColumnWidth(COL_TIMECREATE, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_TIMECREATE));
+		m_list.SetColumnWidth(COL_FULLPATH, HU * 11 * FlagGET(APP()->m_nShowFlag, COL_FULLPATH));
+	}
+	else
+	{
+		for (int i = 0; i < COL_TOTAL; i++)
+		{
+			m_list.SetColumnWidth(i, APP()->m_aColWidth.GetAt(i) * FlagGET(APP()->m_nShowFlag, i));
+		}
+	}
 	m_list.GetHeaderCtrl().SetSortColumn(COL_OLDNAME, TRUE);
-
-	UpdateMenu();
+	UpdateColumnSizes();
 	UpdateMenuPreset();
 	UpdateMenuHotkey();
 	UpdateCount();
@@ -279,6 +289,7 @@ void CBatchNamerDlg::OnCancel()
 {
 	ShowWindow(SW_SHOWNORMAL);
 	GetWindowRect(APP()->m_rcMain);
+	UpdateColumnSizes();
 	ClearList();
 	mapExt.clear();
 	CDialogEx::OnCancel();
@@ -398,7 +409,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 		}
 		m_list.SetRedraw(TRUE);
 		UpdateCount();
-		if (m_list.GetItemCount() == 0) UpdateMenu();
+		//if (m_list.GetItemCount() == 0) UpdateMenu();
 	}
 	break;
 	default:
@@ -443,8 +454,23 @@ void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 
 void CBatchNamerDlg::ToggleListColumn(int nCol)
 {
-	FlagSET(APP()->m_nShowFlag, nCol, !FlagGET(APP()->m_nShowFlag, nCol));
-	m_list.SetColumnWidth(nCol, m_lfHeight * 11 * FlagGET(APP()->m_nShowFlag, nCol));
+	int nOldWidth = m_list.GetColumnWidth(nCol);
+	int nNewWidth = 0;
+	if (nOldWidth == 0)
+	{
+		//FlagSET(APP()->m_nShowFlag, nCol, TRUE);
+		if (APP()->m_aColWidth.GetSize() > nCol) nNewWidth = APP()->m_aColWidth.GetAt(nCol);
+		if (nNewWidth == 0) nNewWidth = m_lfHeight * 11;
+	}
+	else
+	{
+		if (APP()->m_aColWidth.GetSize() > nCol)
+		{
+			APP()->m_aColWidth.SetAt(nCol, nOldWidth);
+			wprintf(L"%d, %d\r\n", APP()->m_aColWidth.GetAt(nCol), nOldWidth);
+		}
+	}
+	m_list.SetColumnWidth(nCol, nNewWidth);
 }
 
 BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
@@ -765,7 +791,7 @@ void CBatchNamerDlg::LoadPathArray(CStringArray& aPath)
 	for (int i = 0; i < nSize; i++) AddPathStart(aPath[i]);
 	if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 	m_list.SetRedraw(TRUE);
-	UpdateMenu();
+//	UpdateMenu();
 	UpdateCount();
 }
 
@@ -801,7 +827,7 @@ void CBatchNamerDlg::AddByFileDialog()
 		if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 		m_list.SetRedraw(TRUE);
 		UpdateCount();
-		UpdateMenu();
+//		UpdateMenu();
 	}
 	delete[] buf;
 	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
@@ -1365,12 +1391,12 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	dlg->m_list.EnableWindow(FALSE);
 	dlg->m_tool1.EnableWindow(FALSE);
 	dlg->m_tool2.EnableWindow(FALSE);
-	dlg->UpdateMenu();
+//	dlg->UpdateMenu();
 	dlg->ApplyChange();
 	dlg->m_list.EnableWindow(TRUE);
 	dlg->m_tool1.EnableWindow(TRUE);
 	dlg->m_tool2.EnableWindow(TRUE);
-	dlg->UpdateMenu();
+//	dlg->UpdateMenu();
 	st_bIsThreadWorking = FALSE;
 	dlg->ArrangeCtrl();
 	dlg->UpdateCount();
@@ -2007,6 +2033,34 @@ void CBatchNamerDlg::OnDblclkListFile(NMHDR* pNMHDR, LRESULT* pResult)
 	*pResult = 0;
 }
 
+void CBatchNamerDlg::UpdateToolBar()
+{
+	BOOL b = (m_list.GetItemCount() > 0);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_APPLY_CHANGE, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REPLACE, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_ADD_FRONT, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_ADD_REAR, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_DIGIT, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_ADDNUM, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_EMPTY, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REMOVESELECTED, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_EXTRACTNUMBER, b);
+	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REMOVENUMBER, b);
+
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_CLEAR_LIST, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_SORT_LIST, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_UNDO_CHANGE, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_NAME_SETFOLDER, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_ADD, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_DEL, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_REPLACE, b);
+
+	b = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_MANUAL_CHANGE, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_UP, b);
+	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_DOWN, b);
+}
+
 void CBatchNamerDlg::UpdateMenu()
 {
 	BOOL b = (m_list.GetItemCount() > 0);
@@ -2035,48 +2089,21 @@ void CBatchNamerDlg::UpdateMenu()
 	pMenu->EnableMenuItem(IDM_IMPORT_FILE_NEWNAME, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EXPORT_CLIP_PATH, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EXPORT_FILE_PATH, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_APPLY_CHANGE, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REPLACE, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_ADD_FRONT, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_ADD_REAR, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_DIGIT, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_ADDNUM, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_EMPTY, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REMOVESELECTED, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_EXTRACTNUMBER, b);
-	m_tool1.GetToolBarCtrl().EnableButton(IDM_NAME_REMOVENUMBER, b);
-
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_CLEAR_LIST, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_SORT_LIST, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_UNDO_CHANGE, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_NAME_SETFOLDER, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_ADD, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_DEL, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_EXT_REPLACE, b);
-
 	b = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
 	pMenu->EnableMenuItem(IDM_MANUAL_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EDIT_UP, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_EDIT_DOWN, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_REMOVE_ITEM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_UNDO_SELECTED, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_MANUAL_CHANGE, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_UP, b);
-	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_DOWN, b);
 
-	pMenu->CheckMenuItem(IDM_SHOW_OLDFOLDER,
-		FlagGET(APP()->m_nShowFlag, COL_OLDFOLDER) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	pMenu->CheckMenuItem(IDM_SHOW_NEWFOLDER,
-		FlagGET(APP()->m_nShowFlag, COL_NEWFOLDER) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	pMenu->CheckMenuItem(IDM_SHOW_FULLPATH,
-		FlagGET(APP()->m_nShowFlag, COL_FULLPATH) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	pMenu->CheckMenuItem(IDM_SHOW_SIZE,
-		FlagGET(APP()->m_nShowFlag, COL_FILESIZE) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	pMenu->CheckMenuItem(IDM_SHOW_MODIFYTIME,
-		FlagGET(APP()->m_nShowFlag, COL_TIMEMODIFY) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
-	pMenu->CheckMenuItem(IDM_SHOW_CREATETIME,
-		FlagGET(APP()->m_nShowFlag, COL_TIMECREATE) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
+	int aShowMenuID[] = { IDM_SHOW_OLDFOLDER, IDM_SHOW_NEWFOLDER, IDM_SHOW_SIZE, IDM_SHOW_MODIFYTIME, IDM_SHOW_CREATETIME, IDM_SHOW_FULLPATH };
+	int nWidth = 0;
+	//UpdateColumnSizes();
+	for (int i = 0; i < 6; i++)
+	{
+		nWidth = m_list.GetColumnWidth(COL_OLDFOLDER + i);
+		pMenu->CheckMenuItem(aShowMenuID[i], (nWidth != 0) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
+	}
 }
 
 void CBatchNamerDlg::UpdateMenuPreset()
@@ -2124,10 +2151,38 @@ void CBatchNamerDlg::UpdateCount()
 	if (nCount == 0)
 	{
 		strTemp = IDSTR(IDS_PLEASE_ADD);
-		UpdateMenu();
 	}
 	else strTemp.Format(IDSTR(IDS_COUNT_FORMAT), nCount);
+	UpdateToolBar();
 	SetDlgItemText(IDC_ST_BAR, strTemp);
+}
+
+void CBatchNamerDlg::UpdateColumnSizes()
+{
+	if (APP()->m_aColWidth.GetSize() != m_list.GetHeaderCtrl().GetItemCount())
+	{
+		APP()->m_aColWidth.RemoveAll();
+		APP()->m_aColWidth.SetSize(m_list.GetHeaderCtrl().GetItemCount());
+		for (int i = 0; i < APP()->m_aColWidth.GetSize(); i++)
+		{
+			APP()->m_aColWidth.SetAt(i, m_lfHeight * 11);
+		}
+	}
+	int nColWidth = 0;
+	for (int i = 0; i < APP()->m_aColWidth.GetSize(); i++)
+	{
+		nColWidth = m_list.GetColumnWidth(i);
+		if (nColWidth > 0)
+		{
+			FlagSET(APP()->m_nShowFlag, i, TRUE);
+			APP()->m_aColWidth.SetAt(i, nColWidth);
+		}
+		else
+		{
+			FlagSET(APP()->m_nShowFlag, i, FALSE);
+			if (APP()->m_aColWidth.GetAt(i) == 0) APP()->m_aColWidth.SetAt(i, m_lfHeight * 11);
+		}
+	}
 }
 
 void CBatchNamerDlg::UpdateFontSize()
@@ -2156,4 +2211,11 @@ void CBatchNamerDlg::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 	lpMMI->ptMinTrackSize.x = 400;
 	lpMMI->ptMinTrackSize.y = 300;
 	CDialogEx::OnGetMinMaxInfo(lpMMI);
+}
+
+
+void CBatchNamerDlg::OnInitMenu(CMenu* pMenu)
+{
+	CDialogEx::OnInitMenu(pMenu);
+	UpdateMenu();
 }

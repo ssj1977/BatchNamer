@@ -21,6 +21,9 @@ public:
 	InputItemArray m_aInput;
 	int m_nCB;
 	int m_nCommand;
+	int m_nFontHeight;
+	int m_nMinWidth;
+	int m_nMinHeight;
 // 대화 상자 데이터입니다.
 //#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_INPUT };
@@ -34,4 +37,9 @@ protected:
 	virtual void OnCancel();
 	afx_msg void OnSelchangeCbInput();
 	DECLARE_MESSAGE_MAP()
+public:
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	void ArrangeCtrl();
+	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 };

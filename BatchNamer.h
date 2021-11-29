@@ -129,6 +129,7 @@ public:
 	int m_nLoadType;
 	int m_nShowFlag;
 	CRect m_rcMain;
+	CRect m_rcInput;
 	COLORREF m_clrText;
 	COLORREF m_clrBk;
 	BOOL m_bUseDefaultColor;
@@ -136,6 +137,7 @@ public:
 	BOOL m_bUseDefaultFont;
 	int m_nIconType;
 	PresetArray m_aPreset;
+	CUIntArray m_aColWidth;
 	void PresetExport();
 	void PresetImport();
 	void INISave(CString strFile);

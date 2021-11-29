@@ -28,6 +28,8 @@ public:
 	void ConfigViewOption();
 	void ConfigEtc();
 	void UpdateCount();
+	void UpdateColumnSizes();
+	void UpdateToolBar();
 	void UpdateMenu();
 	void UpdateMenuPreset();
 	void UpdateMenuHotkey();
@@ -99,4 +101,5 @@ protected:
 public:
 	afx_msg void OnBnClickedBtnStopthread();
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	afx_msg void OnInitMenu(CMenu* pMenu);
 };

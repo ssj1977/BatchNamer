@@ -31,6 +31,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_nLoadType = 0; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가
 	m_nShowFlag = 0; //칼럼 표시 여부
 	m_rcMain = CRect(0, 0, 0, 0);
+	m_rcInput = CRect(0, 0, 0, 0);
 	FlagSET(m_nShowFlag, COL_OLDNAME, TRUE);
 	FlagSET(m_nShowFlag, COL_NEWNAME, TRUE);
 	FlagSET(m_nShowFlag, COL_OLDFOLDER, TRUE);
@@ -177,10 +178,21 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("AutoSort=%d\r\n"), m_bAutoSort); strData += strLine;
 	strLine.Format(_T("LoadType=%d\r\n"), m_nLoadType);	strData += strLine;
 	strLine.Format(_T("ShowColumnFlag=%d\r\n"), m_nShowFlag);	strData += strLine;
-	strLine.Format(_T("MainX1=%d\r\n"), m_rcMain.left);		strData += strLine;
-	strLine.Format(_T("MainY1=%d\r\n"), m_rcMain.top);		strData += strLine;
-	strLine.Format(_T("MainX2=%d\r\n"), m_rcMain.right);	strData += strLine;
-	strLine.Format(_T("MainY2=%d\r\n"), m_rcMain.bottom);	strData += strLine;
+	//strLine.Format(_T("MainX1=%d\r\n"), m_rcMain.left);		strData += strLine;
+	//strLine.Format(_T("MainY1=%d\r\n"), m_rcMain.top);		strData += strLine;
+	//strLine.Format(_T("MainX2=%d\r\n"), m_rcMain.right);	strData += strLine;
+	//strLine.Format(_T("MainY2=%d\r\n"), m_rcMain.bottom);	strData += strLine;
+	if (m_rcMain.IsRectEmpty() == FALSE)
+	{
+		strLine.Format(_T("RectMain=%d,%d,%d,%d\r\n"), m_rcMain.left, m_rcMain.top, m_rcMain.right, m_rcMain.bottom); 
+		strData += strLine;;
+	}
+	if (m_rcInput.IsRectEmpty() == FALSE)
+	{
+		strLine.Format(_T("RectInput=%d,%d,%d,%d\r\n"), m_rcInput.left, m_rcInput.top, m_rcInput.right, m_rcInput.bottom);
+		strData += strLine;
+	}
+
 	strLine.Format(_T("UseDefaultColor=%d\r\n"), m_bUseDefaultColor);	strData += strLine;
 	strLine.Format(_T("ColorBk=%d\r\n"), m_clrBk);	strData += strLine;
 	strLine.Format(_T("ColorText=%d\r\n"), m_clrText);	strData += strLine;
@@ -201,6 +213,15 @@ void CBatchNamerApp::INISave(CString strFile)
 			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
 		}
 	}
+	//컬럼폭 저장
+	strData += _T("ColWidths=");
+	strLine.Empty();
+	for (int i = 0; i < m_aColWidth.GetSize(); i++)
+	{
+		if (strLine.IsEmpty() == FALSE) strLine += L',';
+		strLine += INTtoSTR(m_aColWidth.GetAt(i));
+	}
+	strData += strLine + _T("\r\n");
 	// 단축키 저장
 	CHotKeyMap& hkm = APP()->m_mapHotKey;
 	CHotKeyMap::iterator i;
@@ -212,6 +233,20 @@ void CBatchNamerApp::INISave(CString strFile)
 	WriteCStringToFile(strFile, strData);
 }
 
+static CRect ConvertString2Rect(CString& str)
+{
+	CRect rc;
+	CString strLeft, strTop, strRight, strBottom;
+	AfxExtractSubString(strLeft, str, 0, L',');
+	AfxExtractSubString(strTop, str, 1, L',');
+	AfxExtractSubString(strRight, str, 2, L',');
+	AfxExtractSubString(strBottom, str, 3, L',');
+	rc.left = _ttoi(strLeft);
+	rc.top = _ttoi(strTop);
+	rc.right = _ttoi(strRight);
+	rc.bottom = _ttoi(strBottom);
+	return rc;
+}
 
 void CBatchNamerApp::INILoad(CString strFile)
 {
@@ -230,10 +265,14 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("AutoSort")) == 0) m_bAutoSort = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("LoadType")) == 0) m_nLoadType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ShowColumnFlag")) == 0) m_nShowFlag = _ttoi(str2);
+			//For Legacy INI
 			else if (str1.CompareNoCase(_T("MainX1")) == 0) m_rcMain.left = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainY1")) == 0) m_rcMain.top = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainX2")) == 0) m_rcMain.right = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainY2")) == 0) m_rcMain.bottom = _ttoi(str2);
+			//New INI, all 4 values are in a single line
+			else if (str1.CompareNoCase(_T("RectMain")) == 0) m_rcMain = ConvertString2Rect(str2);
+			else if (str1.CompareNoCase(_T("RectInput")) == 0) m_rcInput = ConvertString2Rect(str2);
 			else if (str1.CompareNoCase(_T("UseDefaultColor")) == 0) m_bUseDefaultColor = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("ColorBk")) == 0) m_clrBk = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ColorText")) == 0) m_clrText = _ttoi(str2);
@@ -242,6 +281,17 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("ColWidths")) == 0)
+			{
+				CString strWidth;
+				m_aColWidth.RemoveAll();
+				int i = 0;
+				while (AfxExtractSubString(strWidth, str2, i, L','))
+				{
+					i++;
+					m_aColWidth.Add(_ttoi(strWidth));
+				}
+			}
 			else if (str1.CompareNoCase(_T("Hotkey")) == 0)
 			{
 				CString strCmd, strKey, strCtrl, strShift;

@@ -16,6 +16,7 @@ CDlgInput::CDlgInput(CWnd* pParent /*=nullptr*/)
 {
 	m_nCB = 0;
 	m_nCommand = 0;
+	m_nFontHeight = 12;
 }
 
 CDlgInput::~CDlgInput()
@@ -35,6 +36,8 @@ BEGIN_MESSAGE_MAP(CDlgInput, CDialogEx)
 	//{{AFX_MSG_MAP(CDlgInput)
 	ON_CBN_SELCHANGE(IDC_CB_INPUT, OnSelchangeCbInput)
 	//}}AFX_MSG_MAP
+	ON_WM_SIZE()
+	ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
 
@@ -42,15 +45,21 @@ END_MESSAGE_MAP()
 BOOL CDlgInput::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
+	CRect rcWin;
+	GetWindowRect(rcWin); 
+	m_nMinWidth = rcWin.Width();
+	m_nMinHeight = rcWin.Height();
 
 	SetWindowText(m_strTitle);
+	CString strItem;
 	if (m_aInput.GetSize() > 0)
 	{
 		int nItem;
 		for (int i = 0; i < m_aInput.GetSize(); i++)
 		{
 			InputItem& item = m_aInput[i];
-			nItem = m_cb.AddString(item.m_strItemName);
+			strItem.Format(L"%d) %s", i + 1, item.m_strItemName);
+			nItem = m_cb.AddString(strItem);
 			m_cb.SetItemData(nItem, (DWORD_PTR)&item);
 		}
 		m_cb.SetCurSel(m_nCB);
@@ -60,6 +69,26 @@ BOOL CDlgInput::OnInitDialog()
 
 	if (m_strReturn1.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_1, m_strReturn1);
 	if (m_strReturn2.IsEmpty() == FALSE) SetDlgItemText(IDC_EDIT_2, m_strReturn2);
+
+	LOGFONT lf;
+	GetDlgItem(IDC_STATIC_1)->GetFont()->GetLogFont(&lf);
+	m_nFontHeight = MulDiv(-1 * lf.lfHeight, 72, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY));
+
+
+	if (APP()->m_rcInput.IsRectEmpty() == FALSE)
+	{
+		CRect rcScreen;
+		::GetWindowRect(::GetDesktopWindow(), &rcScreen);
+		APP()->m_rcInput.NormalizeRect();
+		CRect rcVisible;
+		rcVisible.IntersectRect(APP()->m_rcInput, rcScreen);
+		if (rcVisible.Width() > 200 && rcVisible.Height() > 100)
+		{
+			MoveWindow(APP()->m_rcInput, TRUE);
+		}
+	}
+	ArrangeCtrl();
+
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
@@ -179,13 +208,13 @@ void CDlgInput::OnOK()
 		}
 	}
 	m_nCB = m_cb.GetCurSel();
+	GetWindowRect(APP()->m_rcInput);
 	CDialogEx::OnOK();
 }
 
 void CDlgInput::OnCancel()
 {
-	// TODO: Add extra cleanup here
-
+	GetWindowRect(APP()->m_rcInput);
 	CDialogEx::OnCancel();
 }
 
@@ -395,7 +424,7 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strItemName = IDSTR(IDS_EXT_REPLACE); //"확장자를 변경합니다."
 		item.m_nSubCommand = IDS_EXT_REPLACE;
 		item.m_strLabel1 = IDSTR(IDS_EXT_OLD); //_T("원래 확장자")
-		item.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바뀔 확장자")
+		item.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바꿀 확장자")
 		m_aInput.Add(item);
 		break;
 	case IDS_PRESET_NAME:
@@ -485,4 +514,82 @@ BOOL CDlgInput::VerifyReturnValue()
 		break;
 	}
 	return TRUE;
+}
+
+
+BOOL CDlgInput::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if ((GetKeyState(VK_CONTROL) & 0xFF00) != 0)
+		{
+			int nItem = -1;
+			if (pMsg->wParam >= 0x31 && pMsg->wParam <= 0x39) //Number Keys
+			{
+				nItem = pMsg->wParam - 0x31;
+			}
+			if (pMsg->wParam >= 0x61 && pMsg->wParam <= 0x69) //Numpad Keys
+			{
+				nItem = pMsg->wParam - 0x61;
+			}
+			if (nItem != -1 && nItem < m_cb.GetCount())
+			{
+				m_cb.SetCurSel(nItem);
+				OnSelchangeCbInput();
+				return TRUE;
+			}
+		}
+	}
+	return CDialogEx::PreTranslateMessage(pMsg);
+}
+
+
+void CDlgInput::OnSize(UINT nType, int cx, int cy)
+{
+	CDialogEx::OnSize(nType, cx, cy);
+	if (::IsWindow(m_cb.GetSafeHwnd()) != FALSE)
+	{
+		ArrangeCtrl();
+	}
+}
+
+
+void CDlgInput::ArrangeCtrl()
+{
+	CRect rc;
+	GetClientRect(rc);
+	rc.DeflateRect(m_nFontHeight, m_nFontHeight);
+	int nInputHeight = rc.Height();
+	CRect rcStatic; GetDlgItem(IDC_STATIC_1)->GetWindowRect(rcStatic); int nStaticHeight = rcStatic.Height();
+	CRect rcCombo;	m_cb.GetWindowRect(rcCombo);	int nComboHeight = rcCombo.Height();
+	CRect rcButton; GetDlgItem(IDOK)->GetWindowRect(rcButton); int nButtonHeight = rcButton.Height(); int nButtonWidth = rcButton.Width();
+	//
+	GetDlgItem(IDC_STATIC_3)->MoveWindow(rc.left,rc.top,rc.Width(),nStaticHeight);
+	rc.top += nStaticHeight + 2;
+	m_cb.MoveWindow(rc.left, rc.top, rc.Width(), nComboHeight);
+	rc.top += nComboHeight + m_nFontHeight;
+	//
+	nInputHeight -= (nStaticHeight + 2) * 3 + nComboHeight + (m_nFontHeight * 3) + nButtonHeight;
+	nInputHeight /= 2;
+	GetDlgItem(IDC_STATIC_1)->MoveWindow(rc.left, rc.top, rc.Width(), rcStatic.Height());
+	rc.top += nStaticHeight + 2;
+	GetDlgItem(IDC_EDIT_1)->MoveWindow(rc.left, rc.top, rc.Width(), nInputHeight);
+	rc.top += nInputHeight + m_nFontHeight;
+	//
+	GetDlgItem(IDC_STATIC_2)->MoveWindow(rc.left, rc.top, rc.Width(), rcStatic.Height());
+	rc.top += nStaticHeight + 2;
+	GetDlgItem(IDC_EDIT_2)->MoveWindow(rc.left, rc.top, rc.Width(), nInputHeight);
+	//
+	GetDlgItem(IDOK)->MoveWindow(rc.right - (nButtonWidth) *2 - m_nFontHeight, rc.bottom - nButtonHeight, nButtonWidth, nButtonHeight );
+	GetDlgItem(IDCANCEL)->MoveWindow(rc.right - nButtonWidth, rc.bottom - nButtonHeight, nButtonWidth, nButtonHeight);
+	RedrawWindow();
+}
+
+
+void CDlgInput::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+	lpMMI->ptMinTrackSize.x = m_nMinWidth;
+	lpMMI->ptMinTrackSize.y = m_nMinHeight;
+	CDialogEx::OnGetMinMaxInfo(lpMMI);
 }
