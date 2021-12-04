@@ -236,15 +236,17 @@ void CBatchNamerApp::INISave(CString strFile)
 static CRect ConvertString2Rect(CString& str)
 {
 	CRect rc;
-	CString strLeft, strTop, strRight, strBottom;
-	AfxExtractSubString(strLeft, str, 0, L',');
-	AfxExtractSubString(strTop, str, 1, L',');
-	AfxExtractSubString(strRight, str, 2, L',');
-	AfxExtractSubString(strBottom, str, 3, L',');
-	rc.left = _ttoi(strLeft);
-	rc.top = _ttoi(strTop);
-	rc.right = _ttoi(strRight);
-	rc.bottom = _ttoi(strBottom);
+	CString strValue;
+	int i = 0, nVal = 0;
+	while (AfxExtractSubString(strValue, str, i, L','))
+	{
+		nVal = _ttoi(strValue);
+		if (i == 0) rc.left = nVal;
+		else if (i == 1) rc.top = nVal;
+		else if (i == 2) rc.right = nVal;
+		else if (i == 3) rc.bottom = nVal;
+		i++;
+	}
 	return rc;
 }
 

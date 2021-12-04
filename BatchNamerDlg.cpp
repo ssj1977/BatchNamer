@@ -326,6 +326,9 @@ void CBatchNamerDlg::ArrangeCtrl()
 	GetDlgItem(IDC_BTN_STOPTHREAD)->MoveWindow(rc.right - TOOLWIDTH, rc.bottom - BARHEIGHT + 1, TOOLWIDTH, BARHEIGHT - 2);
 	int BARWIDTH = rc.Width() - (st_bIsThreadWorking ? TOOLWIDTH : 0);
 	GetDlgItem(IDC_ST_BAR)->MoveWindow(0, rc.bottom - BARHEIGHT + 1, BARWIDTH, BARHEIGHT - 2);
+	m_tool1.Invalidate();
+	m_tool2.Invalidate();
+	m_list.Invalidate();
 	RedrawWindow();
 }
 

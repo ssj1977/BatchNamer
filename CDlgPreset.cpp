@@ -153,6 +153,7 @@ void CDlgPreset::ArrangeCtrl()
 	GetDlgItem(IDC_BTN_PRESET_NAME)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
 	rc.left = rc.left + BTNWIDTH + LH;
 	GetDlgItem(IDCANCEL)->MoveWindow(rc.right-rcButton.Width(), rc.top, rcButton.Width(), rcButton.Height());
+	m_toolPreset.Invalidate();
 }
 
 
