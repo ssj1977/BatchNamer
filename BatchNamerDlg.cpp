@@ -1136,67 +1136,78 @@ void CBatchNamerDlg::NameReplace()
 
 void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL bFront, BOOL bForExt)
 {
-	CString strTemp;
+	CString strAdd, strName, strExt, strHead, strTail, strOld, strNew, strOutput;
+	BOOL bIsDir = FALSE;
 	int nPos = 0;
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		switch (nSubCommand)
 		{
 		case IDS_ADDSTRING: //직접 입력
-			strTemp = str1;
+			strAdd = str1;
 			nPos = _ttoi(str2);
 			break;
 		case IDS_ADDPARENT: //폴더명
-			strTemp = GetFolderName(m_list.GetItemText(i, COL_OLDFOLDER));
+			strAdd = GetFolderName(m_list.GetItemText(i, COL_OLDFOLDER));
 			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
-			if (strTemp.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strTemp.Empty();
+			if (strAdd.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strAdd.Empty();
 			break;
 		case IDS_ADDDATEMODIFY: //변경날짜
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE);
+			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE);
 			break;
 		case IDS_ADDDATECREATE: //생성날짜
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
+			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
 			break;
 		case IDS_ADDDATETIMEMODIFY: //변경날짜+시각
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, TRUE);
+			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, TRUE);
 			break;
 		case IDS_ADDDATETIMECREATE: //생성날짜+시각
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, TRUE);
+			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, TRUE);
 			break;
 		case IDS_ADDTIMEMODIFY: //변경시각만
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE, TRUE);
+			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE, TRUE);
 			break;
 		case IDS_ADDTIMECREATE: //생성시각만
-			strTemp = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE, TRUE);
+			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE, TRUE);
 			break;
 		}
 		//앞뒤에 추가로 지정된 문자열 붙이기
-		if (nSubCommand != IDS_ADDSTRING) strTemp = str1 + strTemp + str2;
-		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
-		CString strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-		CString	strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-		if (bFront)
+		if (nSubCommand != IDS_ADDSTRING) strAdd = str1 + strAdd + str2;
+		bIsDir = (BOOL)m_list.GetItemData(i);
+		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir, FALSE);
+		if (bForExt == FALSE)	strOld = strName;
+		else					strOld = strExt;
+
+		if (bIsDir != FALSE && bForExt != FALSE)
+		{
+			strNew = strOld;//디렉토리일때 확장자를 추가하려는 시도 차단
+		}
+		else if (bFront)
 		{
 			if (nPos != 0)
 			{
-				CString strHead = strName.Left(nPos);
-				CString strTail = strName.Mid(nPos);
-				strName = strHead + strTemp + strTail;
+				strHead = strOld.Left(nPos);
+				strTail = strOld.Mid(nPos);
+				strNew = strHead + strAdd + strTail;
 			}
-			else strName = strTemp + strName;
+			else strNew = strAdd + strOld;
 		}
 		else
 		{
 			if (nPos != 0)
 			{
-				CString strHead = strName.Left(strName.GetLength() - nPos);
-				CString strTail = strName.Right(nPos);
-				strName = strHead + strTemp + strTail;
+				strHead = strOld.Left(strOld.GetLength() - nPos);
+				strTail = strOld.Right(nPos);
+				strNew = strHead + strAdd + strTail;
 			}
-			else strName = strName + strTemp;
+			else strNew = strOld + strAdd;
 		}
-		if (strExt.IsEmpty() == FALSE) strName += strExt;
-		m_list.SetItemText(i, COL_NEWNAME, strName);
+		if (bForExt == FALSE)	strName = strNew;
+		else					strExt = strNew;
+		if (strExt.IsEmpty() == FALSE)	strOutput = strName + L'.' + strExt;
+		else							strOutput = strName;
+		m_list.SetItemText(i, COL_NEWNAME, strOutput);
 	}
 }
 
