@@ -16,7 +16,7 @@ CDlgSort::CDlgSort(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_SORT, pParent)
 {
 	m_nSortCol = COL_OLDNAME;
-	m_bAsc = TRUE;
+	m_bSortAscend = TRUE;
 	m_pSortWnd = NULL;
 }
 
@@ -53,11 +53,11 @@ BOOL CDlgSort::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 	if (m_pSortWnd == NULL) return FALSE;
-	CMFCHeaderCtrl& header = ((CNameListCtrl*)m_pSortWnd)->GetHeaderCtrl();
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_SORTCOL);
+	CMFCHeaderCtrl& header = ((CNameListCtrl*)m_pSortWnd)->GetHeaderCtrl();
 	int nCount = header.GetItemCount();
 	m_nSortCol = header.GetSortColumn();
-	m_bAsc = header.IsAscending();
+	m_bSortAscend = header.IsAscending();
 	HDITEM hdi;
 	TCHAR buf[MAX_PATH];
 	hdi.mask = HDI_TEXT;
@@ -70,8 +70,8 @@ BOOL CDlgSort::OnInitDialog()
 	}
 	pCB->SetCurSel(m_nSortCol);
 
-	if (m_bAsc == TRUE) SetCheckByID(IDC_RADIO_SORT_ASCEND, TRUE);
-	else				SetCheckByID(IDC_RADIO_SORT_DESCEND, TRUE);
+	if (m_bSortAscend == TRUE)	SetCheckByID(IDC_RADIO_SORT_ASCEND, TRUE);
+	else						SetCheckByID(IDC_RADIO_SORT_DESCEND, TRUE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -82,8 +82,8 @@ void CDlgSort::OnOK()
 {
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_SORTCOL);
 	m_nSortCol = pCB->GetCurSel();
-	if (GetCheckByID(IDC_RADIO_SORT_ASCEND)) m_bAsc = TRUE;
-	else   m_bAsc = FALSE; //if (GetCheckByID(IDC_RADIO_SORT_DESCEND))
+	if (GetCheckByID(IDC_RADIO_SORT_ASCEND)) m_bSortAscend = TRUE;
+	else   m_bSortAscend = FALSE; //if (GetCheckByID(IDC_RADIO_SORT_DESCEND))
 	CDialogEx::OnOK();
 }
 

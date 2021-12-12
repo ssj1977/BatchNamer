@@ -261,7 +261,16 @@ void CDlgInput::InitInputByCommand(int nCommand)
 	InputItem item;
 	switch (nCommand)
 	{
-	case IDS_TB_01: //Replace
+	case IDS_TB_01: //Replace Name or Extension
+	case IDS_TB_19: // Replace 
+		if (nCommand == IDS_TB_19)
+		{
+			item.m_strItemName = IDSTR(IDS_EXT_REPLACE); //"확장자를 추가합니다."
+			item.m_nSubCommand = IDS_EXT_REPLACE;
+			item.m_strLabel1 = IDSTR(IDS_EXT_OLD); //_T("원래 확장자")
+			item.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바꿀 확장자")
+			m_aInput.Add(item);
+		}
 		item.m_strItemName = IDSTR(IDS_REPLACESTRING);
 		item.m_nSubCommand = IDS_REPLACESTRING;
 		item.m_strLabel1 = IDSTR(IDS_REPLACEOLD);
@@ -289,8 +298,9 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_nSubCommand = IDS_UPPERCASE_WORD;
 		m_aInput.Add(item);
 		break;
-	case IDS_TB_02: //Add Front
-	case IDS_TB_03: //Add End
+	case IDS_TB_02: //Add Front Name
+	case IDS_TB_03: //Add End Name
+	case IDS_TB_18: //Add End Ext
 		item.m_strItemName = IDSTR(IDS_ADDSTRING);
 		item.m_nSubCommand = IDS_ADDSTRING;
 		item.m_strLabel1 = IDSTR(IDS_STRINGTOADD);
@@ -414,19 +424,6 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel1 = IDSTR(IDS_COL_NEWNAME);
 		m_aInput.Add(item);
 		break;
-	case IDS_TB_18: // Add Extension
-		item.m_strItemName = IDSTR(IDS_EXT_APPEND); //"확장자를 추가합니다."
-		item.m_nSubCommand = IDS_EXT_APPEND;
-		item.m_strLabel1 = IDSTR(IDS_EXT_TOADD); //_T("추가할 확장자")
-		m_aInput.Add(item);
-		break;
-	case IDS_TB_19: // Replac Extension
-		item.m_strItemName = IDSTR(IDS_EXT_REPLACE); //"확장자를 변경합니다."
-		item.m_nSubCommand = IDS_EXT_REPLACE;
-		item.m_strLabel1 = IDSTR(IDS_EXT_OLD); //_T("원래 확장자")
-		item.m_strLabel2 = IDSTR(IDS_EXT_NEW); //_T("바꿀 확장자")
-		m_aInput.Add(item);
-		break;
 	case IDS_PRESET_NAME:
 		item.m_strItemName = IDSTR(IDS_PRESET_NAME_DESC);
 		item.m_nSubCommand = IDS_PRESET_NAME_DESC;
@@ -443,13 +440,20 @@ BOOL CDlgInput::VerifyReturnValue()
 	switch (nCommand)
 	{
 	case IDS_TB_01: //Replace
+	case IDS_TB_19: // Replace Extension
 		if (nSubCommand == IDS_REPLACESTRING || nSubCommand == IDS_FLIPSTRING)
 		{
 			if (m_strReturn1.IsEmpty()) return FALSE;
 		}
+		if (nSubCommand == IDS_EXT_REPLACE)
+		{
+			if (m_strReturn2.IsEmpty()) return FALSE;
+		}
+		break;
 		break;
 	case IDS_TB_02: //Add Front
 	case IDS_TB_03: //Add End
+	case IDS_TB_18: // Add Extension
 		if (nSubCommand == IDS_ADDSTRING) {	if (m_strReturn1.IsEmpty()) return FALSE;}
 		break;
 	case IDS_TB_05:
@@ -503,12 +507,6 @@ BOOL CDlgInput::VerifyReturnValue()
 		break;
 	case IDS_TB_13: // Manual Change
 		break;
-	case IDS_TB_18: // Add Extension
-		if (m_strReturn1.IsEmpty()) return FALSE;
-		break;
-	case IDS_TB_19: // Replace Extension
-		if (m_strReturn2.IsEmpty()) return FALSE;
-		break;
 	case IDS_PRESET_NAME:
 		//if (m_strReturn1.IsEmpty()) return FALSE;
 		break;
@@ -526,11 +524,11 @@ BOOL CDlgInput::PreTranslateMessage(MSG* pMsg)
 			int nItem = -1;
 			if (pMsg->wParam >= 0x31 && pMsg->wParam <= 0x39) //Number Keys
 			{
-				nItem = pMsg->wParam - 0x31;
+				nItem = int(pMsg->wParam) - 0x31;
 			}
 			if (pMsg->wParam >= 0x61 && pMsg->wParam <= 0x69) //Numpad Keys
 			{
-				nItem = pMsg->wParam - 0x61;
+				nItem = int(pMsg->wParam) - 0x61;
 			}
 			if (nItem != -1 && nItem < m_cb.GetCount())
 			{

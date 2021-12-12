@@ -248,7 +248,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 			m_list.SetColumnWidth(i, APP()->m_aColWidth.GetAt(i) * FlagGET(APP()->m_nShowFlag, i));
 		}
 	}
-	m_list.GetHeaderCtrl().SetSortColumn(COL_OLDNAME, TRUE);
+	m_list.GetHeaderCtrl().SetSortColumn(APP()->m_nSortCol, APP()->m_bSortAscend);
 	UpdateColumnSizes();
 	UpdateMenuPreset();
 	UpdateMenuHotkey();
@@ -412,13 +412,11 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 		}
 		m_list.SetRedraw(TRUE);
 		UpdateCount();
-		//if (m_list.GetItemCount() == 0) UpdateMenu();
 	}
 	break;
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
-	//UpdateMenu();
 	return TRUE;
 }
 
@@ -437,19 +435,19 @@ void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 		PresetTask& task = preset.m_aTask[i];
 		switch (task.m_nCommand)
 		{
-		case IDS_TB_01:	NameReplace(task.m_nSubCommand, task.m_str1, task.m_str2);	break; //Replace
-		case IDS_TB_02: NameAdd(task.m_nSubCommand, task.m_str1, task.m_str2, TRUE); break; // Add Front
-		case IDS_TB_03: NameAdd(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE); break; // Add End
+		case IDS_TB_01:	StringReplace(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE);	break; //Replace
+		case IDS_TB_02: StringAdd(task.m_nSubCommand, task.m_str1, task.m_str2, TRUE, FALSE); break; // Add Front
+		case IDS_TB_03: StringAdd(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE, FALSE); break; // Add End
 		case IDS_TB_04: NameEmpty(FALSE); break; // Empty Name
 		case IDS_TB_05: NameRemoveSelected(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Remove Selected
-		case IDS_TB_06: NameNumberFilter(FALSE, FALSE); break;
-		case IDS_TB_07: NameNumberFilter(TRUE, FALSE); break;
+		case IDS_TB_06: NameNumberFilter(FALSE); break;
+		case IDS_TB_07: NameNumberFilter(TRUE); break;
 		case IDS_TB_08: NameDigit(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Digits
 		case IDS_TB_09: NameAddNum(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Add Number
 		case IDS_TB_16: NameSetFolder(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Parent
 		case IDS_TB_17: ExtDel(FALSE); break; // Delete Extension
-		case IDS_TB_18: ExtAdd(task.m_nSubCommand, task.m_str1, task.m_str2); break;// Add Extension
-		case IDS_TB_19: ExtReplace(task.m_nSubCommand, task.m_str1, task.m_str2); break;// Replace Extension
+		case IDS_TB_18: StringAdd(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE, TRUE); break;// Add Extension
+		case IDS_TB_19: StringReplace(task.m_nSubCommand, task.m_str1, task.m_str2, TRUE); break;// Replace Extension
 		}
 	}
 }
@@ -794,7 +792,6 @@ void CBatchNamerDlg::LoadPathArray(CStringArray& aPath)
 	for (int i = 0; i < nSize; i++) AddPathStart(aPath[i]);
 	if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 	m_list.SetRedraw(TRUE);
-//	UpdateMenu();
 	UpdateCount();
 }
 
@@ -830,7 +827,6 @@ void CBatchNamerDlg::AddByFileDialog()
 		if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 		m_list.SetRedraw(TRUE);
 		UpdateCount();
-//		UpdateMenu();
 	}
 	delete[] buf;
 	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
@@ -1017,9 +1013,9 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 	return strRet;
 }
 
-void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
+void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, BOOL bForExt)
 {
-	CString strTemp, strName, strExt, strLeft, strRight;
+	CString strOutput, strName, strExt, strOld, strNew;
 	int nPos = -1;
 	BOOL bIsDir = FALSE;
 	BOOL bUseWildCard = FALSE;
@@ -1029,68 +1025,99 @@ void CBatchNamerDlg::NameReplace(int nSubCommand, CString str1, CString str2)
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		bIsDir = (BOOL)m_list.GetItemData(i);
-		strTemp = m_list.GetItemText(i, COL_NEWNAME);
-		strName = Get_Name(strTemp, bIsDir);
-		strExt = Get_Ext(strTemp, bIsDir);
+		strOutput = m_list.GetItemText(i, COL_NEWNAME);
+		strName = Get_Name(strOutput, bIsDir);
+		strExt = Get_Ext(strOutput, bIsDir, FALSE); // 확장자 처리를 위해 '.' 을 뺀다
+		if (bForExt == FALSE) strOld = strName;
+		else strOld = strExt;
 		if (nSubCommand == IDS_REPLACESTRING)
 		{
 			if (bUseWildCard == TRUE)
-				strName = ReplaceWithWildCards(strName, str1, str2);
-			else													
-				strName.Replace(str1, str2);
-			strTemp = strName + strExt;
+			{
+				strNew = ReplaceWithWildCards(strOld, str1, str2);
+			}
+			else
+			{
+				strNew = strOld;
+				strNew.Replace(str1, str2);
+			}
 		}
 		else if (nSubCommand == IDS_FLIPSTRING)
 		{
-			nPos = strName.Find(str1);
+			nPos = strOld.Find(str1);
 			if (nPos != -1)
 			{
-				strLeft = strName.Left(nPos);
-				strRight = strName.Mid(nPos + str1.GetLength());
-				strTemp = strRight + str1 + strLeft + strExt;
+				//strLeft = strOld.Left(nPos);
+				//strRight = strOld.Mid(nPos + str1.GetLength());
+				strNew = strOld.Mid(nPos + str1.GetLength()) + str1 + strOld.Left(nPos);
 			}
+			else strNew = strOld;
 		}
 		else if (nSubCommand == IDS_LOWERCASE)
 		{
-			strTemp = strName.MakeLower() + strExt;
+			strNew = strOld.MakeLower();
 		}
 		else if (nSubCommand == IDS_UPPERCASE)
 		{
-			strTemp = strName.MakeUpper() + strExt;
+			strNew = strOld.MakeUpper();
 		}
 		else if (nSubCommand == IDS_UPPERCASE_FIRST)
 		{
-			TCHAR c; 
-			strName = strName.MakeLower();
-			for (int i = 0; i < strName.GetLength(); i++)
+			TCHAR c;
+			strNew = strOld.MakeLower();
+			for (int i = 0; i < strNew.GetLength(); i++)
 			{
-				c = strName.GetAt(i);
+				c = strNew.GetAt(i);
 				if ((c >= _T('a') && c <= _T('z')) || (c >= _T('A') && c <= _T('Z')))
 				{
-					strName.SetAt(i, towupper(strName.GetAt(i)));
+					strNew.SetAt(i, towupper(strNew.GetAt(i)));
 					break;
 				}
 			}
-			strTemp = strName + strExt;
 		}
 		else if (nSubCommand == IDS_UPPERCASE_WORD)
 		{
 			TCHAR c;
+			strNew = strOld;
 			BOOL bIsAlphabet = FALSE, bIsAlphabetPrev = FALSE;
-			for (int i = 0; i < strName.GetLength(); i++)
+			for (int i = 0; i < strNew.GetLength(); i++)
 			{
-				c = strName.GetAt(i);
+				c = strNew.GetAt(i);
 				if ((c >= _T('a') && c <= _T('z')) || (c >= _T('A') && c <= _T('Z')))
 				{
-					if (bIsAlphabet == FALSE)	strName.SetAt(i, towupper(strName.GetAt(i)));
-					else						strName.SetAt(i, towlower(strName.GetAt(i)));
+					if (bIsAlphabet == FALSE)	strNew.SetAt(i, towupper(strNew.GetAt(i)));
+					else						strNew.SetAt(i, towlower(strNew.GetAt(i)));
 					bIsAlphabet = TRUE;
 				}
 				else bIsAlphabet = FALSE;
 			}
-			strTemp = strName + strExt;
 		}
-		m_list.SetItemText(i, COL_NEWNAME, strTemp);
+		else if (nSubCommand == IDS_EXT_REPLACE && bIsDir == FALSE)
+		{
+			//if (str2.IsEmpty()) return; // 바꿀 확장자
+			//입력값에 '.' 가 있는경우 제거해 준다
+			if (str1.IsEmpty() == FALSE)
+			{
+				if (str1.GetAt(0) == _T('.')) str1 = str1.Right(str1.GetLength() - 1);
+			}
+			if (str2.IsEmpty() == FALSE)
+			{
+				if (str2.GetAt(0) == _T('.')) str2 = str2.Right(str2.GetLength() - 1);
+			}
+			BOOL bReplace = str1.IsEmpty();
+			if (bReplace == FALSE)
+			{
+				if (strOld.CompareNoCase(str1) == 0) bReplace = TRUE;
+			}
+			if (bReplace == TRUE) strNew = str2;
+			else strNew = strOld;
+		}
+		else strNew = strOld;
+		if (bForExt == FALSE)	strName = strNew;
+		else					strExt = strNew;
+		if (strExt.IsEmpty() == FALSE)	strOutput = strName + L'.' + strExt;
+		else							strOutput = strName;
+		m_list.SetItemText(i, COL_NEWNAME, strOutput);
 	}
 }
 
@@ -1102,12 +1129,12 @@ void CBatchNamerDlg::NameReplace()
 	if (dlg.VerifyReturnValue() == FALSE) return;
 	CString strTemp;
 	m_list.SetRedraw(FALSE);
-	NameReplace(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2);
+	StringReplace(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2, FALSE);
 	m_list.SetRedraw(TRUE);
 }
 
 
-void CBatchNamerDlg::NameAdd(int nSubCommand, CString str1, CString str2, BOOL bFront = TRUE)
+void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL bFront, BOOL bForExt)
 {
 	CString strTemp;
 	int nPos = 0;
@@ -1179,14 +1206,15 @@ void CBatchNamerDlg::NameAdd(BOOL bFront = TRUE)
 	dlg.InitInputByCommand(bFront ? IDS_TB_02 : IDS_TB_03);
 	if (dlg.DoModal() == IDCANCEL) return;
 	m_list.SetRedraw(FALSE);
-	NameAdd(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2, bFront);
+	StringAdd(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2, bFront, FALSE);
 	m_list.SetRedraw(TRUE);
 }
 
-void CBatchNamerDlg::NameNumberFilter(BOOL bRemoveNumber, BOOL bToggleRedraw)
+void CBatchNamerDlg::NameNumberFilter(BOOL bRemoveNumber)
 {
 	CString strName, strExt;
-	if (bToggleRedraw == TRUE) m_list.SetRedraw(FALSE);
+	//if (bToggleRedraw == TRUE) 
+	m_list.SetRedraw(FALSE);
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
@@ -1207,7 +1235,8 @@ void CBatchNamerDlg::NameNumberFilter(BOOL bRemoveNumber, BOOL bToggleRedraw)
 		if (strExt.IsEmpty() == FALSE) strName += strExt;
 		m_list.SetItemText(i, COL_NEWNAME, strName);
 	}
-	if (bToggleRedraw == TRUE) m_list.SetRedraw(TRUE);
+	//if (bToggleRedraw == TRUE) 
+	m_list.SetRedraw(TRUE);
 }
 
 void CBatchNamerDlg::NameDigit(int nSubCommand, CString str1, CString str2)
@@ -1298,7 +1327,29 @@ void CBatchNamerDlg::ExtDel(BOOL bToggleRedraw) //확장자 삭제
 	if (bToggleRedraw == TRUE) m_list.SetRedraw(TRUE);
 }
 
-void CBatchNamerDlg::ExtAdd(int nSubCommand, CString str1, CString str2)
+void CBatchNamerDlg::ExtAdd()
+{
+	CDlgInput dlg;
+	dlg.InitInputByCommand(IDS_TB_18);
+	if (dlg.DoModal() == IDCANCEL) return;
+	if (dlg.VerifyReturnValue() == FALSE) return;
+	m_list.SetRedraw(FALSE);
+	StringAdd(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2, FALSE, TRUE);
+	m_list.SetRedraw(TRUE);
+}
+
+void CBatchNamerDlg::ExtReplace()
+{
+	CDlgInput dlg;
+	dlg.InitInputByCommand(IDS_TB_19);
+	if (dlg.DoModal() == IDCANCEL) return;
+	if (dlg.VerifyReturnValue() == FALSE) return;
+	m_list.SetRedraw(FALSE);
+	StringReplace(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2, TRUE);
+	m_list.SetRedraw(TRUE);
+}
+
+/*void CBatchNamerDlg::ExtAdd(int nSubCommand, CString str1, CString str2)
 {
 	CString strTemp;
 	CString strExt = str1;
@@ -1315,17 +1366,6 @@ void CBatchNamerDlg::ExtAdd(int nSubCommand, CString str1, CString str2)
 			m_list.SetItemText(i, COL_NEWNAME, strTemp);
 		}
 	}
-}
-
-void CBatchNamerDlg::ExtAdd()
-{
-	CDlgInput dlg;
-	dlg.InitInputByCommand(IDS_TB_18);
-	if (dlg.DoModal() == IDCANCEL) return;
-	if (dlg.VerifyReturnValue() == FALSE) return;
-	m_list.SetRedraw(FALSE);
-	ExtAdd(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2);
-	m_list.SetRedraw(TRUE);
 }
 
 void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
@@ -1364,19 +1404,7 @@ void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
 			}
 		}
 	}
-}
-
-void CBatchNamerDlg::ExtReplace()
-{
-	CDlgInput dlg;
-	dlg.InitInputByCommand(IDS_TB_19);
-	if (dlg.DoModal() == IDCANCEL) return;
-	if (dlg.VerifyReturnValue() == FALSE) return;
-	m_list.SetRedraw(FALSE);
-	ExtReplace(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2);
-	m_list.SetRedraw(TRUE);
-}
-
+}*/
 
 void CBatchNamerDlg::ApplyChange_Start()
 {
@@ -1394,12 +1422,10 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	dlg->m_list.EnableWindow(FALSE);
 	dlg->m_tool1.EnableWindow(FALSE);
 	dlg->m_tool2.EnableWindow(FALSE);
-//	dlg->UpdateMenu();
 	dlg->ApplyChange();
 	dlg->m_list.EnableWindow(TRUE);
 	dlg->m_tool1.EnableWindow(TRUE);
 	dlg->m_tool2.EnableWindow(TRUE);
-//	dlg->UpdateMenu();
 	st_bIsThreadWorking = FALSE;
 	dlg->ArrangeCtrl();
 	dlg->UpdateCount();
@@ -2020,12 +2046,12 @@ void CBatchNamerDlg::NameRemoveSelected()
 void CBatchNamerDlg::SortList()
 {
 	CDlgSort dlg;
-	dlg.m_pSortWnd = &m_list;
+	dlg.m_pSortWnd = &m_list; 
 	if (dlg.DoModal() == IDCANCEL) return;
-	int nCol = dlg.m_nSortCol;
-	BOOL bAsc = dlg.m_bAsc;
+	APP()->m_nSortCol = dlg.m_nSortCol;
+	APP()->m_bSortAscend = dlg.m_bSortAscend;
 	m_list.SetRedraw(FALSE);
-	m_list.Sort(nCol, bAsc);
+	m_list.Sort(APP()->m_nSortCol, APP()->m_bSortAscend);
 	m_list.SetRedraw(TRUE);
 }
 
@@ -2064,7 +2090,7 @@ void CBatchNamerDlg::UpdateToolBar()
 	m_tool2.GetToolBarCtrl().EnableButton(IDM_EDIT_DOWN, b);
 }
 
-void CBatchNamerDlg::UpdateMenu()
+void CBatchNamerDlg::UpdateMenuEnable()
 {
 	BOOL b = (m_list.GetItemCount() > 0);
 	CMenu* pMenu = GetMenu();
@@ -2157,6 +2183,7 @@ void CBatchNamerDlg::UpdateCount()
 	}
 	else strTemp.Format(IDSTR(IDS_COUNT_FORMAT), nCount);
 	UpdateToolBar();
+	UpdateMenuEnable();
 	SetDlgItemText(IDC_ST_BAR, strTemp);
 }
 
@@ -2186,6 +2213,11 @@ void CBatchNamerDlg::UpdateColumnSizes()
 			if (APP()->m_aColWidth.GetAt(i) == 0) APP()->m_aColWidth.SetAt(i, m_lfHeight * 11);
 		}
 	}
+
+	CMFCHeaderCtrl& header = m_list.GetHeaderCtrl();
+	int nCount = header.GetItemCount();
+	APP()->m_nSortCol = header.GetSortColumn();
+	APP()->m_bSortAscend = header.IsAscending();
 }
 
 void CBatchNamerDlg::UpdateFontSize()
@@ -2220,5 +2252,5 @@ void CBatchNamerDlg::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 void CBatchNamerDlg::OnInitMenu(CMenu* pMenu)
 {
 	CDialogEx::OnInitMenu(pMenu);
-	UpdateMenu();
+	UpdateMenuEnable();
 }

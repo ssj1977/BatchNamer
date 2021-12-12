@@ -30,7 +30,7 @@ public:
 	void UpdateCount();
 	void UpdateColumnSizes();
 	void UpdateToolBar();
-	void UpdateMenu();
+	void UpdateMenuEnable();
 	void UpdateMenuPreset();
 	void UpdateMenuHotkey();
 	void ArrangeCtrl();
@@ -70,9 +70,7 @@ protected:
 	CString GetItemFullPath(int nItem, BOOL bOld = TRUE);
 	void ManualChange();
 	void NameEmpty(BOOL bToggleRedraw = TRUE);
-	void NameNumberFilter(BOOL bRemoveNumber, BOOL bToggleRedraw = TRUE); 
-	void NameAdd(BOOL bFront);
-	void NameAdd(int nSubCommand, CString str1, CString str2, BOOL bFront);
+	void NameNumberFilter(BOOL bRemoveNumber); // , BOOL bToggleRedraw = TRUE);
 	void NameRemoveSelected();
 	void NameRemoveSelected(int nSubCommand, CString str1, CString str2);
 	void NameSetFolder();
@@ -81,12 +79,15 @@ protected:
 	void NameAddNum(int nSubCommand, CString str1, CString str2);
 	void NameDigit();
 	void NameDigit(int nSubCommand, CString str1, CString str2);
-	void NameReplace();
-	void NameReplace(int nSubCommand, CString str1, CString str2);
-	void ExtReplace();
-	void ExtReplace(int nSubCommand, CString str1, CString str2);
+	//Add, Replace는 확장자에도 사용할 수 있도록 구현
+	void NameAdd(BOOL bFront);
 	void ExtAdd();
-	void ExtAdd(int nSubCommand, CString str1, CString str2);
+	void StringAdd(int nSubCommand, CString str1, CString str2, BOOL bFront, BOOL bForExt);
+	void NameReplace();
+	void ExtReplace();
+	void StringReplace(int nSubCommand, CString str1, CString str2, BOOL bForExt);
+	//void ExtReplace(int nSubCommand, CString str1, CString str2, BOOL bForExt);
+	//void ExtAdd(int nSubCommand, CString str1, CString str2);
 	void ExtDel(BOOL bToggleRedraw = TRUE);
 	CString ProcessDropFiles(HDROP hDropInfo, int nActionType); // nActionType 0:목록에 추가, 1:경로를 텍스트로 반환, 2:이름을 텍스트로 반환
 	void LoadPathArray(CStringArray& aPath);

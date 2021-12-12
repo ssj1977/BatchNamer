@@ -128,6 +128,8 @@ public:
 	BOOL m_bNameAutoFix;
 	int m_nLoadType;
 	int m_nShowFlag;
+	int m_nSortCol;
+	int m_bSortAscend; 
 	CRect m_rcMain;
 	CRect m_rcInput;
 	COLORREF m_clrText;

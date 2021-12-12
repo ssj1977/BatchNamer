@@ -14,7 +14,7 @@ public:
 	BOOL GetCheckByID(int nID);
 	CWnd* m_pSortWnd;
 	int m_nSortCol;
-	BOOL m_bAsc;
+	BOOL m_bSortAscend;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME

@@ -225,11 +225,12 @@ CString Get_Name(CString strFile, BOOL bKeepExt)
 	return strReturn;
 }
 
-CString Get_Ext(CString strFile, BOOL bIsDirectory)
+CString Get_Ext(CString strFile, BOOL bIsDirectory, BOOL bIncludeDot)
 {
 	CString strReturn;
 	int n = strFile.ReverseFind(_T('.'));
-	if (n == -1 || bIsDirectory == TRUE) return _T("");
+	if (n < 0 || bIsDirectory == TRUE) return _T("");
+	if (bIncludeDot == FALSE) n++;
 	strReturn = strFile.Right(strFile.GetLength() - n);
 	return strReturn;
 }

@@ -48,6 +48,8 @@ CBatchNamerApp::CBatchNamerApp()
 	m_nIconType = SHIL_EXTRALARGE;
 	m_aPreset.SetSize(5);
 	m_bNameAutoFix = FALSE;
+	m_nSortCol = COL_OLDNAME;
+	m_bSortAscend = TRUE;
 }
 
 
@@ -178,6 +180,8 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("AutoSort=%d\r\n"), m_bAutoSort); strData += strLine;
 	strLine.Format(_T("LoadType=%d\r\n"), m_nLoadType);	strData += strLine;
 	strLine.Format(_T("ShowColumnFlag=%d\r\n"), m_nShowFlag);	strData += strLine;
+	strLine.Format(_T("SortColumn=%d\r\n"), m_nSortCol);	strData += strLine;
+	strLine.Format(_T("SortAscend=%d\r\n"), m_bSortAscend);	strData += strLine;
 	//strLine.Format(_T("MainX1=%d\r\n"), m_rcMain.left);		strData += strLine;
 	//strLine.Format(_T("MainY1=%d\r\n"), m_rcMain.top);		strData += strLine;
 	//strLine.Format(_T("MainX2=%d\r\n"), m_rcMain.right);	strData += strLine;
@@ -267,6 +271,8 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("AutoSort")) == 0) m_bAutoSort = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("LoadType")) == 0) m_nLoadType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ShowColumnFlag")) == 0) m_nShowFlag = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("SortColumn")) == 0) m_nSortCol = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("SortAscend")) == 0) m_bSortAscend = _ttoi(str2);
 			//For Legacy INI
 			else if (str1.CompareNoCase(_T("MainX1")) == 0) m_rcMain.left = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("MainY1")) == 0) m_rcMain.top = _ttoi(str2);
