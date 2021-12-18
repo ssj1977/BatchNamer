@@ -126,6 +126,7 @@ public:
 	BOOL m_bShowEverytime;
 	BOOL m_bAutoSort;
 	BOOL m_bNameAutoFix;
+	BOOL m_bUseThread;
 	int m_nLoadType;
 	int m_nShowFlag;
 	int m_nSortCol;

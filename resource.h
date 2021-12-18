@@ -124,6 +124,7 @@
 #define IDS_NOHOTKEY                    118
 #define IDS_INVALID_FOLDER              119
 #define IDS_FOLDER_PARENT               120
+#define IDS_ELAPSED_TIME                121
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
@@ -186,6 +187,7 @@
 #define IDC_CHK_NAMEAUTOFIX             1063
 #define IDC_LIST_HOTKEY                 1064
 #define IDC_CHK_CTRL                    1065
+#define IDC_CHK_USETHREAD               1065
 #define IDC_CHK_SHIFT                   1066
 #define IDC_EDIT_HOTKEY                 1067
 #define IDC_BTN_EDIT_HOTKEY             1068
@@ -253,7 +255,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        167
+#define _APS_NEXT_RESOURCE_VALUE        168
 #define _APS_NEXT_COMMAND_VALUE         32854
 #define _APS_NEXT_CONTROL_VALUE         1075
 #define _APS_NEXT_SYMED_VALUE           101

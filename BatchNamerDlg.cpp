@@ -38,7 +38,7 @@ typedef vector<CString> CStrArray;
 typedef map<CString, int> CExtMap; //확장자에 해당하는 이미지맵의 번호를 기억
 typedef map<CString, int> CFolderMap; //폴더별 카운트용
 static CExtMap mapExt;
-static BOOL st_bIsThreadWorking;
+static BOOL st_bIsWorking;
 
 inline CString GetFolderName(CString strPath)
 {
@@ -134,7 +134,7 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_clrDefault_Text = RGB(0, 0, 0);
 	m_lfHeight = 0;
 	m_pSysImgList = NULL;
-	st_bIsThreadWorking = FALSE;
+	st_bIsWorking = FALSE;
 	m_nTempLoadType = -1;
 }
 
@@ -321,14 +321,15 @@ void CBatchNamerDlg::ArrangeCtrl()
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
 		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT);
 	}
-	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsThreadWorking ? SW_SHOW : SW_HIDE);
-	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(st_bIsThreadWorking);
+	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsWorking ? SW_SHOW : SW_HIDE);
+	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(st_bIsWorking);
 	GetDlgItem(IDC_BTN_STOPTHREAD)->MoveWindow(rc.right - TOOLWIDTH, rc.bottom - BARHEIGHT + 1, TOOLWIDTH, BARHEIGHT - 2);
-	int BARWIDTH = rc.Width() - (st_bIsThreadWorking ? TOOLWIDTH : 0);
+	int BARWIDTH = rc.Width() - (st_bIsWorking ? TOOLWIDTH : 0);
 	GetDlgItem(IDC_ST_BAR)->MoveWindow(0, rc.bottom - BARHEIGHT + 1, BARWIDTH, BARHEIGHT - 2);
-	m_tool1.Invalidate();
-	m_tool2.Invalidate();
-	m_list.Invalidate();
+	//m_tool1.Invalidate();
+	//m_tool2.Invalidate();
+	//m_list.Invalidate();
+	Invalidate();
 	RedrawWindow();
 }
 
@@ -340,7 +341,7 @@ void CBatchNamerDlg::OnSize(UINT nType, int cx, int cy)
 
 BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 {
-	if (st_bIsThreadWorking == TRUE)
+	if (st_bIsWorking == TRUE)
 	{
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
@@ -364,14 +365,13 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_EXT_ADD:			ExtAdd();			break;
 	case IDM_EXT_DEL:			ExtDel();			break;
 	case IDM_EXT_REPLACE:		ExtReplace();		break;
-	case IDM_MANUAL_CHANGE:		ManualChange();	break;
+	case IDM_MANUAL_CHANGE:		ManualChange();		break;
 	case IDM_APPLY_CHANGE:		ApplyChange_Start();	break;
 	case IDM_NAME_ADDNUM:		NameAddNum();		break;
 	case IDM_NAME_EMPTY:		NameEmpty();		break;
 	case IDM_EDIT_UP:			ListUp();			break;
 	case IDM_EDIT_DOWN:			ListDown();		break;
 	case IDM_NAME_SETFOLDER:	NameSetFolder();	break;
-
 	case IDM_EXPORT_CLIP_NEWNAME:		Export(0);		break;
 	case IDM_IMPORT_CLIP_NEWNAME:		ImportNewName(FALSE);		break;
 	case IDM_EXPORT_FILE_NEWNAME:		Export(1);		break;
@@ -479,7 +479,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 	//주로 단축키의 처리
 	if (pMsg->message == WM_KEYDOWN)
 	{
-		if (st_bIsThreadWorking == FALSE)
+		if (st_bIsWorking == FALSE)
 		{
 			if (pMsg->wParam != VK_CONTROL &&
 				pMsg->wParam != VK_SHIFT &&
@@ -511,7 +511,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 			}
 
 		}
-		else //st_bIsThreadWorking == TRUE
+		else //st_bIsWorking == TRUE
 		{
 			if (pMsg->wParam == VK_ESCAPE) OnBnClickedBtnStopthread();
 			return TRUE;
@@ -717,10 +717,12 @@ void CBatchNamerDlg::ConfigEtc()
 {
 	CDlgCFG_Etc dlg;
 	dlg.m_bNameAutoFix = APP()->m_bNameAutoFix;
+	dlg.m_bUseThread = APP()->m_bUseThread;
 	dlg.m_pMenu = GetMenu();
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
+		APP()->m_bUseThread = dlg.m_bUseThread;
 		UpdateMenuHotkey();
 	}
 }
@@ -1420,26 +1422,22 @@ void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
 void CBatchNamerDlg::ApplyChange_Start()
 {
 	if (AfxMessageBox(IDSTR(IDS_MSG_APPLYASK), MB_OKCANCEL) == IDCANCEL) return;
-	AfxBeginThread(ApplyChange_Thread, this);
+	if (APP()->m_bUseThread == FALSE)
+	{
+		ApplyChange();
+	}
+	else
+	{
+		AfxBeginThread(ApplyChange_Thread, this);
+	}
 }
 
 UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 {
 	//CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
 	CBatchNamerDlg* dlg = (CBatchNamerDlg*)lParam;
-	st_bIsThreadWorking = TRUE;
 	APP()->UpdateThreadLocale();
-	dlg->ArrangeCtrl();
-	dlg->m_list.EnableWindow(FALSE);
-	dlg->m_tool1.EnableWindow(FALSE);
-	dlg->m_tool2.EnableWindow(FALSE);
 	dlg->ApplyChange();
-	dlg->m_list.EnableWindow(TRUE);
-	dlg->m_tool1.EnableWindow(TRUE);
-	dlg->m_tool2.EnableWindow(TRUE);
-	st_bIsThreadWorking = FALSE;
-	dlg->ArrangeCtrl();
-	dlg->UpdateCount();
 	return 0;
 }
 
@@ -1480,6 +1478,22 @@ BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
 void CBatchNamerDlg::ApplyChange()
 {
+	st_bIsWorking = TRUE;
+	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
+	m_list.EnableWindow(FALSE);
+	m_tool1.EnableWindow(FALSE);
+	m_tool2.EnableWindow(FALSE);
+	if (APP()->m_bUseThread == FALSE)
+	{
+		GetDlgItem(IDC_ST_BAR)->Invalidate();
+		GetDlgItem(IDC_ST_BAR)->RedrawWindow();
+	}
+	else
+	{
+		ArrangeCtrl();
+	}
+	clock_t st, et;
+	st = clock();
 	CString strNewPath, strTemp, strLog, strErr;
 	//선택된 부분 초기화
 	int nItemSel = m_list.GetNextItem(-1, LVNI_SELECTED);
@@ -1534,11 +1548,11 @@ void CBatchNamerDlg::ApplyChange()
 	//실제 파일이름을 바꾸는 곳
 	CString strOldPath, strOldExt, strNewExt, strBar;
 	int i=0, nImage = 0;
-	int nChanged = 0;
+	int nChanged = 0, nPercent = 0, nPreviousPercent = 0;
 	BOOL bIsDir = FALSE;
 	for (i = 0; i < nCount; i++)
 	{
-		if (st_bIsThreadWorking == FALSE) break;
+		if (st_bIsWorking == FALSE) break;
 		strOldPath = m_list.GetOldPath(i);
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		try
@@ -1597,13 +1611,30 @@ void CBatchNamerDlg::ApplyChange()
 			strTemp.Format(_T("(%s) %s → %s\r\n - %s\r\n"),IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath.at(i)), strErr);
 			strLog += strTemp;
 		}
-		strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nCount, i + 1, nChanged);
-		SetDlgItemText(IDC_ST_BAR, strBar);
+		if (APP()->m_bUseThread != FALSE)
+		{
+			nPercent = nChanged * 100 / nCount;
+			if (nPercent != nPreviousPercent && nPercent % 2 == 0)
+			{
+				nPreviousPercent = nPercent;
+				strBar.Format(IDSTR(IDS_PROGRESS_CHANGE), nPercent);
+				SetDlgItemText(IDC_ST_BAR, strBar);
+			}
+		}
 	}
 	strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
 	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n\r\n");
 	strLog = strTemp + strLog;
+	et = clock();
+	strTemp.Format(IDSTR(IDS_ELAPSED_TIME), et - st);
+	strLog += L"\r\n" + strTemp;
 	APP()->ShowMsg(strLog, IDSTR(IDS_RESULT_REPORT));
+	m_list.EnableWindow(TRUE);
+	m_tool1.EnableWindow(TRUE);
+	m_tool2.EnableWindow(TRUE);
+	st_bIsWorking = FALSE;
+	UpdateCount();
+	if (APP()->m_bUseThread != FALSE) ArrangeCtrl();
 }
 
 //두개의 아이템 교환
@@ -2248,7 +2279,7 @@ void CBatchNamerDlg::UpdateFontSize()
 void CBatchNamerDlg::OnBnClickedBtnStopthread()
 {
 	if (AfxMessageBox(IDSTR(IDS_MSG_STOPTHREAD), MB_YESNO) == IDNO) return;
-	st_bIsThreadWorking = FALSE;
+	st_bIsWorking = FALSE;
 }
 
 

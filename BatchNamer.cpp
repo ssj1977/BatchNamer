@@ -48,6 +48,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_nIconType = SHIL_EXTRALARGE;
 	m_aPreset.SetSize(5);
 	m_bNameAutoFix = FALSE;
+	m_bUseThread = TRUE;
 	m_nSortCol = COL_OLDNAME;
 	m_bSortAscend = TRUE;
 }
@@ -204,6 +205,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("FontSize=%d\r\n"), m_nFontSize);	strData += strLine;
 	strLine.Format(_T("IconType=%d\r\n"), m_nIconType);	strData += strLine;
 	strLine.Format(_T("NameAutoFix=%d\r\n"), m_bNameAutoFix);	strData += strLine;
+	strLine.Format(_T("UseThread=%d\r\n"), m_bUseThread);	strData += strLine;
 	for (int i = 0; i < m_aPreset.GetSize(); i++)
 	{
 		BatchNamerPreset& ps = m_aPreset[i];
@@ -288,6 +290,7 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("FontSize")) == 0) m_nFontSize = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("UseThread")) == 0) m_bUseThread = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("ColWidths")) == 0)
 			{

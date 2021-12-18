@@ -11,6 +11,7 @@ public:
 	CDlgCFG_Etc(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgCFG_Etc();
 	BOOL m_bNameAutoFix;
+	BOOL m_bUseThread;
 	CMenu* m_pMenu;
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
