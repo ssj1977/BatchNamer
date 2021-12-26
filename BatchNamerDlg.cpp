@@ -56,23 +56,6 @@ inline CString GetTimeStringToShow(FILETIME& dt)
 	return strRet;
 }
 
-/*inline CString GetTimeStringToAdd(FILETIME& dt, BOOL bAddDate, BOOL bAddTime)
-{
-	CString strRet;
-	SYSTEMTIME systime;
-	FileTimeToSystemTime(&dt, &systime);
-	if (bAddTime == TRUE)
-	{
-		strRet.Format(_T("%d-%02d-%02d_%02d%02d%02d"), systime.wYear,	systime.wMonth, systime.wDay, 
-													systime.wHour, systime.wMinute, systime.wSecond);
-	}
-	else
-	{
-		strRet.Format(_T("%d-%02d-%02d"), systime.wYear, systime.wMonth, systime.wDay);
-	}
-	return strRet;
-}*/
-
 inline CString GetTimeStringToAdd(CString strDateTime, BOOL bAddDate, BOOL bAddTime)
 {
 	if (strDateTime.IsEmpty()) return strDateTime;
@@ -89,6 +72,14 @@ inline CString GetTimeStringToAdd(CString strDateTime, BOOL bAddDate, BOOL bAddT
 	}
 	return _T("");
 }
+
+inline CString FormatTimeString(CString strDateTime, CString strFormat)
+{
+	COleDateTime dt;
+	dt.ParseDateTime(strDateTime);
+	return dt.Format(strFormat);
+}
+
 
 int GetFileImageIndex(CString strPath)
 {
@@ -560,10 +551,10 @@ void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 	else return; // 이미 존재하는 이름
 	BOOL bIsDir = (BOOL)((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 	int nImage = GetFileImageIndexFromMap(fullpath, bIsDir);
-	CTime tTemp;
-	tTemp = CTime(fd.ftCreationTime);
+	COleDateTime tTemp;
+	tTemp = COleDateTime(fd.ftCreationTime);
 	strTimeCreate = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
-	tTemp = CTime(fd.ftLastWriteTime);
+	tTemp = COleDateTime(fd.ftLastWriteTime);
 	strTimeModify = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
 	strSize = GetFileSizeString(filesize.QuadPart);
 	int nItem = m_list.InsertItem(m_list.GetItemCount(), fd.cFileName, nImage);
@@ -1175,10 +1166,14 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
 			break;
 		case IDS_ADDDATETIMEMODIFY: //변경날짜+시각
-			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, TRUE);
+			//strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, TRUE);
+			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMEMODIFY), str1);
+			nPos = _ttoi(str2);
 			break;
 		case IDS_ADDDATETIMECREATE: //생성날짜+시각
-			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, TRUE);
+			//strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, TRUE);
+			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMECREATE), str1);
+			nPos = _ttoi(str2);
 			break;
 		case IDS_ADDTIMEMODIFY: //변경시각만
 			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE, TRUE);
@@ -1188,7 +1183,9 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 			break;
 		}
 		//앞뒤에 추가로 지정된 문자열 붙이기
-		if (nSubCommand != IDS_ADDSTRING) strAdd = str1 + strAdd + str2;
+		if (nSubCommand != IDS_ADDSTRING && 
+			nSubCommand != IDS_ADDDATETIMEMODIFY &&
+			nSubCommand != IDS_ADDDATETIMECREATE) strAdd = str1 + strAdd + str2;
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir, FALSE);
@@ -1459,15 +1456,18 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	return 0;
 }
 
-void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard)
+void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard, BOOL bPathWithFolder)
 {
-	str.Remove(_T('\\'));
+	if (bPathWithFolder == FALSE)
+	{
+		str.Remove(_T('\\'));
+		str.Remove(_T(':'));
+	}
 	str.Remove(_T('\"'));
 	str.Remove(_T('/'));
 	str.Remove(_T('|'));
 	str.Remove(_T('<'));
 	str.Remove(_T('>'));
-	str.Remove(_T(':'));
 	str.Remove(_T('\r'));
 	str.Remove(_T('\n'));
 	str.Remove(_T('\t'));
@@ -1479,18 +1479,44 @@ void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard)
 }
 
 //파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
-BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
+BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard, BOOL bPathWithFolder)
 {
-	if (str.Find(_T('\\')) != -1) return TRUE;
+	if (bPathWithFolder == FALSE && str.Find(_T('\\')) != -1) return TRUE;
+	if (bPathWithFolder == FALSE && str.Find(_T(':')) != -1) return TRUE;
 	if (str.Find(_T('\"')) != -1) return TRUE;
 	if (str.Find(_T('/')) != -1) return TRUE;
 	if (str.Find(_T('|')) != -1) return TRUE;
 	if (str.Find(_T('<')) != -1) return TRUE;
 	if (str.Find(_T('>')) != -1) return TRUE;
-	if (str.Find(_T(':')) != -1) return TRUE;
 	if (bPassWildCard == FALSE && str.Find(_T('?')) != -1) return TRUE;
 	if (bPassWildCard == FALSE && str.Find(_T('*')) != -1) return TRUE;
 	return FALSE;
+}
+
+//상위 폴더가 없는 경우 해당 폴더를 포함하여 폴더를 생성한다
+BOOL CreateFolder_Ensure(CString strFolder)
+{
+	CString strParent = Get_Folder(strFolder);
+	if (GetFileAttributes(strParent) == INVALID_FILE_ATTRIBUTES)
+	{
+		//상위 폴더가 없는 경우 재귀호출로 생성 시도
+		if (CreateFolder_Ensure(strParent) == FALSE) return FALSE;
+	}
+	try
+	{
+		//해당 폴더 생성
+		if (CreateDirectory(strFolder, NULL) == 0) // 0 이면 실패
+		{
+			//생성에 실패하더라도 이미 존재하는 경우는 TRUE 리턴
+			if (GetLastError() != ERROR_ALREADY_EXISTS) return FALSE;
+		}
+	}
+	catch (CFileException* e)
+	{
+		e->Delete();
+		return FALSE;
+	}
+	return TRUE;
 }
 
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
@@ -1534,7 +1560,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 		nMsg = 0;
 		//변경할 이름이 비어있어나 잘못된 문자가 포함된 경우를 검사한다.
 		if (strTemp.IsEmpty() == TRUE) nMsg = IDS_MSG_NONAME;
-		else if (CheckInvalidCharForFile(strTemp, FALSE)) nMsg = IDS_INVALID_CHAR;
+		else if (CheckInvalidCharForFile(strTemp, FALSE, FALSE)) nMsg = IDS_INVALID_CHAR;
 		if (nMsg != 0)
 		{
 			APP()->ShowMsg(IDSTR(nMsg), IDSTR(IDS_MSG_ERROR));
@@ -2068,59 +2094,31 @@ void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 			if (FindBracketPart(strName, c1, c2, nStart, nEnd) == TRUE)
 			{
-				//strFolder = m_list.GetItemText(i, COL_NEWFOLDER);
-				//strTemp = strName.Mid(nStart, nEnd - nStart + 1);
-				//if (strFolder.GetLength() == 0 || strFolder.GetAt(strFolder.GetLength() - 1) != L'\\') strFolder += L'\\';
-				//strFolder += L'\\' + strTemp;
 				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strName.Mid(nStart, nEnd - nStart + 1);
 				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
 			}
 		}
 	}
-	else if (nSubCommand == IDS_FOLDER_POS)
+	else if (nSubCommand == IDS_FOLDER_POS || nSubCommand == IDS_FOLDER_POS_REVERSE)
 	{
-		if (str1.IsEmpty() && str2.IsEmpty()) return;
 		int nStart = _ttoi(str1);
 		int nEnd = _ttoi(str2);
-		if (str2.IsEmpty()) nEnd = -1;
-		if (nStart >= 0 && nEnd >= 0 && nStart > nEnd) return;
+		if (nStart == 0 && nEnd == 0) return;
+		if (nStart > 0) nStart--; //첫번째 문자의 인덱스는 0
+		if (nEnd > 0 && nStart > nEnd) return; //nEnd가 입력된 상태에서 시작이 끝보다 뒤일때
+		if (nEnd > 0)	nEnd--; //첫번째 문자의 인덱스는 0
+		else			nEnd = -1; //항상 끝까지 
 		CString strName, strFolder, strTemp;
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
 			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			if (nSubCommand == IDS_FOLDER_POS_REVERSE) strName = strName.MakeReverse();
 			if (nEnd == -1) strTemp = strName.Mid(nStart);
 			else strTemp = strName.Mid(nStart, nEnd - nStart + 1);
 			if (strTemp.IsEmpty() == FALSE)
 			{
-				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strTemp;
-				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
-			}
-		}
-	}
-	else if (nSubCommand == IDS_FOLDER_POS_REVERSE)
-	{
-		if (str1.IsEmpty() && str2.IsEmpty()) return;
-		int nStart_R = _ttoi(str1);
-		int nEnd_R = _ttoi(str2);
-		if (str1.IsEmpty()) nStart_R = -1; // 뒤집어서 하므로 -1 이면 맨 뒤부터 라는 뜻
-		if (str2.IsEmpty()) nEnd_R = -1; //뒤집어서 하므로 -1 이면 맨 앞까지 라는 뜻
-		if (nStart_R >= 0 && nEnd_R >= 0 && nStart_R > nEnd_R) return;
-
-		int nStart = -1, nEnd = -1, nLen = 0;
-		CString strName, strFolder, strTemp;
-		for (int i = 0; i < m_list.GetItemCount(); i++)
-		{
-			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
-			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-			nLen = strName.GetLength();
-			if (nStart_R == -1) nEnd = nLen;
-			else nEnd = nLen - nStart_R - 1;
-			if (nEnd_R == -1) nStart = 0;
-			else nStart = nLen - nEnd_R - 1;
-			strTemp = strName.Mid(nStart, nEnd - nStart + 1);
-			if (strTemp.IsEmpty() == FALSE)
-			{
+				if (nSubCommand == IDS_FOLDER_POS_REVERSE) strTemp = strTemp.MakeReverse();
 				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strTemp;
 				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
 			}
@@ -2130,7 +2128,7 @@ void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 	{
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
-			CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
+			CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + FormatTimeString(m_list.GetItemText(i, COL_TIMECREATE), str1);
 			m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
 		}
 	}
@@ -2138,7 +2136,7 @@ void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 	{
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
-			CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE);
+			CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + FormatTimeString(m_list.GetItemText(i, COL_TIMEMODIFY), str1);
 			m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
 		}
 	}
@@ -2210,10 +2208,18 @@ void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString s
 	CString strName, strExt;
 	if (nSubCommand == IDS_DELPOS_FRONT || nSubCommand == IDS_DELPOS_REAR)
 	{
+		// 입력값의 종류
+		// 1) 모두 비어 있거나 값이 0일때 : 작동하지 않음
+		// 2) 시작값이 비어 있을때 또는 0이 입력되어 있을때 : 첫 글자부터
+		// 3) 끝값이 비어 있을때 또는 0이 입력되어 있을때: 마지막 글자까지
+		// 4) 값이 두개 다 있을 때 : 1부터 시작하는 위치이므로 1씩 빼서 계산
 		int nStart = _ttoi(str1);
 		int nEnd = _ttoi(str2);
+		int nEnd_Current = 0;
 		if (nStart == 0 && nEnd == 0) return;
-		if (nEnd > 0 && nStart > nEnd) return;
+		if (nStart > 0) nStart--;
+		if (nEnd > 0 && nStart > nEnd) return; //nEnd가 입력된 상태에서 시작이 끝보다 뒤일때
+		if (nEnd > 0) nEnd--;
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
 			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
@@ -2221,13 +2227,9 @@ void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString s
 			strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 			if (nSubCommand == IDS_DELPOS_FRONT)	//앞의 n부터 m까지
 			{
-				if (nStart == 0) nStart = 1;
-				int nLen = strName.GetLength();
-				if (nStart <= nLen)
-				{
-					if (nEnd > 0 && nEnd < nLen) nLen = nEnd;
-					strName.Delete(nStart - 1, nLen - nStart + 1);
-				}
+				if (nEnd <= 0) nEnd_Current = strName.GetLength(); //nEnd 는 0일 경우 길이에 따라 변한다.
+				else nEnd_Current = nEnd;
+				strName.Delete(nStart, nEnd_Current - nStart + 1);
 			}
 			else if (nSubCommand == IDS_DELPOS_REAR) //뒤의 n개
 			{

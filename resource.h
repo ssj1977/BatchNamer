@@ -157,6 +157,7 @@
 #define IDS_FOLDER_DATECREATE           175
 #define IDS_FOLDER_DATEMODIFY           176
 #define IDS_FOLDER_EXT                  177
+#define IDS_DATETIME_FORMAT             178
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001

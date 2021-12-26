@@ -74,8 +74,6 @@ BOOL CDlgInput::OnInitDialog()
 	LOGFONT lf;
 	GetDlgItem(IDC_STATIC_1)->GetFont()->GetLogFont(&lf);
 	m_nFontHeight = MulDiv(-1 * lf.lfHeight, 72, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY));
-
-
 	if (APP()->m_rcInput.IsRectEmpty() == FALSE)
 	{
 		CRect rcScreen;
@@ -89,8 +87,6 @@ BOOL CDlgInput::OnInitDialog()
 		}
 	}
 	ArrangeCtrl();
-
-
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
@@ -112,14 +108,32 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 		? (GetWindowLong(h1, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h1, GWL_STYLE) & ~ES_NUMBER));
 	SetWindowLong(h2, GWL_STYLE, pItem->m_bIsNumber2 
 		? (GetWindowLong(h2, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h2, GWL_STYLE) & ~ES_NUMBER));
-	SetDlgItemText(IDC_EDIT_1, L"");
-	SetDlgItemText(IDC_EDIT_2, L"");
+	//필요한 경우 기본값을 넣어준다
+	if (pItem->m_strLabel1 == IDSTR(IDS_DATETIME_FORMAT))
+	{ //시각형일때 기본 날짜 포맷 스트링
+		SetDlgItemText(IDC_EDIT_1, L"%Y-%m-%d");
+		SetDlgItemText(IDC_EDIT_2, L"");
+	}
+	else if (pItem->m_nSubCommand == IDS_FOLDER_SPECIFIC)
+	{ //폴더 지정일때 마지막으로 열어본 폴더 
+		CFileDialog dlg(TRUE, _T("*.*"), NULL,
+			OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY,
+			_T("All Files(*.*)|*.*||"), NULL, 0, TRUE);
+		SetDlgItemText(IDC_EDIT_1, dlg.GetFolderPath());
+		SetDlgItemText(IDC_EDIT_2, L"");
+	}
+	else // 나머지는 모두 비운다
+	{
+		SetDlgItemText(IDC_EDIT_1, L"");
+		SetDlgItemText(IDC_EDIT_2, L"");
+	}
 	GetDlgItem(IDC_BTN_FOLDER_SELECT)->ShowWindow((pItem->m_nSubCommand == IDS_FOLDER_SPECIFIC) ? SW_SHOW : SW_HIDE);
+	ArrangeCtrl();
 }
 
 //파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
-BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard);
-void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard);
+BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard, BOOL bPathWithFolder);
+void RemoveInvalidCharForFile(CString& str, BOOL bPassWildCard, BOOL bPathWithFolder);
 
 CString ExtractWildCard(CString str, BOOL bAddToken)
 {
@@ -173,19 +187,20 @@ void CDlgInput::OnOK()
 	if (GetDlgItem(IDC_EDIT_2)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
 	else m_strReturn2.Empty();
 	BOOL bWildCard = FALSE;
+	BOOL bPathWithFolder = (m_nCommand == IDS_TB_16) ? TRUE : FALSE;
 	int nSubCommand = GetSubCommand();
 	if (nSubCommand == IDS_REPLACESTRING || nSubCommand == IDS_FOLDER_PATTERN) bWildCard = TRUE;
 	RemoveEnter(m_strReturn1);
 	RemoveEnter(m_strReturn2);
 	if (APP()->m_bNameAutoFix)
 	{
-		RemoveInvalidCharForFile(m_strReturn1, bWildCard);
-		RemoveInvalidCharForFile(m_strReturn2, bWildCard);
+		RemoveInvalidCharForFile(m_strReturn1, bWildCard, bPathWithFolder);
+		RemoveInvalidCharForFile(m_strReturn2, bWildCard, bPathWithFolder);
 	}
 	else
 	{
-		if (CheckInvalidCharForFile(m_strReturn1, bWildCard)
-			|| CheckInvalidCharForFile(m_strReturn2, bWildCard))
+		if (CheckInvalidCharForFile(m_strReturn1, bWildCard, bPathWithFolder)
+			|| CheckInvalidCharForFile(m_strReturn2, bWildCard, bPathWithFolder))
 		{
 			APP()->ShowMsg(IDSTR(IDS_INVALID_CHAR), IDSTR(IDS_MSG_ERROR));
 			return;
@@ -250,6 +265,7 @@ void CDlgInput::OnSelchangeCbInput()
 	int nSel = m_cb.GetCurSel();
 	if (nSel < 0 || nSel >= m_aInput.GetSize()) return;
 	InputItem* pItem = (InputItem*)m_cb.GetItemData(nSel);
+	m_nCB = nSel;
 	SetInputItem(pItem);
 }
 
@@ -266,8 +282,8 @@ void CDlgInput::InitInputByCommand(int nCommand)
 	InputItem item;
 	switch (nCommand)
 	{
-	case IDS_TB_01: //Replace Name or Extension
-	case IDS_TB_19: // Replace 
+	case IDS_TB_01: // 이름 처리
+	case IDS_TB_19: // 확장자 처리
 		if (nCommand == IDS_TB_19)
 		{
 			item.m_strItemName = IDSTR(IDS_EXT_REPLACE); //"확장자를 추가합니다."
@@ -346,14 +362,16 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_ADDDATETIMECREATE);
 		item.m_nSubCommand = IDS_ADDDATETIMECREATE;
-		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
-		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		item.m_strLabel1 = IDSTR(IDS_DATETIME_FORMAT);
+		if (nCommand == IDS_TB_02)	item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_FRONT);
+		else						item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_BACK);
 		m_aInput.Add(item);
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_ADDDATETIMEMODIFY);
 		item.m_nSubCommand = IDS_ADDDATETIMEMODIFY;
-		item.m_strLabel1 = IDSTR(IDS_ADDPREFIX);
-		item.m_strLabel2 = IDSTR(IDS_ADDSUFFIX);
+		item.m_strLabel1 = IDSTR(IDS_DATETIME_FORMAT);
+		if (nCommand == IDS_TB_02)	item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_FRONT);
+		else						item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_BACK);
 		m_aInput.Add(item);
 		break;
 	case IDS_TB_05:
@@ -471,10 +489,12 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_FOLDER_DATECREATE); 		//생성된 날짜를 추출하여 하위폴더 생성
 		item.m_nSubCommand = IDS_FOLDER_DATECREATE;
+		item.m_strLabel1 = IDSTR(IDS_DATETIME_FORMAT); // 시간값에서 추출할 문자열 포맷
 		m_aInput.Add(item);
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_FOLDER_DATEMODIFY); 		//변경된 날짜를 추출하여 하위폴더 생성
 		item.m_nSubCommand = IDS_FOLDER_DATEMODIFY;
+		item.m_strLabel1 = IDSTR(IDS_DATETIME_FORMAT); // 시간값에서 추출할 문자열 포맷
 		m_aInput.Add(item);
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_FOLDER_EXT); 		//확장자를 추출하여 하위폴더 생성
@@ -569,7 +589,7 @@ BOOL CDlgInput::VerifyReturnValue()
 		{
 			int nStart = _ttoi(m_strReturn1);
 			int nEnd = _ttoi(m_strReturn2);
-			//if (nStart == 0 && nEnd == 0) return FALSE;
+			if (nStart == 0 && nEnd == 0) return FALSE;
 			if (nEnd > 0 && nStart > nEnd)
 			{
 				AfxMessageBox(IDSTR(IDS_MSG_INVALIDPOS));
@@ -685,6 +705,7 @@ void CDlgInput::ArrangeCtrl()
 	//
 	GetDlgItem(IDOK)->MoveWindow(rc.right - (nButtonWidth) *2 - m_nFontHeight, rc.bottom - nButtonHeight, nButtonWidth, nButtonHeight );
 	GetDlgItem(IDCANCEL)->MoveWindow(rc.right - nButtonWidth, rc.bottom - nButtonHeight, nButtonWidth, nButtonHeight);
+	Invalidate();
 	RedrawWindow();
 }
 
