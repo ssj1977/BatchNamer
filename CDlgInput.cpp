@@ -38,6 +38,7 @@ BEGIN_MESSAGE_MAP(CDlgInput, CDialogEx)
 	//}}AFX_MSG_MAP
 	ON_WM_SIZE()
 	ON_WM_GETMINMAXINFO()
+	ON_BN_CLICKED(IDC_BTN_FOLDER_SELECT, &CDlgInput::OnBnClickedBtnFolderSelect)
 END_MESSAGE_MAP()
 
 
@@ -113,6 +114,7 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 		? (GetWindowLong(h2, GWL_STYLE) | ES_NUMBER) : (GetWindowLong(h2, GWL_STYLE) & ~ES_NUMBER));
 	SetDlgItemText(IDC_EDIT_1, L"");
 	SetDlgItemText(IDC_EDIT_2, L"");
+	GetDlgItem(IDC_BTN_FOLDER_SELECT)->ShowWindow((pItem->m_nSubCommand == IDS_FOLDER_SPECIFIC) ? SW_SHOW : SW_HIDE);
 }
 
 //파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
@@ -165,11 +167,14 @@ inline void RemoveEnter(CString& str)
 
 void CDlgInput::OnOK()
 {
+	m_nCB = m_cb.GetCurSel();
 	if (GetDlgItem(IDC_EDIT_1)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_1, m_strReturn1);
 	else m_strReturn1.Empty();
 	if (GetDlgItem(IDC_EDIT_2)->IsWindowVisible())	GetDlgItemText(IDC_EDIT_2, m_strReturn2);
 	else m_strReturn2.Empty();
-	BOOL bWildCard = (GetSubCommand() == IDS_REPLACESTRING) ? TRUE : FALSE;
+	BOOL bWildCard = FALSE;
+	int nSubCommand = GetSubCommand();
+	if (nSubCommand == IDS_REPLACESTRING || nSubCommand == IDS_FOLDER_PATTERN) bWildCard = TRUE;
 	RemoveEnter(m_strReturn1);
 	RemoveEnter(m_strReturn2);
 	if (APP()->m_bNameAutoFix)
@@ -190,6 +195,7 @@ void CDlgInput::OnOK()
 	{
 		//str1과 str2의 wildcard 종류, 개수, 순서가 일치하여야 함
 		//wild카드 이외의 문자를 지우고 난후 값이 일치하는지 본다
+		//VerifyReturnValue가 아닌 여기에서 처리하여 창을 닫히지 않게 한다.
 		CString strWild1 = ExtractWildCard(m_strReturn1, TRUE);
 		CString strWild2 = ExtractWildCard(m_strReturn2, TRUE);
 		if (strWild1 != strWild2)
@@ -207,7 +213,6 @@ void CDlgInput::OnOK()
 			return;
 		}
 	}
-	m_nCB = m_cb.GetCurSel();
 	GetWindowRect(APP()->m_rcInput);
 	CDialogEx::OnOK();
 }
@@ -424,6 +429,58 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel1 = IDSTR(IDS_COL_NEWNAME);
 		m_aInput.Add(item);
 		break;
+	case IDS_TB_16: // 폴더 변경
+		item.m_strItemName = IDSTR(IDS_FOLDER_SPECIFIC); 		//지정한 특정 폴더로
+		item.m_nSubCommand = IDS_FOLDER_SPECIFIC;
+		item.m_strLabel1 = IDSTR(IDS_COL_NEWFOLDER);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_PARENT); 		//지정한 단계만큼 상위 폴더로
+		item.m_nSubCommand = IDS_FOLDER_PARENT;
+		item.m_strLabel1 = IDSTR(IDS_LEVEL);
+		item.m_bIsNumber1 = TRUE;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_PATTERN); 		//지정한 패턴을 추출해서 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_PATTERN;
+		item.m_strLabel1 = IDSTR(IDS_PATTERN_FIND);
+		item.m_strLabel2 = IDSTR(IDS_PATTERN_OUTPUT);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_BRACKET); 		//묶인곳을 추출해서 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_BRACKET;
+		item.m_strLabel1 = IDSTR(IDS_BRACKET1);
+		item.m_strLabel2 = IDSTR(IDS_BRACKET2);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_POS); 		//앞에서부터 지정된 부분을 추출하여 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_POS;
+		item.m_strLabel1 = IDSTR(IDS_POS_1);
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel2 = IDSTR(IDS_POS_2);
+		item.m_bIsNumber2 = TRUE;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_POS_REVERSE); 		//뒤에서부터 지정된 부분을 추출하여 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_POS_REVERSE;
+		item.m_strLabel1 = IDSTR(IDS_POS_1_REVERSE);
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel2 = IDSTR(IDS_POS_2_REVERSE);
+		item.m_bIsNumber2 = TRUE;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_DATECREATE); 		//생성된 날짜를 추출하여 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_DATECREATE;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_DATEMODIFY); 		//변경된 날짜를 추출하여 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_DATEMODIFY;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_FOLDER_EXT); 		//확장자를 추출하여 하위폴더 생성
+		item.m_nSubCommand = IDS_FOLDER_EXT;
+		m_aInput.Add(item);
+		break;
 	case IDS_PRESET_NAME:
 		item.m_strItemName = IDSTR(IDS_PRESET_NAME_DESC);
 		item.m_nSubCommand = IDS_PRESET_NAME_DESC;
@@ -507,6 +564,36 @@ BOOL CDlgInput::VerifyReturnValue()
 		break;
 	case IDS_TB_13: // Manual Change
 		break;
+	case IDS_TB_16: // 폴더 변경
+		if (nSubCommand == IDS_FOLDER_POS || nSubCommand == IDS_FOLDER_POS_REVERSE)
+		{
+			int nStart = _ttoi(m_strReturn1);
+			int nEnd = _ttoi(m_strReturn2);
+			//if (nStart == 0 && nEnd == 0) return FALSE;
+			if (nEnd > 0 && nStart > nEnd)
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_INVALIDPOS));
+				return FALSE;
+			}
+		}
+		else if (nSubCommand == IDS_FOLDER_BRACKET)
+		{
+			if (m_strReturn1.IsEmpty() || m_strReturn2.IsEmpty())
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_BRACKETINVALID)); //_T("시작/끝 문자가 정확하게 지정되지 않았습니다.")
+				return FALSE;
+			}
+			if (m_strReturn1.GetLength() > 1 || m_strReturn2.GetLength() > 1)
+			{
+				AfxMessageBox(IDSTR(IDS_MSG_BRACKETLEN)); //(_T("구분자 길이가 한 글자가 아닙니다."));
+				return FALSE;
+			}
+		}
+		else if (nSubCommand == IDS_FOLDER_PATTERN)
+		{
+			if (m_strReturn1.IsEmpty()) return FALSE;
+		}
+		break;
 	case IDS_PRESET_NAME:
 		//if (m_strReturn1.IsEmpty()) return FALSE;
 		break;
@@ -569,8 +656,26 @@ void CDlgInput::ArrangeCtrl()
 	//
 	nInputHeight -= (nStaticHeight + 2) * 3 + nComboHeight + (m_nFontHeight * 3) + nButtonHeight;
 	nInputHeight /= 2;
-	GetDlgItem(IDC_STATIC_1)->MoveWindow(rc.left, rc.top, rc.Width(), rcStatic.Height());
+
+	CButton* pBtn = (CButton*)(GetDlgItem(IDC_BTN_FOLDER_SELECT));
+	CRect rcBtn;
+	pBtn->GetWindowRect(rcBtn);
+	int nBtnW = rcBtn.Width();
+	rcBtn.left = rc.right - nBtnW;
+	rcBtn.right = rc.right;
+	rcBtn.top = rc.top;
+	rcBtn.bottom = rc.top + rcStatic.Height() + 2;
+	pBtn->MoveWindow(rcBtn);
+	if (pBtn->IsWindowVisible() == FALSE)
+	{
+		GetDlgItem(IDC_STATIC_1)->MoveWindow(rc.left, rc.top, rc.Width(), rcStatic.Height());
+	}
+	else
+	{
+		GetDlgItem(IDC_STATIC_1)->MoveWindow(rc.left, rc.top, rc.Width() - rcBtn.Width() - 5, rcStatic.Height());
+	}
 	rc.top += nStaticHeight + 2;
+
 	GetDlgItem(IDC_EDIT_1)->MoveWindow(rc.left, rc.top, rc.Width(), nInputHeight);
 	rc.top += nInputHeight + m_nFontHeight;
 	//
@@ -590,4 +695,15 @@ void CDlgInput::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 	lpMMI->ptMinTrackSize.x = m_nMinWidth;
 	lpMMI->ptMinTrackSize.y = m_nMinHeight;
 	CDialogEx::OnGetMinMaxInfo(lpMMI);
+}
+
+
+void CDlgInput::OnBnClickedBtnFolderSelect()
+{
+	CFolderPickerDialog dlg;
+	CString strTitle;
+	strTitle.LoadString(IDS_FOLDER_SPECIFIC);
+	dlg.GetOFN().lpstrTitle = strTitle;
+	if (dlg.DoModal() == IDCANCEL) return;
+	SetDlgItemText(IDC_EDIT_1, dlg.GetPathName());
 }

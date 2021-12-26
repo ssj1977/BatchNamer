@@ -178,7 +178,7 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 	int nItem = pList->GetNextItem(-1, LVNI_SELECTED);
 	if (nItem == -1) return;
 	PresetTask& task = preset.m_aTask[nItem];
-	BOOL bUseInputDlg = FALSE;
+/*	BOOL bUseInputDlg = FALSE;
 	switch (task.m_nCommand)
 	{
 //	case IDS_TB_01:	case IDS_TB_02:	case IDS_TB_03:	case IDS_TB_05:	
@@ -187,7 +187,7 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 //		break;
 //	case IDS_TB_04: case IDS_TB_06: case IDS_TB_07: case IDS_TB_17:
 //		break;
-	case IDS_TB_16:
+/*	case IDS_TB_16:
 		if (TRUE)
 		{
 			CDlgFolderSelect dlg;
@@ -209,7 +209,7 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 	default:
 		bUseInputDlg = (task.m_nSubCommand != 0);
 	}
-	if (bUseInputDlg == TRUE)
+	if (bUseInputDlg == TRUE)*/
 	{
 		CDlgInput dlg;
 		dlg.InitInputByCommand(task.m_nCommand);
@@ -256,9 +256,8 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_NAME_REMOVENUMBER: nCommand = IDS_TB_07;	break;
 	case IDM_NAME_DIGIT:		nCommand = IDS_TB_08;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_ADDNUM:		nCommand = IDS_TB_09;	bUseInputDlg = TRUE;		break;
-	case IDM_NAME_SETFOLDER:
-		nCommand = IDS_TB_16;
-		if (TRUE)
+	case IDM_NAME_SETFOLDER:	nCommand = IDS_TB_16;	bUseInputDlg = TRUE;		break;
+/*		if (TRUE)
 		{
 			CDlgFolderSelect dlg;
 			if (dlg.DoModal() == IDCANCEL) return TRUE;
@@ -275,7 +274,7 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 				str2.Format(L"%d", dlg.m_nLevel);
 			}
 		}
-		break;
+		break;*/
 	case IDM_EXT_DEL:			nCommand = IDS_TB_17;	break;
 	case IDM_EXT_ADD:			nCommand = IDS_TB_18;	bUseInputDlg = TRUE;		break;
 	case IDM_EXT_REPLACE:		nCommand = IDS_TB_19;	bUseInputDlg = TRUE;		break;

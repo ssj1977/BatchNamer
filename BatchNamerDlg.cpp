@@ -20,6 +20,7 @@
 #include "CDlgSort.h"
 #include "CDlgPreset.h"
 #include "CDlgFolderSelect.h"
+#include "CDlgApplyOption.h"
 #pragma warning(disable:4786)
 //#include <map>
 #include <vector>
@@ -38,7 +39,7 @@ typedef vector<CString> CStrArray;
 typedef map<CString, int> CExtMap; //확장자에 해당하는 이미지맵의 번호를 기억
 typedef map<CString, int> CFolderMap; //폴더별 카운트용
 static CExtMap mapExt;
-static BOOL st_bIsWorking;
+static BOOL st_bIsIdle;
 
 inline CString GetFolderName(CString strPath)
 {
@@ -119,6 +120,7 @@ int GetFileImageIndexFromMap(CString strPath, BOOL bIsDirectory)
 	return (*it).second;
 }
 
+BOOL FindBracketPart(CString& strSrc, TCHAR c1, TCHAR c2, int& nStart, int& nEnd);
 
 
 // CBatchNamerDlg 대화 상자
@@ -134,7 +136,7 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_clrDefault_Text = RGB(0, 0, 0);
 	m_lfHeight = 0;
 	m_pSysImgList = NULL;
-	st_bIsWorking = FALSE;
+	st_bIsIdle = TRUE;
 	m_nTempLoadType = -1;
 }
 
@@ -287,6 +289,16 @@ void CBatchNamerDlg::OnOK()
 
 void CBatchNamerDlg::OnCancel()
 {
+	if (st_bIsIdle == FALSE)
+	{
+		if (AfxMessageBox(IDSTR(IDS_MSG_STOPTHREAD), MB_YESNO) == IDNO) return;
+		st_bIsIdle = TRUE;
+	}
+	if (m_list.GetItemCount() > 0)
+	{
+		if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return;
+	}
+
 	ShowWindow(SW_SHOWNORMAL);
 	GetWindowRect(APP()->m_rcMain);
 	UpdateColumnSizes();
@@ -321,10 +333,10 @@ void CBatchNamerDlg::ArrangeCtrl()
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
 		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT);
 	}
-	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsWorking ? SW_SHOW : SW_HIDE);
-	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(st_bIsWorking);
+	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsIdle ? SW_HIDE : SW_SHOW);
+	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(!st_bIsIdle);
 	GetDlgItem(IDC_BTN_STOPTHREAD)->MoveWindow(rc.right - TOOLWIDTH, rc.bottom - BARHEIGHT + 1, TOOLWIDTH, BARHEIGHT - 2);
-	int BARWIDTH = rc.Width() - (st_bIsWorking ? TOOLWIDTH : 0);
+	int BARWIDTH = rc.Width() - (st_bIsIdle ? 0 : TOOLWIDTH);
 	GetDlgItem(IDC_ST_BAR)->MoveWindow(0, rc.bottom - BARHEIGHT + 1, BARWIDTH, BARHEIGHT - 2);
 	//m_tool1.Invalidate();
 	//m_tool2.Invalidate();
@@ -341,7 +353,7 @@ void CBatchNamerDlg::OnSize(UINT nType, int cx, int cy)
 
 BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 {
-	if (st_bIsWorking == TRUE)
+	if (st_bIsIdle == FALSE)
 	{
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
@@ -479,7 +491,7 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 	//주로 단축키의 처리
 	if (pMsg->message == WM_KEYDOWN)
 	{
-		if (st_bIsWorking == FALSE)
+		if (st_bIsIdle == TRUE)
 		{
 			if (pMsg->wParam != VK_CONTROL &&
 				pMsg->wParam != VK_SHIFT &&
@@ -504,14 +516,12 @@ BOOL CBatchNamerDlg::PreTranslateMessage(MSG* pMsg)
 			//종료시 확인처리
 			if (pMsg->wParam == VK_ESCAPE)
 			{
-				if (m_list.GetItemCount() > 0)
-				{
-					if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return TRUE;
-				}
+				OnCancel();
+				return TRUE;
 			}
 
 		}
-		else //st_bIsWorking == TRUE
+		else //st_bIsIdle == FALSE
 		{
 			if (pMsg->wParam == VK_ESCAPE) OnBnClickedBtnStopthread();
 			return TRUE;
@@ -906,7 +916,7 @@ int GetStringTokens(CStringArray& aRet, CString str)
 	return (int)aRet.GetSize();
 }
 
-CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
+CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bReturnBlockOnly)
 {
 	//원본 문자열을 와일드카드와 비와일드카드 단위 토큰으로 쪼갠다
 	CStringArray aStr1, aStr2, aRet;
@@ -993,7 +1003,7 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 		if (nPos <= nMaxPos && nBlockEndPos >= 0)
 		{
 			//찾아낸 블록과 이전 블록 간 사이의 문자는 그냥 추가
-			strRet += strSrc.Mid(nBlockPrevEndPos + 1, nBlockBeginPos - nBlockPrevEndPos - 1);
+			if (bReturnBlockOnly == FALSE) strRet += strSrc.Mid(nBlockPrevEndPos + 1, nBlockBeginPos - nBlockPrevEndPos - 1);
 			if (nLen1 == nLen2) //1:1 매칭인 경우
 			{
 				for (int j = 0; j < aRet.GetSize(); j++) strRet += aRet[j];
@@ -1011,7 +1021,11 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2)
 	//뒤에 남은 문자열 추가
 	if (nPos == -1) nPos = 0;
 	if (nBlockEndPos == -1) nBlockEndPos = nBlockPrevEndPos;
-	strRet += strSrc.Mid(nBlockEndPos + 1);
+	if (bReturnBlockOnly == FALSE || cToken == L'*')
+	{
+		strRet += strSrc.Mid(nBlockEndPos + 1);
+	}
+
 	return strRet;
 }
 
@@ -1036,7 +1050,7 @@ void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, 
 		{
 			if (bUseWildCard == TRUE)
 			{
-				strNew = ReplaceWithWildCards(strOld, str1, str2);
+				strNew = ReplaceWithWildCards(strOld, str1, str2, FALSE);
 			}
 			else
 			{
@@ -1419,12 +1433,16 @@ void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
 	}
 }*/
 
+static int st_nApplyOption = APPLY_MOVE;
+
 void CBatchNamerDlg::ApplyChange_Start()
 {
-	if (AfxMessageBox(IDSTR(IDS_MSG_APPLYASK), MB_OKCANCEL) == IDCANCEL) return;
+	CDlgApplyOption dlg;
+	if (dlg.DoModal() == IDCANCEL) return;
+	st_nApplyOption = dlg.m_nApplyOption;
 	if (APP()->m_bUseThread == FALSE)
 	{
-		ApplyChange();
+		ApplyChange(st_nApplyOption);
 	}
 	else
 	{
@@ -1437,7 +1455,7 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	//CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
 	CBatchNamerDlg* dlg = (CBatchNamerDlg*)lParam;
 	APP()->UpdateThreadLocale();
-	dlg->ApplyChange();
+	dlg->ApplyChange(st_nApplyOption);
 	return 0;
 }
 
@@ -1476,9 +1494,9 @@ BOOL CheckInvalidCharForFile(CString str, BOOL bPassWildCard)
 }
 
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
-void CBatchNamerDlg::ApplyChange()
+void CBatchNamerDlg::ApplyChange(int nApplyOption)
 {
-	st_bIsWorking = TRUE;
+	st_bIsIdle = FALSE;
 	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
 	m_list.EnableWindow(FALSE);
 	m_tool1.EnableWindow(FALSE);
@@ -1502,8 +1520,10 @@ void CBatchNamerDlg::ApplyChange()
 		m_list.SetItemState(nItemSel, 0, LVIS_SELECTED | LVIS_FOCUSED);
 		nItemSel = m_list.GetNextItem(-1, LVNI_SELECTED);
 	}
+	
+	CPathSet setNewFolder; // 폴더 존재여부 확인용
 	//중복여부 체크 및 새로운 파일명 만들기
-	CPathSet setNewPath;
+	CPathSet setNewPath;  //파일 이름 중복 확인용
 	CPathSet::iterator it;
 	CStrArray aNewPath;
 	int nCount = m_list.GetItemCount();
@@ -1546,21 +1566,51 @@ void CBatchNamerDlg::ApplyChange()
 	if (aNewPath.size() != nCount) { APP()->ShowMsg(IDSTR(IDS_MSG_MISMATCH), IDSTR(IDS_MSG_ERROR)); return; }
 
 	//실제 파일이름을 바꾸는 곳
-	CString strOldPath, strOldExt, strNewExt, strBar;
+	CString strOldPath, strOldExt, strNewExt, strBar, strNewFolder;
 	int i=0, nImage = 0;
 	int nChanged = 0, nPercent = 0, nPreviousPercent = 0;
 	BOOL bIsDir = FALSE;
+	BOOL bSuccess = FALSE;
 	for (i = 0; i < nCount; i++)
 	{
-		if (st_bIsWorking == FALSE) break;
+		if (st_bIsIdle == TRUE) break;
 		strOldPath = m_list.GetOldPath(i);
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		try
 		{
+			//경로가 존재하는지 확인하고 없다면 만든다
+			strNewFolder = m_list.GetItemText(i, COL_NEWFOLDER);
+			if (strNewFolder.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) != 0)
+			{ 
+				//경로가 바뀌어야 하는 경우 파일시스템을 보기 전에 setNewFolder 를 검색한다.
+				it = setNewFolder.find(strNewFolder);
+				if (it == setNewFolder.end())
+				{  //새로운 폴더인 경우 GetFileAttribute 로 존재여부를 확인한다.
+					DWORD dw = GetFileAttributes(strNewFolder);
+					if (dw == INVALID_FILE_ATTRIBUTES)
+					{
+						CreateFolder_Ensure(strNewFolder);//존재하지 않으면 만든다
+						setNewFolder.insert(strNewFolder); //폴더 생성이 성공하든 실패하든 반복하지 않도록 set에 넣어준다
+					}
+					//else if ((dw & FILE_ATTRIBUTE_DIRECTORY) == 0) // 존재는 하지만 디렉토리가 아닌 경우 => Exception 으로 처리
+				}
+			}
+			//실제 파일 처리
 			if (aNewPath.at(i).Compare(strOldPath) != 0)
-			//if (aNewPath.at(i).CompareNoCase(strOldPath) != 0)
 			{
-				if (MoveFileExW(strOldPath, aNewPath[i], MOVEFILE_COPY_ALLOWED) == FALSE)
+				if (nApplyOption == APPLY_MOVE)
+				{
+					bSuccess = MoveFileExW(strOldPath, aNewPath[i], MOVEFILE_COPY_ALLOWED);
+				}
+				else if (nApplyOption == APPLY_COPY)
+				{
+					bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
+				}
+				else
+				{
+					break;
+				}
+				if (bSuccess == FALSE)
 				{
 					LPVOID lpMsgBuf;
 					DWORD err = GetLastError();
@@ -1632,7 +1682,7 @@ void CBatchNamerDlg::ApplyChange()
 	m_list.EnableWindow(TRUE);
 	m_tool1.EnableWindow(TRUE);
 	m_tool2.EnableWindow(TRUE);
-	st_bIsWorking = FALSE;
+	st_bIsIdle = TRUE;
 	UpdateCount();
 	if (APP()->m_bUseThread != FALSE) ArrangeCtrl();
 }
@@ -1958,7 +2008,7 @@ void CBatchNamerDlg::ImportPath(BOOL bFromFile)
 void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 {
 	//str1에 값이 들어간 경우에는 지정된 폴더로 이동
-	if (nSubCommand == IDS_FOLDER_SPECIFIC) //(str1.IsEmpty() == FALSE)
+	if (nSubCommand == IDS_FOLDER_SPECIFIC)
 	{
 		CString strPath = str1;
 		//e:\ 같은 경우를 대비하여 끝에 오는 \를 삭제
@@ -1969,9 +2019,10 @@ void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 			m_list.SetItemText(i, COL_NEWFOLDER, strPath);
 		}
 	}
-	else if (nSubCommand == IDS_FOLDER_PARENT) //(str2.IsEmpty() == FALSE)
+	else if (nSubCommand == IDS_FOLDER_PARENT)
 	{
-		int nLevel = _ttoi(str2);
+		if (str1.IsEmpty() == TRUE && str2.IsEmpty() == FALSE) str1 = str2;
+		int nLevel = _ttoi(str1);
 		CString strNewFolder, strTemp;
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
@@ -1985,11 +2036,143 @@ void CBatchNamerDlg::NameSetFolder(int nSubCommand, CString str1, CString str2)
 			m_list.SetItemText(i, COL_NEWFOLDER, strNewFolder);
 		}
 	}
+	else if (nSubCommand == IDS_FOLDER_PATTERN)
+	{
+		if (str1.IsEmpty()) return;
+		if (str2.IsEmpty()) str2 = str1;
+		CString strName, strFolder, strTemp;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			strTemp = ReplaceWithWildCards(strName, str1, str2, TRUE);
+			if (strTemp.IsEmpty() == FALSE)
+			{
+				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strTemp;
+				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+			}
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_BRACKET)
+	{
+		if (str1.IsEmpty() || str2.IsEmpty()) return;
+		if (str1.GetLength() > 1 || str2.GetLength() > 1) return;
+		TCHAR c1 = str1.GetAt(0);
+		TCHAR c2 = str2.GetAt(0);
+		CString strName, strFolder; //strTemp
+		int nStart, nEnd;
+		//int n1, n2;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			if (FindBracketPart(strName, c1, c2, nStart, nEnd) == TRUE)
+			{
+				//strFolder = m_list.GetItemText(i, COL_NEWFOLDER);
+				//strTemp = strName.Mid(nStart, nEnd - nStart + 1);
+				//if (strFolder.GetLength() == 0 || strFolder.GetAt(strFolder.GetLength() - 1) != L'\\') strFolder += L'\\';
+				//strFolder += L'\\' + strTemp;
+				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strName.Mid(nStart, nEnd - nStart + 1);
+				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+			}
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_POS)
+	{
+		if (str1.IsEmpty() && str2.IsEmpty()) return;
+		int nStart = _ttoi(str1);
+		int nEnd = _ttoi(str2);
+		if (str2.IsEmpty()) nEnd = -1;
+		if (nStart >= 0 && nEnd >= 0 && nStart > nEnd) return;
+		CString strName, strFolder, strTemp;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			if (nEnd == -1) strTemp = strName.Mid(nStart);
+			else strTemp = strName.Mid(nStart, nEnd - nStart + 1);
+			if (strTemp.IsEmpty() == FALSE)
+			{
+				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strTemp;
+				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+			}
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_POS_REVERSE)
+	{
+		if (str1.IsEmpty() && str2.IsEmpty()) return;
+		int nStart_R = _ttoi(str1);
+		int nEnd_R = _ttoi(str2);
+		if (str1.IsEmpty()) nStart_R = -1; // 뒤집어서 하므로 -1 이면 맨 뒤부터 라는 뜻
+		if (str2.IsEmpty()) nEnd_R = -1; //뒤집어서 하므로 -1 이면 맨 앞까지 라는 뜻
+		if (nStart_R >= 0 && nEnd_R >= 0 && nStart_R > nEnd_R) return;
+
+		int nStart = -1, nEnd = -1, nLen = 0;
+		CString strName, strFolder, strTemp;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			nLen = strName.GetLength();
+			if (nStart_R == -1) nEnd = nLen;
+			else nEnd = nLen - nStart_R - 1;
+			if (nEnd_R == -1) nStart = 0;
+			else nStart = nLen - nEnd_R - 1;
+			strTemp = strName.Mid(nStart, nEnd - nStart + 1);
+			if (strTemp.IsEmpty() == FALSE)
+			{
+				strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strTemp;
+				m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+			}
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_DATECREATE)
+	{
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
+			m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_DATEMODIFY)
+	{
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE);
+			m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+		}
+	}
+	else if (nSubCommand == IDS_FOLDER_EXT)
+	{
+		CString strFolder, strTemp;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+			if (bIsDir == FALSE)
+			{
+				strTemp = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), FALSE, FALSE);
+				if (strTemp.IsEmpty() == FALSE)
+				{
+					strFolder = m_list.GetItemText(i, COL_NEWFOLDER) + L'\\' + strTemp;
+					m_list.SetItemText(i, COL_NEWFOLDER, strFolder);
+				}
+			}
+		}
+	}
+
 }
+
 
 void CBatchNamerDlg::NameSetFolder()
 {
-	CDlgFolderSelect dlg;
+	CDlgInput dlg;
+	dlg.InitInputByCommand(IDS_TB_16);
+	if (dlg.DoModal() == IDCANCEL) return;
+	if (dlg.VerifyReturnValue() == FALSE) return;
+	m_list.SetRedraw(FALSE);
+	NameSetFolder(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2);
+	m_list.SetRedraw(TRUE);
+/*	CDlgFolderSelect dlg;
 	if (dlg.DoModal() == IDCANCEL) return;
 
 	m_list.SetRedraw(FALSE);
@@ -2003,7 +2186,23 @@ void CBatchNamerDlg::NameSetFolder()
 		strTemp.Format(L"%d", dlg.m_nLevel);
 		NameSetFolder(IDS_FOLDER_PARENT, L"", strTemp);
 	}
-	m_list.SetRedraw(TRUE);
+	m_list.SetRedraw(TRUE);*/
+}
+
+BOOL FindBracketPart(CString& strSrc, TCHAR c1, TCHAR c2, int& nStart, int& nEnd)
+{
+	int n1, n2;
+	nStart = -1; nEnd = strSrc.GetLength() - 1;
+	for (n1 = 0; n1 <= nEnd; n1++)
+	{
+		if (strSrc.GetAt(n1) == c1) { nStart = n1; n1++; break; }
+	}
+	for (n2 = n1; n2 <= nEnd; n2++)
+	{
+		if (strSrc.GetAt(n2) == c2) { nEnd = n2; break; }
+	}
+	if (nStart != -1 && nStart < nEnd && nEnd == n2) return TRUE;
+	return FALSE;
 }
 
 void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString str2)
@@ -2047,13 +2246,20 @@ void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString s
 		TCHAR c1 = str1.GetAt(0);
 		TCHAR c2 = str2.GetAt(0);
 		CString strName, strExt;
-		int n1, n2, nStart, nEnd;
+		int nStart, nEnd;
+		//int n1, n2;
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
 			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 			strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-			nStart = -1; nEnd = strName.GetLength() - 1;
+			if (FindBracketPart(strName, c1, c2, nStart, nEnd) == TRUE)
+			{
+				strName.Delete(nStart, nEnd - nStart + 1);
+				if (strExt.IsEmpty() == FALSE) strName += strExt;
+				m_list.SetItemText(i, COL_NEWNAME, strName);
+			}
+			/* nStart = -1; nEnd = strName.GetLength() - 1;
 			n1 = 0; n2 = 0;
 			for (n1 = 0; n1 <= nEnd; n1++)
 			{
@@ -2066,9 +2272,7 @@ void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString s
 			if (nStart != -1 && nStart < nEnd && nEnd == n2)
 			{
 				strName.Delete(nStart, nEnd - nStart + 1);
-			}
-			if (strExt.IsEmpty() == FALSE) strName += strExt;
-			m_list.SetItemText(i, COL_NEWNAME, strName);
+			}*/
 		}
 	}
 }
@@ -2279,7 +2483,7 @@ void CBatchNamerDlg::UpdateFontSize()
 void CBatchNamerDlg::OnBnClickedBtnStopthread()
 {
 	if (AfxMessageBox(IDSTR(IDS_MSG_STOPTHREAD), MB_YESNO) == IDNO) return;
-	st_bIsWorking = FALSE;
+	st_bIsIdle = TRUE;
 }
 
 

@@ -31,4 +31,5 @@ public:
 	afx_msg void OnBnClickedBtnFolderSelect();
 	afx_msg void OnBnClickedRadioParentFolder();
 	afx_msg void OnBnClickedRadioSpecificFolder();
+	afx_msg void OnBnClickedCancel();
 };

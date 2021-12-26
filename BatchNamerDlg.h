@@ -62,7 +62,7 @@ protected:
 	void ListDown();
 	void ListUp();
 	void SwapItem(int n1, int n2);
-	void ApplyChange();
+	void ApplyChange(int nApplyOption);
 	void ApplyChange_Start();
 	void UndoChanges(BOOL bSelectedOnly = FALSE);
 	void PresetEdit();

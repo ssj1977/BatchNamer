@@ -5,6 +5,7 @@
 #define IDS_TB_00                       1
 #define IDS_TB_01                       2
 #define IDS_TB_02                       3
+#define IDC_BTN_COPY                    3
 #define IDS_TB_03                       4
 #define IDS_TB_04                       5
 #define IDS_TB_05                       6
@@ -125,6 +126,11 @@
 #define IDS_INVALID_FOLDER              119
 #define IDS_FOLDER_PARENT               120
 #define IDS_ELAPSED_TIME                121
+#define IDS_LEVEL                       122
+#define IDS_POS_1_REVERSE               123
+#define IDS_POS_2_REVERSE               124
+#define IDS_PATTERN_FIND                125
+#define IDS_PATTERN_OUTPUT              126
 #define IDR_MAINFRAME                   128
 #define IDD_INPUT                       129
 #define IDR_TOOLBAR1                    130
@@ -143,6 +149,14 @@
 #define IDS_PRESET_EXPORT               163
 #define IDS_PRESET_IMPORT               164
 #define IDD_FOLDER_SELECT               165
+#define IDD_APPLY_OPTION                168
+#define IDS_FOLDER_PATTERN              170
+#define IDS_FOLDER_BRACKET              172
+#define IDS_FOLDER_POS                  173
+#define IDS_FOLDER_POS_REVERSE          174
+#define IDS_FOLDER_DATECREATE           175
+#define IDS_FOLDER_DATEMODIFY           176
+#define IDS_FOLDER_EXT                  177
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001
@@ -200,6 +214,8 @@
 #define IDC_BTN_FOLDER_SELECT           1073
 #define IDC_EDIT2                       1074
 #define IDC_EDIT_PARENT_LEVEL           1074
+#define IDC_BTN_MOVE                    1075
+#define IDC_RADIO_FOLDER_CREATE         1083
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
 #define IDM_PRESET_APPLY2               32772
@@ -255,9 +271,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        168
+#define _APS_NEXT_RESOURCE_VALUE        172
 #define _APS_NEXT_COMMAND_VALUE         32854
-#define _APS_NEXT_CONTROL_VALUE         1075
+#define _APS_NEXT_CONTROL_VALUE         1076
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

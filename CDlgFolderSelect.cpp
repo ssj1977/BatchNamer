@@ -32,6 +32,7 @@ BEGIN_MESSAGE_MAP(CDlgFolderSelect, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_FOLDER_SELECT, &CDlgFolderSelect::OnBnClickedBtnFolderSelect)
 	ON_BN_CLICKED(IDC_RADIO_PARENT_FOLDER, &CDlgFolderSelect::OnBnClickedRadioParentFolder)
 	ON_BN_CLICKED(IDC_RADIO_SPECIFIC_FOLDER, &CDlgFolderSelect::OnBnClickedRadioSpecificFolder)
+	ON_BN_CLICKED(IDCANCEL, &CDlgFolderSelect::OnBnClickedCancel)
 END_MESSAGE_MAP()
 
 
@@ -118,4 +119,11 @@ void CDlgFolderSelect::OnBnClickedRadioSpecificFolder()
 	GetDlgItem(IDC_EDIT_PARENT_LEVEL)->EnableWindow(FALSE);
 	GetDlgItem(IDC_EDIT_PARENT_FOLDER)->EnableWindow(TRUE);
 	GetDlgItem(IDC_BTN_FOLDER_SELECT)->EnableWindow(TRUE);
+}
+
+
+void CDlgFolderSelect::OnBnClickedCancel()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CDialogEx::OnCancel();
 }

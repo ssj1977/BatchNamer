@@ -187,6 +187,7 @@
   <ItemGroup>
     <ClInclude Include="BatchNamer.h" />
     <ClInclude Include="BatchNamerDlg.h" />
+    <ClInclude Include="CDlgApplyOption.h" />
     <ClInclude Include="CDlgCFG_Etc.h" />
     <ClInclude Include="CDlgCFG_Load.h" />
     <ClInclude Include="CDlgCFG_View.h" />
@@ -206,6 +207,7 @@
   <ItemGroup>
     <ClCompile Include="BatchNamer.cpp" />
     <ClCompile Include="BatchNamerDlg.cpp" />
+    <ClCompile Include="CDlgApplyOption.cpp" />
     <ClCompile Include="CDlgCFG_Etc.cpp" />
     <ClCompile Include="CDlgCFG_Load.cpp" />
     <ClCompile Include="CDlgCFG_View.cpp" />
