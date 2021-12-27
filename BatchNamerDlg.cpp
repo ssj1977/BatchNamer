@@ -1519,6 +1519,56 @@ BOOL CreateFolder_Ensure(CString strFolder)
 	return TRUE;
 }
 
+void StringArray2szzBuffer(CStringArray& aPath, TCHAR*& pszzBuf)
+{
+	if (aPath.GetSize() == 0)
+	{
+		pszzBuf = NULL;
+		return;
+	}
+	//Caculate Buffer Size
+	size_t uBufSize = 0;
+	for (int i = 0; i < aPath.GetSize(); i++)
+	{
+		uBufSize += aPath[i].GetLength() + 1; //String + '\0'
+	}
+	uBufSize += 1; //For the last '\0'
+	//Copy into buffer
+	pszzBuf = new TCHAR[uBufSize];
+	memset(pszzBuf, 0, uBufSize * sizeof(TCHAR));
+	TCHAR* pBufPos = pszzBuf;
+	for (int i = 0; i < aPath.GetSize(); i++)
+	{
+		lstrcpy(pBufPos, (LPCTSTR)aPath[i]);
+		pBufPos = 1 + _tcschr(pBufPos, _T('\0'));
+	}
+}
+
+BOOL CopyPath(CStringArray& aOldPath, CStringArray& aNewPath, BOOL bMove)
+{
+	if (aOldPath.GetSize() == 0 || aOldPath.GetSize() != aNewPath.GetSize()) return FALSE;
+		TCHAR* pszzBuf_OldPath = NULL;
+	TCHAR* pszzBuf_NewPath = NULL;
+	StringArray2szzBuffer(aOldPath, pszzBuf_OldPath);
+	if (pszzBuf_OldPath == NULL) return FALSE;
+	StringArray2szzBuffer(aNewPath, pszzBuf_NewPath);
+	if (pszzBuf_NewPath == NULL) return FALSE;
+	SHFILEOPSTRUCT FileOp = { 0 };
+	FileOp.hwnd = NULL;
+	FileOp.wFunc = bMove ? FO_MOVE : FO_COPY;
+	FileOp.pFrom = pszzBuf_OldPath;
+	FileOp.pTo = pszzBuf_NewPath;
+	FileOp.fFlags = FOF_MULTIDESTFILES | FOF_ALLOWUNDO; //| FOF_WANTMAPPINGHANDLE 
+	//FileOp.fFlags = FileOp.fFlags | FOF_RENAMEONCOLLISION; //중복되는 이름이 있는 경우 자동으로 리네임하기
+	FileOp.fAnyOperationsAborted = false;
+	FileOp.hNameMappings = NULL;
+	FileOp.lpszProgressTitle = NULL;
+	int nRet = SHFileOperation(&FileOp);
+	delete[] pszzBuf_OldPath;
+	delete[] pszzBuf_NewPath;
+	return TRUE;
+}
+
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
 void CBatchNamerDlg::ApplyChange(int nApplyOption)
 {
@@ -1630,7 +1680,12 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 				}
 				else if (nApplyOption == APPLY_COPY)
 				{
-					bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
+					//bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
+					CStringArray a1, a2;
+					a1.Add(strOldPath);
+					a2.Add(aNewPath[i]);
+					bSuccess = CopyPath(a1, a2, FALSE);
+					//bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
 				}
 				else
 				{
