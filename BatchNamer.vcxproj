@@ -193,6 +193,7 @@
     <ClInclude Include="CDlgCFG_View.h" />
     <ClInclude Include="CDlgHotKey.h" />
     <ClInclude Include="CDlgInput.h" />
+    <ClInclude Include="CDlgListFilter.h" />
     <ClInclude Include="CDlgMsg.h" />
     <ClInclude Include="CDlgPreset.h" />
     <ClInclude Include="CDlgSort.h" />
@@ -212,6 +213,7 @@
     <ClCompile Include="CDlgCFG_View.cpp" />
     <ClCompile Include="CDlgHotKey.cpp" />
     <ClCompile Include="CDlgInput.cpp" />
+    <ClCompile Include="CDlgListFilter.cpp" />
     <ClCompile Include="CDlgMsg.cpp" />
     <ClCompile Include="CDlgPreset.cpp" />
     <ClCompile Include="CDlgSort.cpp" />

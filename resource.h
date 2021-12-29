@@ -162,12 +162,14 @@
 #define IDS_FOLDER_DATEMODIFY           176
 #define IDS_FOLDER_EXT                  177
 #define IDS_DATETIME_FORMAT             178
+#define IDD_LIST_FILTER                 178
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001
 #define IDC_STATIC_1                    1002
 #define IDC_STATIC_2                    1003
 #define IDC_EDIT_1                      1004
+#define IDC_STATIC_4                    1004
 #define IDC_EDIT_2                      1005
 #define IDC_CB_INPUT                    1006
 #define IDC_ST_BAR                      1007
@@ -216,6 +218,12 @@
 #define IDC_BTN_FOLDER_SELECT           1073
 #define IDC_EDIT2                       1074
 #define IDC_BTN_MOVE                    1075
+#define IDC_BTN_CLEAR                   1076
+#define IDC_BTN_FILTER                  1077
+#define IDC_BTN_FILTER_INVERT           1078
+#define IDC_EDIT_FILTER_NAME_WORD       1079
+#define IDC_EDIT_EXT_WORD               1080
+#define IDC_EDIT_FILTER_EXT_WORD        1080
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
 #define IDM_PRESET_APPLY2               32772
@@ -272,9 +280,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        178
+#define _APS_NEXT_RESOURCE_VALUE        179
 #define _APS_NEXT_COMMAND_VALUE         32855
-#define _APS_NEXT_CONTROL_VALUE         1076
+#define _APS_NEXT_CONTROL_VALUE         1081
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

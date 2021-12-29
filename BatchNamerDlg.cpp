@@ -20,6 +20,7 @@
 #include "CDlgSort.h"
 #include "CDlgPreset.h"
 #include "CDlgApplyOption.h"
+#include "CDlgListFilter.h"
 #pragma warning(disable:4786)
 //#include <map>
 #include <vector>
@@ -323,7 +324,7 @@ void CBatchNamerDlg::OnCancel()
 	ShowWindow(SW_SHOWNORMAL);
 	GetWindowRect(APP()->m_rcMain);
 	UpdateColumnSizes();
-	ClearList();
+	ClearList(TRUE);
 	mapExt.clear();
 	CDialogEx::OnCancel();
 }
@@ -384,7 +385,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 		return TRUE;
 	switch (wParam)
 	{
-	case IDM_CLEAR_LIST:		ClearList();		break;
+	case IDM_CLEAR_LIST:		ClearList(((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE);		break;
 	case IDM_UNDO_SELECTED:		UndoChanges(TRUE);	break;
 	case IDM_UNDO_CHANGE:		UndoChanges(((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE);;	break;
 	case IDM_SORT_LIST:			SortList();		break;
@@ -899,12 +900,33 @@ void CBatchNamerDlg::AddByFileDialog()
 
 
 //리스트 모두 삭제
-void CBatchNamerDlg::ClearList()
+void CBatchNamerDlg::ClearList(BOOL bClearAll)
 {
-	m_list.DeleteAllItems();
-	m_list.m_setPath.clear();
-	m_bSelected = FALSE;
-	UpdateCount();
+	if (bClearAll == FALSE)
+	{
+		CDlgListFilter dlg;
+		if (dlg.DoModal() == IDCANCEL) return;
+		if (dlg.m_nClearOption == CLEAR_LIST_BYFILTER)
+		{
+			return;
+		}
+		else if (dlg.m_nClearOption == CLEAR_LIST_BYFILTER_INVERT)
+		{
+			return;
+		}
+		else if (dlg.m_nClearOption == CLEAR_LIST_ALL)
+		{
+			bClearAll = TRUE;
+		}
+	}
+	if (bClearAll == TRUE)
+	{
+		m_list.DeleteAllItems();
+		m_list.m_setPath.clear();
+		m_bSelected = FALSE;
+		UpdateCount();
+		return;
+	}
 }
 
 //바뀔 이름을 원래 이름으로 다시 복구
