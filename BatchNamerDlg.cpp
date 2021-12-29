@@ -76,7 +76,38 @@ inline CString FormatTimeString(CString strDateTime, CString strFormat)
 {
 	COleDateTime dt;
 	dt.ParseDateTime(strDateTime);
-	return dt.Format(strFormat);
+	CString strTemp;
+	TCHAR c;
+	//COleDateTime::Format 은 잘못된 인자가 들어가는 경우 런타임 에러 발생
+	//사용자 입력값에서 에러가 발생하지 않도록 포맷 문자열 사전 점검 및 교정
+	int nLen = strFormat.GetLength();
+	for (int i=0; i<nLen; i++)
+	{
+		c = strFormat.GetAt(i);
+		if (c == L'%' && i < nLen - 1)
+		{ //%가 있는 경우 바로 뒷 글자를 확인
+			i++;
+			c = strFormat.GetAt(i);
+			switch (c)
+			{ //정상적인 포맷은 유지한다
+			case L'a': case L'A': case L'b': case L'B':
+			case L'c': case L'C': case L'd': case L'D':
+			case L'e': case L'F': case L'g': case L'G':
+			case L'h': case L'H': case L'I': case L'j':
+			case L'm': case L'M': case L'n': case L'p':
+			case L'r': case L'R': case L'S': case L'T':
+			case L'u': case L'U': case L'V': case L'w':
+			case L'W': case L'x': case L'X': case L'y':
+			case L'Y': case L'z': case L'Z': case L'%':
+				strTemp = strTemp + L'%' + c;
+				break;
+			default: //잘못된 포맷은 뺀다
+				break;
+			}
+		}
+		else strTemp += c; //보통 문자는 유지
+	}
+	return dt.Format(strTemp);
 }
 
 
