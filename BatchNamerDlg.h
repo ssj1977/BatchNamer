@@ -49,6 +49,7 @@ public:
 
 // 구현입니다.
 protected:
+	void AddByFolderPicker();
 	void AddByFileDialog();
 	void AddPath(CString strFile, BOOL bIsDirectory);
 	void AddPathStart(CString strPath);

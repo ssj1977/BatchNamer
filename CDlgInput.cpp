@@ -374,7 +374,7 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		else						item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_BACK);
 		m_aInput.Add(item);
 		break;
-	case IDS_TB_05:
+	case IDS_TB_05: // 삭제하기
 		item.m_strItemName = IDSTR(IDS_DELPOS_FRONT);
 		item.m_nSubCommand = IDS_DELPOS_FRONT;
 		item.m_bIsNumber1 = TRUE;
@@ -386,7 +386,8 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strItemName = IDSTR(IDS_DELPOS_REAR);
 		item.m_nSubCommand = IDS_DELPOS_REAR;
 		item.m_bIsNumber1 = TRUE;
-		item.m_strLabel1 = IDSTR(IDS_POS_1_REAR);
+		item.m_strLabel1 = IDSTR(IDS_POS_1_REVERSE);
+		item.m_strLabel2 = IDSTR(IDS_POS_2_REVERSE);
 		m_aInput.Add(item);
 		item.Clear();
 		item.m_strItemName = IDSTR(IDS_REMOVEBYBRACKET); //_T("지정된 문자로 묶인 부분을 삭제합니다.")
@@ -394,8 +395,28 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel1 = IDSTR(IDS_BRACKET1); // _T("시작문자")
 		item.m_strLabel2 = IDSTR(IDS_BRACKET2); // _T("끝문자")
 		m_aInput.Add(item);
+		item.m_strItemName = IDSTR(IDS_DELPOS_FRONT_INVERT);
+		item.m_nSubCommand = IDS_DELPOS_FRONT_INVERT;
+		item.m_bIsNumber1 = TRUE;
+		item.m_bIsNumber2 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_POS_1);
+		item.m_strLabel2 = IDSTR(IDS_POS_2);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_DELPOS_REAR_INVERT);
+		item.m_nSubCommand = IDS_DELPOS_REAR_INVERT;
+		item.m_bIsNumber1 = TRUE;
+		item.m_strLabel1 = IDSTR(IDS_POS_1_REVERSE);
+		item.m_strLabel2 = IDSTR(IDS_POS_2_REVERSE);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_REMOVEBYBRACKET_INVERT); //_T("지정된 문자로 묶인 부분을 삭제합니다.")
+		item.m_nSubCommand = IDS_REMOVEBYBRACKET_INVERT;
+		item.m_strLabel1 = IDSTR(IDS_BRACKET1); // _T("시작문자")
+		item.m_strLabel2 = IDSTR(IDS_BRACKET2); // _T("끝문자")
+		m_aInput.Add(item);
 		break;
-	case IDS_TB_08:
+	case IDS_TB_08: // 자릿수 맞추기
 		item.m_strItemName = IDSTR(IDS_DIGITBACK); //"맨 뒤쪽 숫자의 앞에 0을 추가해서 자릿수를 맞춥니다."
 		item.m_nSubCommand = IDS_DIGITBACK;
 		item.m_bIsNumber1 = TRUE;
@@ -408,7 +429,7 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel1 = IDSTR(IDS_DIGITCOUNT); //_T("자릿수")
 		m_aInput.Add(item);
 		break;
-	case IDS_TB_09:
+	case IDS_TB_09: //번호 붙이기
 		item.m_strItemName = IDSTR(IDS_ADDNUM_ALL_BACK); //"모든 이름 뒤에 목록 순서대로 번호를 붙입니다."
 		item.m_nSubCommand = IDS_ADDNUM_ALL_BACK;
 		item.m_bIsNumber1 = TRUE;
@@ -534,7 +555,8 @@ BOOL CDlgInput::VerifyReturnValue()
 		if (nSubCommand == IDS_ADDSTRING) {	if (m_strReturn1.IsEmpty()) return FALSE;}
 		break;
 	case IDS_TB_05:
-		if (nSubCommand == IDS_DELPOS_FRONT || nSubCommand == IDS_DELPOS_REAR)
+		if (nSubCommand == IDS_DELPOS_FRONT || nSubCommand == IDS_DELPOS_REAR ||
+			nSubCommand == IDS_DELPOS_FRONT_INVERT || nSubCommand == IDS_DELPOS_REAR_INVERT)
 		{
 			int nStart = _ttoi(m_strReturn1);
 			int nEnd = _ttoi(m_strReturn2);

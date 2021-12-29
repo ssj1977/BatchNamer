@@ -7,8 +7,6 @@
 #include "afxdialogex.h"
 #include "EtcFunctions.h"
 #include "CDlgInput.h"
-#include "CDlgFolderSelect.h"
-
 
 // CDlgPreset 대화 상자
 
@@ -178,53 +176,19 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 	int nItem = pList->GetNextItem(-1, LVNI_SELECTED);
 	if (nItem == -1) return;
 	PresetTask& task = preset.m_aTask[nItem];
-/*	BOOL bUseInputDlg = FALSE;
-	switch (task.m_nCommand)
+	CDlgInput dlg;
+	dlg.InitInputByCommand(task.m_nCommand);
+	dlg.InitValue(task.m_nSubCommand, task.m_str1, task.m_str2);
+	if (dlg.DoModal() == IDCANCEL)
 	{
-//	case IDS_TB_01:	case IDS_TB_02:	case IDS_TB_03:	case IDS_TB_05:	
-//	case IDS_TB_08:	case IDS_TB_09:	case IDS_TB_18:	case IDS_TB_19:
-//		bUseInputDlg = TRUE;
-//		break;
-//	case IDS_TB_04: case IDS_TB_06: case IDS_TB_07: case IDS_TB_17:
-//		break;
-/*	case IDS_TB_16:
-		if (TRUE)
-		{
-			CDlgFolderSelect dlg;
-			if (dlg.DoModal() == IDCANCEL) return;
-			if (dlg.m_bUseParent == FALSE) 	
-			{
-				task.m_nSubCommand = IDS_FOLDER_SPECIFIC;
-				task.m_str1 = dlg.m_strFolder;
-				task.m_str2.Empty();
-			}
-			else
-			{
-				task.m_nSubCommand = IDS_FOLDER_PARENT;
-				task.m_str1.Empty();
-				task.m_str2.Format(L"%d", dlg.m_nLevel);
-			}
-		}
-		break;
-	default:
-		bUseInputDlg = (task.m_nSubCommand != 0);
-	}
-	if (bUseInputDlg == TRUE)*/
-	{
-		CDlgInput dlg;
-		dlg.InitInputByCommand(task.m_nCommand);
-		dlg.InitValue(task.m_nSubCommand, task.m_str1, task.m_str2);
-		if (dlg.DoModal() == IDCANCEL)
-		{
-			m_toolPreset.RedrawWindow();
-			return;
-		}
 		m_toolPreset.RedrawWindow();
-		if (dlg.VerifyReturnValue() == FALSE) return;
-		task.m_nSubCommand = dlg.GetSubCommand();
-		task.m_str1 = dlg.m_strReturn1;
-		task.m_str2 = dlg.m_strReturn2;
+		return;
 	}
+	m_toolPreset.RedrawWindow();
+	if (dlg.VerifyReturnValue() == FALSE) return;
+	task.m_nSubCommand = dlg.GetSubCommand();
+	task.m_str1 = dlg.m_strReturn1;
+	task.m_str2 = dlg.m_strReturn2;
 	SetListTask(nItem, task);
 }
 
@@ -257,24 +221,6 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_NAME_DIGIT:		nCommand = IDS_TB_08;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_ADDNUM:		nCommand = IDS_TB_09;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_SETFOLDER:	nCommand = IDS_TB_16;	bUseInputDlg = TRUE;		break;
-/*		if (TRUE)
-		{
-			CDlgFolderSelect dlg;
-			if (dlg.DoModal() == IDCANCEL) return TRUE;
-			if (dlg.m_bUseParent == FALSE)
-			{
-				nSubCommand = IDS_FOLDER_SPECIFIC;
-				str1 = dlg.m_strFolder;
-				str2.Empty();
-			}
-			else
-			{
-				nSubCommand = IDS_FOLDER_PARENT;
-				str1.Empty();
-				str2.Format(L"%d", dlg.m_nLevel);
-			}
-		}
-		break;*/
 	case IDM_EXT_DEL:			nCommand = IDS_TB_17;	break;
 	case IDM_EXT_ADD:			nCommand = IDS_TB_18;	bUseInputDlg = TRUE;		break;
 	case IDM_EXT_REPLACE:		nCommand = IDS_TB_19;	bUseInputDlg = TRUE;		break;

@@ -63,9 +63,6 @@
     <ClInclude Include="CDlgHotKey.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="CDlgFolderSelect.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="CDlgApplyOption.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -108,9 +105,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="CDlgHotKey.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="CDlgFolderSelect.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="CDlgApplyOption.cpp">
