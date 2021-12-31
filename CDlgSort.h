@@ -10,8 +10,6 @@ class CDlgSort : public CDialogEx
 public:
 	CDlgSort(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgSort();
-	void SetCheckByID(int nID, BOOL bCheck);
-	BOOL GetCheckByID(int nID);
 	CWnd* m_pSortWnd;
 	int m_nSortCol;
 	BOOL m_bSortAscend;

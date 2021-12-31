@@ -1,11 +1,5 @@
 ﻿#pragma once
 
-#ifndef APPLY_MOVE
-#define APPLY_MOVE 0
-#define APPLY_COPY 1
-#endif
-
-
 // CDlgApplyOption 대화 상자
 
 class CDlgApplyOption : public CDialogEx

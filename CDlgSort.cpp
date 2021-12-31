@@ -6,6 +6,7 @@
 #include "CDlgSort.h"
 #include "afxdialogex.h"
 #include "CNameListCtrl.h"
+#include "EtcFunctions.h"
 
 
 // CDlgSort 대화 상자
@@ -36,19 +37,6 @@ END_MESSAGE_MAP()
 
 // CDlgSort 메시지 처리기
 
-void CDlgSort::SetCheckByID(int nID, BOOL bCheck)
-{
-	CButton* pBtn = (CButton*)GetDlgItem(nID);
-	pBtn->SetCheck(bCheck);
-}
-
-
-BOOL CDlgSort::GetCheckByID(int nID)
-{
-	CButton* pBtn = (CButton*)GetDlgItem(nID);
-	return pBtn->GetCheck();
-}
-
 BOOL CDlgSort::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -70,8 +58,8 @@ BOOL CDlgSort::OnInitDialog()
 	}
 	pCB->SetCurSel(m_nSortCol);
 
-	if (m_bSortAscend == TRUE)	SetCheckByID(IDC_RADIO_SORT_ASCEND, TRUE);
-	else						SetCheckByID(IDC_RADIO_SORT_DESCEND, TRUE);
+	if (m_bSortAscend == TRUE)	SetCheckByID(this, IDC_RADIO_SORT_ASCEND, TRUE);
+	else						SetCheckByID(this, IDC_RADIO_SORT_DESCEND, TRUE);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -82,8 +70,7 @@ void CDlgSort::OnOK()
 {
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_SORTCOL);
 	m_nSortCol = pCB->GetCurSel();
-	if (GetCheckByID(IDC_RADIO_SORT_ASCEND)) m_bSortAscend = TRUE;
-	else   m_bSortAscend = FALSE; //if (GetCheckByID(IDC_RADIO_SORT_DESCEND))
+	m_bSortAscend = IsChecked(this, IDC_RADIO_SORT_ASCEND);
 	CDialogEx::OnOK();
 }
 

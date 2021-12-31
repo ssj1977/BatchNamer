@@ -44,9 +44,8 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 	m_listHotKey.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-
-	((CButton*)GetDlgItem(IDC_CHK_NAMEAUTOFIX))->SetCheck(m_bNameAutoFix);
-	((CButton*)GetDlgItem(IDC_CHK_USETHREAD))->SetCheck(m_bUseThread);
+	SetCheckByID(this, IDC_CHK_NAMEAUTOFIX, m_bNameAutoFix);
+	SetCheckByID(this, IDC_CHK_USETHREAD, m_bUseThread);
 	m_listHotKey.InsertColumn(0, IDSTR(IDS_HOTKEY_COMMAND), LVCFMT_LEFT, 250);
 	m_listHotKey.InsertColumn(1, IDSTR(IDS_HOTKEY_KEY), LVCFMT_LEFT, 150);
 
@@ -60,8 +59,8 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 void CDlgCFG_Etc::OnOK()
 {
 	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-	m_bNameAutoFix = ((CButton*)GetDlgItem(IDC_CHK_NAMEAUTOFIX))->GetCheck();
-	m_bUseThread = ((CButton*)GetDlgItem(IDC_CHK_USETHREAD))->GetCheck();
+	m_bNameAutoFix = IsChecked(this, IDC_CHK_NAMEAUTOFIX);
+	m_bUseThread = IsChecked(this, IDC_CHK_USETHREAD);
 	CDialogEx::OnOK();
 }
 

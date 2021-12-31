@@ -40,6 +40,7 @@ struct InputItem
 
 typedef CArray<InputItem, InputItem&> InputItemArray;
 
+
 //프리셋의 단위 작업 항목을 나타내는 구조체
 struct PresetTask
 {
@@ -59,11 +60,25 @@ struct PresetTask
 
 typedef CArray<PresetTask, PresetTask&> PresetTaskArray;
 
+#ifndef APPLY_MOVE
+#define APPLY_MOVE 0
+#define APPLY_COPY 1
+#endif
+
 //프리셋을 나타내는 구조체
 struct BatchNamerPreset
 {
 	CString m_strName;
+	int m_nApplyOption;
 	PresetTaskArray m_aTask;
+	BatchNamerPreset()
+	{
+		m_nApplyOption = APPLY_MOVE;
+	};
+	~BatchNamerPreset()
+	{
+		Clear();
+	}
 	void Clear()
 	{
 		m_strName = L"";

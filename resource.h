@@ -224,6 +224,8 @@
 #define IDC_BTN_FILTER_INVERT           1078
 #define IDC_EDIT_FILTER_NAME_WORD       1079
 #define IDC_EDIT_FILTER_EXT_WORD        1080
+#define IDC_RADIO_APPLY_MOVE            1081
+#define IDC_RADIO_APPLY_COPY            1083
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
 #define IDM_PRESET_APPLY2               32772
@@ -276,14 +278,16 @@
 #define IDM_SHOW_OLDFOLDER              32840
 #define IDM_LIST_ADD_FOLDER             32854
 #define IDM_CLEAR_LIST_ALL              32855
+#define ID_EDIT_CLEARLIST               32856
+#define ID_CLEAR_LIST_ALL               32857
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        179
-#define _APS_NEXT_COMMAND_VALUE         32856
-#define _APS_NEXT_CONTROL_VALUE         1081
+#define _APS_NEXT_COMMAND_VALUE         32858
+#define _APS_NEXT_CONTROL_VALUE         1082
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

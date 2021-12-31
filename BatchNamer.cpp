@@ -210,6 +210,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	{
 		BatchNamerPreset& ps = m_aPreset[i];
 		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
+		strLine.Format(_T("Preset_ApplyOption=%d\r\n"), ps.m_nApplyOption);	strData += strLine;
 		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
 		{
 			PresetTask& pt = ps.m_aTask[j];
@@ -328,6 +329,10 @@ void CBatchNamerApp::INILoad(CString strFile)
 			nTask = -1;
 			nPreset++;
 			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_strName = str2;
+		}
+		else if (str1.CompareNoCase(_T("Preset_Name")) == 0)
+		{
+			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_nApplyOption = _ttoi(str2);
 		}
 		else if (str1.CompareNoCase(_T("PresetTask_Command")) == 0)
 		{

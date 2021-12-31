@@ -38,6 +38,8 @@ BEGIN_MESSAGE_MAP(CDlgPreset, CDialogEx)
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BTN_PRESET_NAME, &CDlgPreset::OnBnClickedBtnPresetName)
 	ON_WM_GETMINMAXINFO()
+	ON_BN_CLICKED(IDC_RADIO_APPLY_MOVE, &CDlgPreset::OnBnClickedRadioApplyMove)
+	ON_BN_CLICKED(IDC_RADIO_APPLY_COPY, &CDlgPreset::OnBnClickedRadioApplyCopy)
 END_MESSAGE_MAP()
 
 
@@ -120,7 +122,7 @@ void CDlgPreset::ArrangeCtrl()
 	rc.DeflateRect(LH, LH, LH, LH);
 	GetDlgItem(IDC_CB_PRESET_SELECT)->GetWindowRect(rcTemp);
 	GetDlgItem(IDC_CB_PRESET_SELECT)->MoveWindow(rc.left, rc.top, rc.Width(), rcTemp.Height());
-	rc.DeflateRect(0, rcTemp.Height() + LH, 0, 0);
+	rc.DeflateRect(0, rcTemp.Height() + (LH/2), 0, 0);
 
 	m_toolPreset.GetToolBarCtrl().GetItemRect(0, rcToolButton);
 	m_toolPreset.GetToolBarCtrl().GetItemRect(1, rcSplit);
@@ -134,6 +136,10 @@ void CDlgPreset::ArrangeCtrl()
 	int BTNWIDTH = rcButton.Width();
 	if (BTNWIDTH * 6 + LH*5 > rc.Width()) BTNWIDTH = (rc.Width() - BTNWIDTH) / 5 - LH;
 	int BTNHEIGHT = rcButton.Height() + LH * 2; 
+	GetDlgItem(IDC_RADIO_APPLY_MOVE)->GetWindowRect(rcTemp);
+	GetDlgItem(IDC_RADIO_APPLY_MOVE)->MoveWindow(rc.left, rc.top, rc.Width()/2 - 1, rcTemp.Height());
+	GetDlgItem(IDC_RADIO_APPLY_COPY)->MoveWindow(rc.left + rc.Width() / 2, rc.top, rc.Width()/2, rcTemp.Height());
+	rc.top += rcTemp.Height() + (LH / 2);
 	GetDlgItem(IDC_LIST_PRESET)->MoveWindow(rc.left, rc.top, rc.Width(), rc.Height() - ADDHEIGHT - BTNHEIGHT);
 	GetDlgItem(IDC_LIST_PRESET)->GetWindowRect(rcTemp);
 	rc.DeflateRect(0, rcTemp.Height() + LH, 0, 0);
@@ -197,6 +203,12 @@ void CDlgPreset::OnSelchangeCbPresetSelect()
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
 	CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
 	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
+
+	BOOL bTemp = FALSE;
+	if (preset.m_nApplyOption == APPLY_MOVE) bTemp = TRUE;
+	SetCheckByID(this, IDC_RADIO_APPLY_MOVE, bTemp);
+	SetCheckByID(this, IDC_RADIO_APPLY_COPY, !bTemp);
+
 	pList->DeleteAllItems();
 	for (int i = 0; i<preset.m_aTask.GetSize(); i++)
 	{
@@ -374,7 +386,24 @@ void CDlgPreset::OnBnClickedBtnPresetName()
 
 void CDlgPreset::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
-	lpMMI->ptMinTrackSize.x = 400;
-	lpMMI->ptMinTrackSize.y = 300;
+	lpMMI->ptMinTrackSize.x = 500;
+	lpMMI->ptMinTrackSize.y = 400;
 	CDialogEx::OnGetMinMaxInfo(lpMMI);
+}
+
+
+void CDlgPreset::OnBnClickedRadioApplyMove()
+{
+	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
+	preset.m_nApplyOption = APPLY_MOVE;
+}
+
+
+void CDlgPreset::OnBnClickedRadioApplyCopy()
+{
+	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
+	preset.m_nApplyOption = APPLY_COPY;
+
 }

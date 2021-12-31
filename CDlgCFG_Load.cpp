@@ -5,6 +5,7 @@
 #include "framework.h"
 #include "BatchNamer.h"
 #include "CDlgCFG_Load.h"
+#include "EtcFunctions.h"
 #include <afxdialogex.h>
 
 // CDlgCFG_Load 대화 상자
@@ -41,14 +42,14 @@ BOOL CDlgCFG_Load::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	if (m_nLoadType == 0)		((CButton*)GetDlgItem(IDC_RADIO_LOAD_0))->SetCheck(TRUE);
-	else if (m_nLoadType == 1)	((CButton*)GetDlgItem(IDC_RADIO_LOAD_1))->SetCheck(TRUE);
-	else if (m_nLoadType == 2)	((CButton*)GetDlgItem(IDC_RADIO_LOAD_2))->SetCheck(TRUE);
+	if (m_nLoadType == 0)		((CButton*)GetDlgItem(IDC_RADIO_LOAD_0))->SetCheck(BST_CHECKED);
+	else if (m_nLoadType == 1)	((CButton*)GetDlgItem(IDC_RADIO_LOAD_1))->SetCheck(BST_CHECKED);
+	else if (m_nLoadType == 2)	((CButton*)GetDlgItem(IDC_RADIO_LOAD_2))->SetCheck(BST_CHECKED);
 
-	if (m_bAutoSort == 0)		((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_0))->SetCheck(TRUE);
-	else if (m_bAutoSort == 1)	((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_1))->SetCheck(TRUE);
+	if (m_bAutoSort == 0)		((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_0))->SetCheck(BST_CHECKED);
+	else if (m_bAutoSort == 1)	((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_1))->SetCheck(BST_CHECKED);
 
-	((CButton*)GetDlgItem(IDC_CHK_SHOWEVERYTIME))->SetCheck(m_bShowEverytime);
+	SetCheckByID(this, IDC_CHK_SHOWEVERYTIME, m_bShowEverytime);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -58,14 +59,14 @@ BOOL CDlgCFG_Load::OnInitDialog()
 
 void CDlgCFG_Load::OnOK()
 {
-	if (((CButton*)GetDlgItem(IDC_RADIO_LOAD_0))->GetCheck()==TRUE) m_nLoadType = 0;
-	else if (((CButton*)GetDlgItem(IDC_RADIO_LOAD_1))->GetCheck() == TRUE) m_nLoadType = 1;
-	else if (((CButton*)GetDlgItem(IDC_RADIO_LOAD_2))->GetCheck() == TRUE) m_nLoadType = 2;
+	if (IsChecked(this, IDC_RADIO_LOAD_0) == TRUE) m_nLoadType = 0;
+	else if (IsChecked(this, IDC_RADIO_LOAD_1) == TRUE) m_nLoadType = 1;
+	else if (IsChecked(this, IDC_RADIO_LOAD_2) == TRUE) m_nLoadType = 2;
 
-	if (((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_0))->GetCheck() == TRUE) m_bAutoSort = FALSE;
-	else if (((CButton*)GetDlgItem(IDC_RADIO_AUTOSORT_1))->GetCheck() == TRUE) m_bAutoSort = TRUE;
+	if (IsChecked(this, IDC_RADIO_AUTOSORT_0) == TRUE) m_bAutoSort = FALSE;
+	else if (IsChecked(this, IDC_RADIO_AUTOSORT_1) == TRUE) m_bAutoSort = TRUE;
 
-	m_bShowEverytime = ((CButton*)GetDlgItem(IDC_CHK_SHOWEVERYTIME))->GetCheck();
+	m_bShowEverytime = IsChecked(this, IDC_CHK_SHOWEVERYTIME);
 	CDialogEx::OnOK();
 }
 
