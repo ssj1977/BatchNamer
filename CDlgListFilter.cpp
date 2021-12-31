@@ -5,8 +5,9 @@
 #include "BatchNamer.h"
 #include "CDlgListFilter.h"
 #include "afxdialogex.h"
+#include "EtcFunctions.h"
 
-
+CString ExtractWildCard(CString str, BOOL bAddToken);
 // CDlgListFilter 대화 상자
 
 IMPLEMENT_DYNAMIC(CDlgListFilter, CDialogEx)
@@ -66,8 +67,24 @@ void CDlgListFilter::OnOK()
 
 BOOL CDlgListFilter::PreTranslateMessage(MSG* pMsg)
 {
-	// TODO: 여기에 특수화된 코드를 추가 및/또는 기본 클래스를 호출합니다.
-
+	if (pMsg->message == WM_KEYDOWN)
+	{
+		if (pMsg->wParam == VK_RETURN)
+		{
+			CWnd* pWnd = GetFocus();
+			if (pWnd == GetDlgItem(IDC_EDIT_FILTER_NAME_WORD) || pWnd == GetDlgItem(IDC_EDIT_FILTER_EXT_WORD))
+			{ //필터 입력창에 포커스가 있는 상태에서 엔터를 눌렀을때
+				return TRUE;
+			}
+			OnBnClickedBtnClear();
+			return TRUE;
+		}
+		else if (pMsg->wParam == VK_ESCAPE)
+		{
+			OnCancel();
+			return TRUE;
+		}
+	}
 	return CDialogEx::PreTranslateMessage(pMsg);
 }
 
@@ -80,8 +97,7 @@ void CDlgListFilter::OnBnClickedBtnClear()
 void CDlgListFilter::OnBnClickedBtnFilter()
 {
 	m_nClearOption = CLEAR_LIST_BYFILTER;
-	GetDlgItemText(IDC_EDIT_FILTER_NAME_WORD, m_strFilter_Name);
-	GetDlgItemText(IDC_EDIT_FILTER_EXT_WORD, m_strFilter_Ext);
+	if (UpdateFilters(TRUE) == FALSE) return;
 	OnOK();
 }
 
@@ -89,7 +105,42 @@ void CDlgListFilter::OnBnClickedBtnFilter()
 void CDlgListFilter::OnBnClickedBtnFilterInvert()
 {
 	m_nClearOption = CLEAR_LIST_BYFILTER_INVERT;
+	if (UpdateFilters(TRUE) == FALSE) return;
 	OnOK();
+}
+
+
+BOOL CDlgListFilter::ValidateFilter(CString strFilter)
+{
+	if (strFilter.IsEmpty() == FALSE)
+	{
+		CString str = ExtractWildCard(strFilter, TRUE);
+		if (str.IsEmpty()) return FALSE;
+		// ** , ?*, ?* 는 비정상
+		if (str.Find(_T("**")) != -1 ||
+			str.Find(_T("*?")) != -1 ||
+			str.Find(_T("?*")) != -1) return FALSE;
+		// 상수 문자열 토큰(_)이 하나도 없으면 비정상
+		if (str.Find(_T("_")) == -1) return FALSE;
+	}
+	return TRUE;
+}
+
+BOOL CDlgListFilter::UpdateFilters(BOOL bShowMsg)
+{
+	GetDlgItemText(IDC_EDIT_FILTER_NAME_WORD, m_strFilter_Name);
+	GetDlgItemText(IDC_EDIT_FILTER_EXT_WORD, m_strFilter_Ext);
+	if (m_strFilter_Name.IsEmpty() && m_strFilter_Ext.IsEmpty())
+	{
+		if (bShowMsg) AfxMessageBox(IDSTR(IDS_FILTER_EMPTY));
+		return FALSE;
+	}
+	if (ValidateFilter(m_strFilter_Name) == FALSE || ValidateFilter(m_strFilter_Ext) == FALSE)
+	{
+		if (bShowMsg) AfxMessageBox(IDSTR(IDS_INVALID_WILDCARD));
+		return FALSE;
+	}
+	return TRUE;
 }
 
 

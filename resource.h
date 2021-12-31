@@ -140,6 +140,7 @@
 #define IDS_DELPOS_REAR_INVERT          130
 #define IDS_REMOVEBYBRACKET_INVERT      131
 #define IDR_TOOLBAR2                    132
+#define IDS_FILTER_EMPTY                132
 #define IDR_MENU_MAIN                   134
 #define IDD_CFG_LOAD                    137
 #define IDD_CFG_VIEW                    141
@@ -222,7 +223,6 @@
 #define IDC_BTN_FILTER                  1077
 #define IDC_BTN_FILTER_INVERT           1078
 #define IDC_EDIT_FILTER_NAME_WORD       1079
-#define IDC_EDIT_EXT_WORD               1080
 #define IDC_EDIT_FILTER_EXT_WORD        1080
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
@@ -275,13 +275,14 @@
 #define IDM_SHOW_NEWFOLDER              32839
 #define IDM_SHOW_OLDFOLDER              32840
 #define IDM_LIST_ADD_FOLDER             32854
+#define IDM_CLEAR_LIST_ALL              32855
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        179
-#define _APS_NEXT_COMMAND_VALUE         32855
+#define _APS_NEXT_COMMAND_VALUE         32856
 #define _APS_NEXT_CONTROL_VALUE         1081
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

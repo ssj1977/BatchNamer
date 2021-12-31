@@ -40,6 +40,7 @@ typedef map<CString, int> CExtMap; //확장자에 해당하는 이미지맵의 �
 typedef map<CString, int> CFolderMap; //폴더별 카운트용
 static CExtMap mapExt;
 static BOOL st_bIsIdle;
+CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bReturnBlockOnly);
 
 inline CString GetFolderName(CString strPath)
 {
@@ -386,6 +387,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	switch (wParam)
 	{
 	case IDM_CLEAR_LIST:		ClearList(((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE);		break;
+	case IDM_CLEAR_LIST_ALL:	ClearList(TRUE);		break;
 	case IDM_UNDO_SELECTED:		UndoChanges(TRUE);	break;
 	case IDM_UNDO_CHANGE:		UndoChanges(((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE);;	break;
 	case IDM_SORT_LIST:			SortList();		break;
@@ -580,7 +582,8 @@ void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 	//중복체크
 	CPathSet::iterator it = m_list.m_setPath.find(fullpath);
 	if (it == m_list.m_setPath.end()) m_list.m_setPath.insert(fullpath);
-	else return; // 이미 존재하는 이름
+	else 
+		return; // 이미 존재하는 이름
 	BOOL bIsDir = (BOOL)((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
 	int nImage = GetFileImageIndexFromMap(fullpath, bIsDir);
 	COleDateTime tTemp;
@@ -906,12 +909,40 @@ void CBatchNamerDlg::ClearList(BOOL bClearAll)
 	{
 		CDlgListFilter dlg;
 		if (dlg.DoModal() == IDCANCEL) return;
-		if (dlg.m_nClearOption == CLEAR_LIST_BYFILTER)
+		if (dlg.m_nClearOption == CLEAR_LIST_BYFILTER ||
+			dlg.m_nClearOption == CLEAR_LIST_BYFILTER_INVERT)
 		{
-			return;
-		}
-		else if (dlg.m_nClearOption == CLEAR_LIST_BYFILTER_INVERT)
-		{
+			BOOL bInvert = (dlg.m_nClearOption == CLEAR_LIST_BYFILTER_INVERT) ? TRUE : FALSE;
+			int nCount = m_list.GetItemCount() - 1;
+			CString& name_f = dlg.m_strFilter_Name;
+			CString& ext_f = dlg.m_strFilter_Ext;
+			BOOL bUseName = name_f.IsEmpty() ? FALSE : TRUE;
+			BOOL bUseExt = ext_f.IsEmpty() ? FALSE : TRUE;
+			if (bUseName == FALSE && bUseExt == FALSE) return; //조건이 모두 비어있느 경우
+			BOOL bName = !bUseName, bExt = !bUseExt; // 해당 조건이 필요없는 경우에 무시하기 위한 초기값
+			BOOL bIsDir = FALSE;
+			CString strFullPath, strName, strExt;
+			for (int i = nCount; i >= 0 ; i--) //삭제는 끝에서부터
+			{
+				bIsDir = (BOOL)m_list.GetItemData(i);
+				if (bUseName)
+				{
+					strName = Get_Name(m_list.GetItemText(i, COL_OLDNAME), bIsDir);
+					bName = (ReplaceWithWildCards(strName, name_f, name_f, TRUE).IsEmpty()) ? FALSE : TRUE;
+				}
+				if (bUseExt)
+				{
+					strExt = Get_Ext(m_list.GetItemText(i, COL_OLDNAME), bIsDir, FALSE);
+					bExt = (ReplaceWithWildCards(strExt, ext_f, ext_f, TRUE).IsEmpty()) ? FALSE : TRUE;
+				}
+				if ( (!bInvert) == (bName && bExt) )
+				{
+					strFullPath = m_list.GetOldPath(i);
+					m_list.m_setPath.erase(strFullPath);
+					m_list.DeleteItem(i);
+				}
+			}
+			m_bSelected = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
 			return;
 		}
 		else if (dlg.m_nClearOption == CLEAR_LIST_ALL)
@@ -2482,6 +2513,7 @@ void CBatchNamerDlg::UpdateMenuEnable()
 	CMenu* pMenu = GetMenu();
 	pMenu->EnableMenuItem(IDM_APPLY_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_CLEAR_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
+	pMenu->EnableMenuItem(IDM_CLEAR_LIST_ALL, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_SORT_LIST, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_REMOVE_ITEM, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);
 	pMenu->EnableMenuItem(IDM_UNDO_CHANGE, b ? MF_ENABLED | MF_BYCOMMAND : MF_GRAYED | MF_BYCOMMAND);

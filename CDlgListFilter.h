@@ -20,7 +20,8 @@ public:
 	CString m_strFilter_Name;
 	CString m_strFilter_Ext;
 
-
+	BOOL ValidateFilter(CString strFilter);
+	BOOL UpdateFilters(BOOL bShowMsg);
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_LIST_FILTER };
