@@ -173,6 +173,26 @@ BOOL CBatchNamerApp::InitInstance()
 	return FALSE;
 }
 
+CString CBatchNamerApp::GetPresetExportString()
+{
+	CString strData, strLine;
+	for (int i = 0; i < m_aPreset.GetSize(); i++)
+	{
+		BatchNamerPreset& ps = m_aPreset[i];
+		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
+		strLine.Format(_T("Preset_ApplyOption=%d\r\n"), ps.m_nApplyOption);	strData += strLine;
+		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
+		{
+			PresetTask& pt = ps.m_aTask[j];
+			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
+			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), pt.m_str1);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
+		}
+	}
+	return strData;
+}
+
 void CBatchNamerApp::INISave(CString strFile)
 {
 	CString strData, strLine, str1, str2;
@@ -206,20 +226,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("IconType=%d\r\n"), m_nIconType);	strData += strLine;
 	strLine.Format(_T("NameAutoFix=%d\r\n"), m_bNameAutoFix);	strData += strLine;
 	strLine.Format(_T("UseThread=%d\r\n"), m_bUseThread);	strData += strLine;
-	for (int i = 0; i < m_aPreset.GetSize(); i++)
-	{
-		BatchNamerPreset& ps = m_aPreset[i];
-		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
-		strLine.Format(_T("Preset_ApplyOption=%d\r\n"), ps.m_nApplyOption);	strData += strLine;
-		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
-		{
-			PresetTask& pt = ps.m_aTask[j];
-			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
-			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), pt.m_str1);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
-		}
-	}
+	strData += GetPresetExportString();
 	//컬럼폭 저장
 	strData += _T("ColWidths=");
 	strLine.Empty();
@@ -456,22 +463,7 @@ void CBatchNamerApp::PresetExport()
 	dlg.GetOFN().lpstrTitle = strTitle;
 	if (dlg.DoModal() == IDCANCEL) return;
 	CString strFile = dlg.GetPathName();
-
-	CString strData, strLine, str1, str2;
-	for (int i = 0; i < m_aPreset.GetSize(); i++)
-	{
-		BatchNamerPreset& ps = m_aPreset[i];
-		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
-		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
-		{
-			PresetTask& pt = ps.m_aTask[j];
-			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
-			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), pt.m_str1);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
-		}
-	}
-	WriteCStringToFile(strFile, strData);
+	WriteCStringToFile(strFile, GetPresetExportString());
 }
 
 void CBatchNamerApp::PresetImport()

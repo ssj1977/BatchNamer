@@ -943,6 +943,7 @@ void CBatchNamerDlg::ClearList(BOOL bClearAll)
 				}
 			}
 			m_bSelected = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
+			UpdateCount();
 			return;
 		}
 		else if (dlg.m_nClearOption == CLEAR_LIST_ALL)
@@ -1096,6 +1097,7 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bR
 					nPos += aStr1[i].GetLength();
 					nBlockEndPos = nPos - 1;
 					nMaxPos = nPos;
+					cToken = L'_';
 				}
 			}
 		}
@@ -1802,7 +1804,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 					if (bIsDir == FALSE)
 					{
 						//일반 파일 카피는 중간 캔슬이 가능한 CopyFileEx 사용
-						bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
+						bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_FAIL_IF_EXISTS | COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
 					}
 					else
 					{
@@ -2443,6 +2445,23 @@ void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString s
 				else strName = strName.Mid(nStart, nEnd - nStart + 1);//IDS_REMOVEBYBRACKET_INVERT
 				if (strExt.IsEmpty() == FALSE) strName += strExt;
 				m_list.SetItemText(i, COL_NEWNAME, strName);
+			}
+		}
+	}
+	else if (nSubCommand == IDS_TRIM_BOTH)
+	{
+		CString strName, strExt, strTemp;
+		for (int i = 0; i < m_list.GetItemCount(); i++)
+		{
+			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
+			strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir, TRUE);
+			strTemp = strName;
+			strTemp.Trim();
+			if (strTemp.GetLength() != strName.GetLength())
+			{
+				if (strExt.IsEmpty() == FALSE) strTemp += strExt;
+				m_list.SetItemText(i, COL_NEWNAME, strTemp);
 			}
 		}
 	}

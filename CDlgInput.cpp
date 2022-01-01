@@ -415,6 +415,10 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel1 = IDSTR(IDS_BRACKET1); // _T("시작문자")
 		item.m_strLabel2 = IDSTR(IDS_BRACKET2); // _T("끝문자")
 		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_TRIM_BOTH); // 앞뒤의 공백 제거
+		item.m_nSubCommand = IDS_TRIM_BOTH;
+		m_aInput.Add(item);
 		break;
 	case IDS_TB_08: // 자릿수 맞추기
 		item.m_strItemName = IDSTR(IDS_DIGITBACK); //"맨 뒤쪽 숫자의 앞에 0을 추가해서 자릿수를 맞춥니다."

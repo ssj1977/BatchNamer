@@ -160,6 +160,7 @@ public:
 	void PresetImport();
 	void INISave(CString strFile);
 	void INILoad(CString strFile);
+	CString GetPresetExportString();
 	void SetLocale(int nLanguageID);
 	void UpdateThreadLocale();
 	void ShowMsg(CString strMsg, CString strTitle);
