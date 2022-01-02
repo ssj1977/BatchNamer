@@ -426,7 +426,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.0 (2022-01-01 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.01 (2022-01-03 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -1049,6 +1049,10 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bR
 			if (aStr1[i] == _T("?")) 
 			{
 				if (i==0) nBlockBeginPos = nPos;
+				if (strSrc.GetLength() <= nPos)
+				{
+					break;
+				}
 				aRet[i] = strSrc.GetAt(nPos); //추가할 글자 쌓기
 				nPrevTokenPos = nPos;
 				nBlockEndPos = nPos;
