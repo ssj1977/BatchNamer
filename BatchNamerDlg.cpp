@@ -426,7 +426,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.01 (2022-01-03 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.02 (2022-01-10 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -2396,13 +2396,13 @@ void CBatchNamerDlg::NameRemoveSelected(int nSubCommand, CString str1, CString s
 		if (nStart == 0 && nEnd == 0) return;
 		if (nStart > 0) nStart--;
 		if (nEnd > 0 && nStart > nEnd) return; //nEnd가 입력된 상태에서 시작이 끝보다 뒤일때
-		if (nEnd > 0) nEnd--;
+		if (nEnd >= 0) nEnd--;
 		for (int i = 0; i < m_list.GetItemCount(); i++)
 		{
 			BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 			strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 			strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-			if (nEnd <= 0) nEnd_Current = strName.GetLength(); //nEnd 는 0일 경우 길이에 따라 변한다.
+			if (nEnd < 0) nEnd_Current = strName.GetLength(); //nEnd 는 0일 경우 길이에 따라 변한다.
 			else nEnd_Current = nEnd;
 			if (nSubCommand == IDS_DELPOS_FRONT)	//앞의 n부터 m까지
 			{

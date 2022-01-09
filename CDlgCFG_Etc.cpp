@@ -129,6 +129,7 @@ void CDlgCFG_Etc::OnBnClickedBtnClearHotkey()
 
 void CDlgCFG_Etc::OnBnClickedBtnDefaultHotkey()
 {
+	if (AfxMessageBox(IDSTR(IDS_RESET_HOTKEY), MB_YESNO) == IDNO) return;
 	APP()->InitHotKey();
 	LoadHotKey();
 }

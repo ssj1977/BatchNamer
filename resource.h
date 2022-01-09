@@ -143,6 +143,7 @@
 #define IDS_FILTER_EMPTY                132
 #define IDS_TRIM_BOTH                   133
 #define IDR_MENU_MAIN                   134
+#define IDS_RESET_HOTKEY                134
 #define IDD_CFG_LOAD                    137
 #define IDD_CFG_VIEW                    141
 #define IDD_SORT                        149
