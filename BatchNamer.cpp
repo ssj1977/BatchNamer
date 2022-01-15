@@ -180,7 +180,7 @@ CString CBatchNamerApp::GetPresetExportString()
 	{
 		BatchNamerPreset& ps = m_aPreset[i];
 		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
-		strLine.Format(_T("Preset_ApplyOption=%d\r\n"), ps.m_nApplyOption);	strData += strLine;
+		//strLine.Format(_T("Preset_ApplyOption=%d\r\n"), ps.m_nApplyOption);	strData += strLine;
 		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
 		{
 			PresetTask& pt = ps.m_aTask[j];
@@ -337,10 +337,10 @@ void CBatchNamerApp::INILoad(CString strFile)
 			nPreset++;
 			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_strName = str2;
 		}
-		else if (str1.CompareNoCase(_T("Preset_Name")) == 0)
+/*		else if (str1.CompareNoCase(_T("Preset_ApplyOption")) == 0)
 		{
 			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_nApplyOption = _ttoi(str2);
-		}
+		}*/
 		else if (str1.CompareNoCase(_T("PresetTask_Command")) == 0)
 		{
 			PresetTask pt;
@@ -457,24 +457,38 @@ void CBatchNamerApp::InitHotKey()
 
 void CBatchNamerApp::PresetExport()
 {
-	CFileDialog dlg(FALSE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), NULL);
+	CWnd* pWnd = AfxGetMainWnd();
+	CFileDialog dlg(FALSE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), pWnd);
 	CString strTitle;
 	strTitle.LoadString(IDS_PRESET_EXPORT);
 	dlg.GetOFN().lpstrTitle = strTitle;
-	if (dlg.DoModal() == IDCANCEL) return;
-	CString strFile = dlg.GetPathName();
-	WriteCStringToFile(strFile, GetPresetExportString());
+	dlg.GetOFN().hwndOwner = pWnd->GetSafeHwnd();
+	if (dlg.DoModal() == IDOK)
+	{
+		CString strFile = dlg.GetPathName();
+		WriteCStringToFile(strFile, GetPresetExportString());
+	}
+	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+	pWnd->SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 }
 
 void CBatchNamerApp::PresetImport()
 {
-	CFileDialog dlg(TRUE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), NULL);
+	CWnd* pWnd = AfxGetMainWnd();
+	CFileDialog dlg(TRUE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), pWnd);
 	CString strTitle;
 	strTitle.LoadString(IDS_PRESET_IMPORT);
 	dlg.GetOFN().lpstrTitle = strTitle;
-	if (dlg.DoModal() == IDCANCEL) return;
-	CString strFile = dlg.GetPathName();
-	m_aPreset.RemoveAll();
-	m_aPreset.SetSize(5);
-	INILoad(strFile);
+	dlg.GetOFN().hwndOwner = pWnd->GetSafeHwnd();
+	if (dlg.DoModal() == IDOK)
+	{
+		CString strFile = dlg.GetPathName();
+		m_aPreset.RemoveAll();
+		m_aPreset.SetSize(5);
+		INILoad(strFile);
+	}
+	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+	pWnd->SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 }

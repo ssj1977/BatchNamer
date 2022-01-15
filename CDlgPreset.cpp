@@ -38,8 +38,8 @@ BEGIN_MESSAGE_MAP(CDlgPreset, CDialogEx)
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BTN_PRESET_NAME, &CDlgPreset::OnBnClickedBtnPresetName)
 	ON_WM_GETMINMAXINFO()
-	ON_BN_CLICKED(IDC_RADIO_APPLY_MOVE, &CDlgPreset::OnBnClickedRadioApplyMove)
-	ON_BN_CLICKED(IDC_RADIO_APPLY_COPY, &CDlgPreset::OnBnClickedRadioApplyCopy)
+//	ON_BN_CLICKED(IDC_RADIO_APPLY_MOVE, &CDlgPreset::OnBnClickedRadioApplyMove)
+//	ON_BN_CLICKED(IDC_RADIO_APPLY_COPY, &CDlgPreset::OnBnClickedRadioApplyCopy)
 END_MESSAGE_MAP()
 
 
@@ -136,10 +136,10 @@ void CDlgPreset::ArrangeCtrl()
 	int BTNWIDTH = rcButton.Width();
 	if (BTNWIDTH * 6 + LH*5 > rc.Width()) BTNWIDTH = (rc.Width() - BTNWIDTH) / 5 - LH;
 	int BTNHEIGHT = rcButton.Height() + LH * 2; 
-	GetDlgItem(IDC_RADIO_APPLY_MOVE)->GetWindowRect(rcTemp);
+/*	GetDlgItem(IDC_RADIO_APPLY_MOVE)->GetWindowRect(rcTemp);
 	GetDlgItem(IDC_RADIO_APPLY_MOVE)->MoveWindow(rc.left, rc.top, rc.Width()/2 - 1, rcTemp.Height());
 	GetDlgItem(IDC_RADIO_APPLY_COPY)->MoveWindow(rc.left + rc.Width() / 2, rc.top, rc.Width()/2, rcTemp.Height());
-	rc.top += rcTemp.Height() + (LH / 2);
+	rc.top += rcTemp.Height() + (LH / 2);*/
 	GetDlgItem(IDC_LIST_PRESET)->MoveWindow(rc.left, rc.top, rc.Width(), rc.Height() - ADDHEIGHT - BTNHEIGHT);
 	GetDlgItem(IDC_LIST_PRESET)->GetWindowRect(rcTemp);
 	rc.DeflateRect(0, rcTemp.Height() + LH, 0, 0);
@@ -205,9 +205,10 @@ void CDlgPreset::OnSelchangeCbPresetSelect()
 	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
 
 	BOOL bTemp = FALSE;
-	if (preset.m_nApplyOption == APPLY_MOVE) bTemp = TRUE;
+	//프리셋에서 ApplyOption은 현재 의미가 없으므로 제거
+/*	if (preset.m_nApplyOption == APPLY_MOVE) bTemp = TRUE;
 	SetCheckByID(this, IDC_RADIO_APPLY_MOVE, bTemp);
-	SetCheckByID(this, IDC_RADIO_APPLY_COPY, !bTemp);
+	SetCheckByID(this, IDC_RADIO_APPLY_COPY, !bTemp);*/
 
 	pList->DeleteAllItems();
 	for (int i = 0; i<preset.m_aTask.GetSize(); i++)
@@ -392,7 +393,7 @@ void CDlgPreset::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 }
 
 
-void CDlgPreset::OnBnClickedRadioApplyMove()
+/*void CDlgPreset::OnBnClickedRadioApplyMove()
 {
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
 	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
@@ -405,5 +406,5 @@ void CDlgPreset::OnBnClickedRadioApplyCopy()
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
 	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
 	preset.m_nApplyOption = APPLY_COPY;
-
 }
+*/

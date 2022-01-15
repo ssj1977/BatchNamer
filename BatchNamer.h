@@ -69,11 +69,11 @@ typedef CArray<PresetTask, PresetTask&> PresetTaskArray;
 struct BatchNamerPreset
 {
 	CString m_strName;
-	int m_nApplyOption;
+//	int m_nApplyOption;
 	PresetTaskArray m_aTask;
 	BatchNamerPreset()
 	{
-		m_nApplyOption = APPLY_MOVE;
+//		m_nApplyOption = APPLY_MOVE;
 	};
 	~BatchNamerPreset()
 	{

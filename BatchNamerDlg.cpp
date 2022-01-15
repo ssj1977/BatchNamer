@@ -841,6 +841,7 @@ void CBatchNamerDlg::AddByFolderPicker()
 	strTitle.LoadString(IDS_LOAD_FOLDERPICKER);
 	OPENFILENAME& ofn = dlg.GetOFN();
 	ofn.lpstrTitle = strTitle;
+	ofn.hwndOwner = GetSafeHwnd();
 	int nCount = 0;
 	if (dlg.DoModal() == IDOK)
 	{
@@ -861,6 +862,9 @@ void CBatchNamerDlg::AddByFolderPicker()
 		UpdateCount();
 	}
 	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
+	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+	SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 }
 
 
@@ -869,12 +873,13 @@ void CBatchNamerDlg::AddByFileDialog()
 {
 	CFileDialog dlg(TRUE, _T("*.*"), NULL,
 		OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY,
-		_T("All Files(*.*)|*.*||"), NULL, 0 , TRUE);
+		_T("All Files(*.*)|*.*||"), this, 0 , TRUE);
 	CString strTemp;
 	strTemp.LoadString(IDS_LOAD_FILEDIALOG);
 	OPENFILENAME& ofn = dlg.GetOFN();
 	ofn.lpstrTitle = strTemp;
 	ofn.nMaxFile = (MAX_PATH + sizeof(TCHAR)) * 10000;
+	ofn.hwndOwner = GetSafeHwnd();
 	TCHAR* buf = new TCHAR[ofn.nMaxFile];
 	memset(buf, 0, sizeof(buf));
 	ofn.lpstrFile = buf;
@@ -899,6 +904,9 @@ void CBatchNamerDlg::AddByFileDialog()
 	}
 	delete[] buf;
 	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
+	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+	SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 }
 
 
@@ -1696,6 +1704,7 @@ BOOL CopyPath(CString& strOldPath, CString& strNewPath, BOOL bMove)
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
 void CBatchNamerDlg::ApplyChange(int nApplyOption)
 {
+	BOOL bError = FALSE;
 	st_bIsIdle = FALSE;
 	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
 	m_list.EnableWindow(FALSE);
@@ -1741,7 +1750,8 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_list.EnsureVisible(i, FALSE);
-			return;
+			bError = TRUE; 
+			break;
 		}
 		//이름을 만든다
 		strNewPath = m_list.GetItemText(i, COL_NEWFOLDER) + _T("\\") + strTemp;
@@ -1753,17 +1763,30 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 		}
 		else
 		{
-			strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), 
-				IDSTR(IDS_MSG_DUPNAME),	strTemp, strNewPath);
+			strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), IDSTR(IDS_MSG_DUPNAME),	strTemp, strNewPath);
 			APP()->ShowMsg(strErr, IDSTR(IDS_MSG_ERROR));
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			m_list.EnsureVisible(i, FALSE);
-			return;
+			bError = TRUE; 
+			break;
 		}
 		aNewPath.push_back(strNewPath); // Array에 추가
 	}
-	if (aNewPath.size() != nCount) { APP()->ShowMsg(IDSTR(IDS_MSG_MISMATCH), IDSTR(IDS_MSG_ERROR)); return; }
+	if (bError == FALSE && aNewPath.size() != nCount)
+	{ 
+		APP()->ShowMsg(IDSTR(IDS_MSG_MISMATCH), IDSTR(IDS_MSG_ERROR)); 
+		bError = TRUE;
+	}
+	if (bError == TRUE)
+	{
+		st_bIsIdle = TRUE;
+		m_list.EnableWindow(TRUE);
+		m_tool1.EnableWindow(TRUE);
+		m_tool2.EnableWindow(TRUE);
+		UpdateCount();
+		return;
+	}
 
 	//실제 파일이름을 바꾸는 곳
 	CString strOldPath, strOldExt, strNewExt, strBar, strNewFolder;
@@ -2085,13 +2108,19 @@ void CBatchNamerDlg::Export(int nMode)
 	}
 	else if (nMode == 1 || nMode == 3)
 	{
-		CFileDialog dlg(FALSE, _T("txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
+		CFileDialog dlg(FALSE, _T("txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), this);
 		CString strTitle; 
 		if (nMode == 1)	strTitle.LoadString(IDS_EXPORTNAME); //_T("이름 목록 저장");
 		else			strTitle.LoadString(IDS_EXPORTFULLPATH); //_T("전체경로 목록 저장");
 		dlg.GetOFN().lpstrTitle = strTitle;
-		if (dlg.DoModal() == IDCANCEL) return;
-		WriteCStringToFile(dlg.GetPathName(), strData);
+		dlg.GetOFN().hwndOwner = GetSafeHwnd();
+		if (dlg.DoModal() == IDOK)
+		{
+			WriteCStringToFile(dlg.GetPathName(), strData);
+		}
+		//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+		//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+		SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
 }
 
@@ -2103,12 +2132,18 @@ void CBatchNamerDlg::ImportNewName(BOOL bFromFile)
 	CString strImportData, strName;
 	if (bFromFile == TRUE) // 파일에서 읽기
 	{
-		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
+		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), this);
 		CString strTitle;
 		strTitle.LoadString(IDS_IMPORTNAME); //"바꿀 파일 이름 불러오기"
 		dlg.GetOFN().lpstrTitle = strTitle;
-		if (dlg.DoModal() == IDCANCEL) return;
-		ReadFileToCString(dlg.GetPathName(), strImportData);
+		dlg.GetOFN().hwndOwner = GetSafeHwnd();
+		if (dlg.DoModal() == IDOK)
+		{
+			ReadFileToCString(dlg.GetPathName(), strImportData);
+		}
+		//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+		//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+		SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
 	else // 클립보드에서 읽기
 	{
@@ -2166,12 +2201,18 @@ void CBatchNamerDlg::ImportPath(BOOL bFromFile)
 	CString strImportData;
 	if (bFromFile == TRUE) // 파일에서 읽기
 	{
-		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), NULL);
+		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), this);
 		CString strTemp;
 		strTemp.LoadString(IDS_IMPORT_PATH);
 		dlg.GetOFN().lpstrTitle = strTemp;
-		if (dlg.DoModal() == IDCANCEL) return;
-		ReadFileToCString(dlg.GetPathName(), strImportData);
+		dlg.GetOFN().hwndOwner = GetSafeHwnd();
+		if (dlg.DoModal() == IDOK)
+		{
+			ReadFileToCString(dlg.GetPathName(), strImportData);
+		}
+		//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+		//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
+		SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
 	else // 클립보드에서 읽기
 	{
