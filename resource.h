@@ -144,7 +144,11 @@
 #define IDS_TRIM_BOTH                   133
 #define IDR_MENU_MAIN                   134
 #define IDS_RESET_HOTKEY                134
+#define IDS_MOVE_PATTERN                135
+#define IDS_MOVE_BRACKET                136
 #define IDD_CFG_LOAD                    137
+#define IDS_MOVE_POS                    137
+#define IDS_MOVE_POS_REVERSE            138
 #define IDD_CFG_VIEW                    141
 #define IDD_SORT                        149
 #define IDD_PRESET                      151
@@ -287,7 +291,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        179
+#define _APS_NEXT_RESOURCE_VALUE        180
 #define _APS_NEXT_COMMAND_VALUE         32858
 #define _APS_NEXT_CONTROL_VALUE         1082
 #define _APS_NEXT_SYMED_VALUE           101

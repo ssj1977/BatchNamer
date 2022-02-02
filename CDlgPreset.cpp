@@ -331,6 +331,26 @@ void CDlgPreset::SwapListItem(int n1, int n2)
 
 void CDlgPreset::SetListTask(int nItem, PresetTask& task)
 {
+	//구버전에서만 쓰이던 기능인 
+	//IDS_ADDTIMECREATE, IDS_ADDTIMEMODIFY, IDS_ADDDATECREATE, IDS_ADDDATEMODIFY 를 
+	//IDS_ADDDATETIMECREATE, IDSADDDATETIMEMODIFY로 변경
+	if (task.m_nSubCommand == IDS_ADDTIMECREATE
+		|| task.m_nSubCommand == IDS_ADDTIMEMODIFY
+		|| task.m_nSubCommand == IDS_ADDDATECREATE
+		|| task.m_nSubCommand == IDS_ADDDATEMODIFY )
+	{
+		CString strFormat;
+		if (task.m_nSubCommand == IDS_ADDTIMECREATE || task.m_nSubCommand == IDS_ADDTIMEMODIFY) 
+			strFormat.Format(_T("%s%%H%%M%%S%s"), (LPCTSTR)task.m_str1, (LPCTSTR)task.m_str2);
+		else //if (task.m_nSubCommand == IDS_ADDDATEMODIFY || task.m_nSubCommand == IDS_ADDDATECREATE)  
+			strFormat.Format(_T("%s%%Y-%%m-%%d%s"), (LPCTSTR)task.m_str1, (LPCTSTR)task.m_str2);
+		task.m_str1 = strFormat;
+		task.m_str2.Empty();
+		if (task.m_nSubCommand == IDS_ADDTIMECREATE || task.m_nSubCommand == IDS_ADDDATECREATE)
+			task.m_nSubCommand = IDS_ADDDATETIMECREATE;
+		else //if (task.m_nSubCommand == IDS_ADDTIMEMODIFY || task.m_nSubCommand == IDS_ADDDATEMODIFY)  
+			task.m_nSubCommand = IDS_ADDDATETIMEMODIFY;
+	}
 	CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
 	CString strCommand, strSubCommand;
 	if (nItem >= pList->GetItemCount()) nItem = pList->InsertItem(pList->GetItemCount(), _T(""));

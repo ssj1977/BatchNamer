@@ -1286,50 +1286,119 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 {
 	CString strAdd, strName, strExt, strHead, strTail, strOld, strNew, strOutput;
 	BOOL bIsDir = FALSE;
-	int nPos = 0;
+	int nPos = 0; //문자열을 추가할 위치, 기능에 따라 앞에서부터인지 뒤에서부터인지 바뀐다
+	TCHAR c1 = _T('\0');
+	TCHAR c2 = _T('\0');
+	int nStart = 0;
+	int nEnd = 0;
+	//초기값 준비
+	switch (nSubCommand)
+	{
+	case IDS_ADDSTRING:
+		if (str1.IsEmpty()) return;
+		strAdd = str1;
+		nPos = _ttoi(str2);
+		break;
+	case IDS_ADDPARENT: break;
+	case IDS_ADDDATETIMEMODIFY:
+	case IDS_ADDDATETIMECREATE:
+		if (str1.IsEmpty()) return;
+		nPos = _ttoi(str2);
+		break;
+	case IDS_ADDDATEMODIFY: break;
+	case IDS_ADDDATECREATE: break;
+	case IDS_ADDTIMEMODIFY: break;
+	case IDS_ADDTIMECREATE: break;
+	case IDS_MOVE_PATTERN: 
+		if (str1.IsEmpty()) return;
+		nPos = _ttoi(str2);
+		break;
+	case IDS_MOVE_BRACKET: 
+		if (str1.IsEmpty() || str2.IsEmpty()) return;
+		if (str1.GetLength() > 1 || str2.GetLength() > 1) return;
+		c1 = str1.GetAt(0);
+		c2 = str2.GetAt(0);
+		break;
+	case IDS_MOVE_POS:
+	case IDS_MOVE_POS_REVERSE: 
+		nStart = _ttoi(str1);
+		nEnd = _ttoi(str2);
+		if (nStart == 0 && nEnd == 0) return;
+		if (nStart > 0) nStart--; //첫번째 문자의 인덱스는 0
+		if (nEnd > 0 && nStart > nEnd) return; //nEnd가 입력된 상태에서 시작이 끝보다 뒤일때
+		if (nEnd > 0)	nEnd--; //첫번째 문자의 인덱스는 0
+		else			nEnd = -1; //항상 끝까지 
+		break;
+	}
+	//항목별로 돌면서 처리
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
-		switch (nSubCommand)
-		{
-		case IDS_ADDSTRING: //직접 입력
-			strAdd = str1;
-			nPos = _ttoi(str2);
-			break;
-		case IDS_ADDPARENT: //폴더명
-			strAdd = GetFolderName(m_list.GetItemText(i, COL_OLDFOLDER));
-			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
-			if (strAdd.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strAdd.Empty();
-			break;
-		case IDS_ADDDATEMODIFY: //변경날짜
-			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE);
-			break;
-		case IDS_ADDDATECREATE: //생성날짜
-			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE);
-			break;
-		case IDS_ADDDATETIMEMODIFY: //변경날짜+시각
-			//strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, TRUE);
-			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMEMODIFY), str1);
-			nPos = _ttoi(str2);
-			break;
-		case IDS_ADDDATETIMECREATE: //생성날짜+시각
-			//strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, TRUE);
-			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMECREATE), str1);
-			nPos = _ttoi(str2);
-			break;
-		case IDS_ADDTIMEMODIFY: //변경시각만
-			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE, TRUE);
-			break;
-		case IDS_ADDTIMECREATE: //생성시각만
-			strAdd = GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE, TRUE);
-			break;
-		}
-		//앞뒤에 추가로 지정된 문자열 붙이기
-		if (nSubCommand != IDS_ADDSTRING && 
-			nSubCommand != IDS_ADDDATETIMEMODIFY &&
-			nSubCommand != IDS_ADDDATETIMECREATE) strAdd = str1 + strAdd + str2;
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir, FALSE);
+
+		if (nSubCommand == IDS_ADDSTRING)
+		{
+			//strAdd = str1; //여기서 strAdd는 고정값
+			//nPos = _ttoi(str2); 
+		}
+		else if (nSubCommand == IDS_ADDPARENT)
+		{
+			strAdd = GetFolderName(m_list.GetItemText(i, COL_OLDFOLDER));
+			//c:, d: 등 드라이브 루트 경로인 경우 추가히지 않음
+			if (strAdd.CompareNoCase(m_list.GetItemText(i, COL_OLDFOLDER)) == 0) strAdd.Empty();
+			else strAdd = str1 + strAdd + str2;
+		}
+		else if (nSubCommand == IDS_ADDDATETIMEMODIFY)
+		{
+			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMEMODIFY), str1);
+		}
+		else if (nSubCommand == IDS_ADDDATETIMECREATE)
+		{
+			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMECREATE), str1);
+		}
+		//이전 버전 호환성을 위한 코드 시작
+		else if (nSubCommand == IDS_ADDDATEMODIFY) strAdd = str1 + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE) + str2;
+		else if (nSubCommand == IDS_ADDDATECREATE) strAdd = str1 + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE) + str2;
+		else if (nSubCommand == IDS_ADDTIMEMODIFY) strAdd = str1 + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), FALSE, TRUE) + str2;
+		else if (nSubCommand == IDS_ADDTIMECREATE) strAdd = str1 + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), FALSE, TRUE) + str2;
+		// 끝
+		// 잘라내서 붙이기 기능 (2.1 버전부터 추가)
+		else if (nSubCommand == IDS_MOVE_PATTERN)
+		{
+			strAdd = ReplaceWithWildCards(strName, str1, str1, TRUE); //찾아낸 블록 반환
+			if (strAdd.IsEmpty() == FALSE)
+			{
+				strName = ReplaceWithWildCards(strName, str1, _T(""), FALSE); //찾아낸 부분을 뺀 이름 반환
+			}
+		}
+		else if (nSubCommand == IDS_MOVE_BRACKET)
+		{
+			if (FindBracketPart(strName, c1, c2, nStart, nEnd) == TRUE)
+			{
+				strAdd = strName.Mid(nStart, nEnd - nStart + 1);
+				strName.Delete(nStart, nEnd - nStart + 1);
+			}
+		}
+		else if (nSubCommand == IDS_MOVE_POS || nSubCommand == IDS_MOVE_POS_REVERSE)
+		{
+			if (nSubCommand == IDS_MOVE_POS_REVERSE) strName = strName.MakeReverse();
+			if (nEnd == -1)
+			{
+				strAdd = strName.Mid(nStart);
+				strName.Delete(nStart, strName.GetLength() - nStart);
+			}
+			else
+			{
+				strAdd = strName.Mid(nStart, nEnd - nStart + 1);
+				strName.Delete(nStart, nEnd - nStart + 1);
+			}
+			if (strAdd.IsEmpty() == FALSE)
+			{
+				if (nSubCommand == IDS_MOVE_POS_REVERSE) strAdd = strAdd.MakeReverse();
+			}
+		}
+
 		if (bForExt == FALSE)	strOld = strName;
 		else					strOld = strExt;
 
