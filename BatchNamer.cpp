@@ -25,7 +25,8 @@ END_MESSAGE_MAP()
 
 CBatchNamerApp::CBatchNamerApp()
 {
-	m_bEnglishUI = FALSE;
+	//m_bEnglishUI = FALSE;
+	m_strUILanguage = _T("Default");
 	m_bShowEverytime = FALSE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
 	m_bAutoSort = TRUE; //항목 추가시 자동 정렬 여부
 	m_nLoadType = 0; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가
@@ -103,20 +104,20 @@ int CBatchNamerApp::ExitInstance()
 
 void CBatchNamerApp::UpdateThreadLocale()
 {
-	if (m_bEnglishUI == TRUE) SetLocale(LANG_ENGLISH);
+	if (m_strUILanguage.CompareNoCase(_T("english")) == 0) SetLocale(LANG_ENGLISH);
+	else if (m_strUILanguage.CompareNoCase(_T("korean")) == 0) SetLocale(LANG_KOREAN);
 }
 
 BOOL CBatchNamerApp::InitInstance()
 {
-	TCHAR szBuff[MAX_PATH];
-	GetModuleFileName(m_hInstance, szBuff, MAX_PATH);
+	TCHAR szBuff[MY_MAX_PATH];
+	GetModuleFileName(m_hInstance, szBuff, MY_MAX_PATH);
 	CString strExePath = szBuff;
 	m_strINIPath = Get_Folder(strExePath) + L"\\" + Get_Name(strExePath, FALSE) + L".ini";
 	InitHotKey();
 	INILoad(m_strINIPath);
 	m_hIcon = LoadIcon(IDR_MAINFRAME);
-	if (m_bEnglishUI == TRUE) SetLocale(LANG_ENGLISH);
-
+	UpdateThreadLocale();
 /*	if (!AfxOleInit())
 	{
 		AfxMessageBox(_T("Ole Initialization Failure"));
@@ -196,7 +197,8 @@ CString CBatchNamerApp::GetPresetExportString()
 void CBatchNamerApp::INISave(CString strFile)
 {
 	CString strData, strLine, str1, str2;
-	strLine.Format(_T("EnglishUI=%d\r\n"), m_bEnglishUI); strData += strLine;
+	//strLine.Format(_T("EnglishUI=%d\r\n"), m_bEnglishUI); strData += strLine; //아래의 코드로 대체됨
+	strLine.Format(_T("UILanguage=%s\r\n"), m_strUILanguage); strData += strLine;
 	strLine.Format(_T("ShowCFGLoad=%d\r\n"), m_bShowEverytime); strData += strLine;
 	strLine.Format(_T("AutoSort=%d\r\n"), m_bAutoSort); strData += strLine;
 	strLine.Format(_T("LoadType=%d\r\n"), m_nLoadType);	strData += strLine;
@@ -299,7 +301,12 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("UseThread")) == 0) m_bUseThread = CString2BOOL(str2);
-			else if (str1.CompareNoCase(_T("EnglishUI")) == 0) m_bEnglishUI = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("EnglishUI")) == 0)
+			{   //예전 버전의 호환성을 위한 코드
+				if (CString2BOOL(str2) == FALSE) m_strUILanguage = _T("Default");
+				else m_strUILanguage = _T("English");
+			}
+			else if (str1.CompareNoCase(_T("UILanguage")) == 0) m_strUILanguage = str2;
 			else if (str1.CompareNoCase(_T("ColWidths")) == 0)
 			{
 				CString strWidth;
@@ -458,37 +465,43 @@ void CBatchNamerApp::InitHotKey()
 void CBatchNamerApp::PresetExport()
 {
 	CWnd* pWnd = AfxGetMainWnd();
-	CFileDialog dlg(FALSE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), pWnd);
+	OPENFILENAME ofn = { 0 };
 	CString strTitle;
-	strTitle.LoadString(IDS_PRESET_EXPORT);
-	dlg.GetOFN().lpstrTitle = strTitle;
-	dlg.GetOFN().hwndOwner = pWnd->GetSafeHwnd();
-	if (dlg.DoModal() == IDOK)
+	if (strTitle.LoadString(IDS_PRESET_EXPORT) == FALSE) strTitle.Empty();
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = pWnd->GetSafeHwnd();
+	ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_ENABLESIZING;
+	ofn.lpstrTitle = strTitle;
+	ofn.lpstrFilter = _T("BatchNamer Preset(*.bnp)\0*.bnp\0All Files(*.*)\0*.*\0\0"); //모든 파일이 대상인 경우는 필터 불필요
+	ofn.nMaxFile = MY_MAX_PATH;
+	ofn.lpstrDefExt = _T("bnp");
+	TCHAR pBuf[MY_MAX_PATH] = { 0 };
+	ofn.lpstrFile = pBuf;
+	if (GetSaveFileName(&ofn) != FALSE)
 	{
-		CString strFile = dlg.GetPathName();
-		WriteCStringToFile(strFile, GetPresetExportString());
+		WriteCStringToFile(ofn.lpstrFile, GetPresetExportString());
 	}
-	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
-	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
-	pWnd->SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 }
 
 void CBatchNamerApp::PresetImport()
 {
 	CWnd* pWnd = AfxGetMainWnd();
-	CFileDialog dlg(TRUE, _T("bnp"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("BatchNamer Preset(*.bnp)|*.bnp|All Files(*.*)|*.*||"), pWnd);
+	OPENFILENAME ofn = { 0 };
 	CString strTitle;
-	strTitle.LoadString(IDS_PRESET_IMPORT);
-	dlg.GetOFN().lpstrTitle = strTitle;
-	dlg.GetOFN().hwndOwner = pWnd->GetSafeHwnd();
-	if (dlg.DoModal() == IDOK)
+	if (strTitle.LoadString(IDS_PRESET_IMPORT) == FALSE) strTitle.Empty();
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = pWnd->GetSafeHwnd();
+	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
+	ofn.lpstrTitle = strTitle;
+	ofn.lpstrFilter = _T("BatchNamer Preset(*.bnp)\0*.bnp\0All Files(*.*)\0*.*\0\0");
+	ofn.nMaxFile = MY_MAX_PATH;
+	ofn.lpstrDefExt = _T("bnp");
+	TCHAR pBuf[MY_MAX_PATH] = { 0 };
+	ofn.lpstrFile = pBuf;
+	if (GetOpenFileName(&ofn)!= FALSE)
 	{
-		CString strFile = dlg.GetPathName();
 		m_aPreset.RemoveAll();
 		m_aPreset.SetSize(5);
-		INILoad(strFile);
+		INILoad(ofn.lpstrFile);
 	}
-	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
-	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
-	pWnd->SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 }

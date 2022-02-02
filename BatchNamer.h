@@ -12,6 +12,10 @@
 #include <afxwinappex.h>
 #include <map>
 
+#ifndef MY_MAX_PATH
+#define MY_MAX_PATH 2048
+#endif
+
 //CDlgInput 및 CDlgPreset에 사용되는 입력창 설정용 구조체
 struct InputItem
 {
@@ -136,7 +140,8 @@ public:
 	CBatchNamerApp();
 //	ULONG_PTR m_gdiplusToken;
 	HICON m_hIcon;
-	BOOL m_bEnglishUI;
+//	BOOL m_bEnglishUI;
+	CString m_strUILanguage; //Default, Korean, English
 	CString m_strINIPath;
 	BOOL m_bShowEverytime;
 	BOOL m_bAutoSort;

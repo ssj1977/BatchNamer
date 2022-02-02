@@ -47,9 +47,9 @@ BOOL CDlgSort::OnInitDialog()
 	m_nSortCol = header.GetSortColumn();
 	m_bSortAscend = header.IsAscending();
 	HDITEM hdi;
-	TCHAR buf[MAX_PATH];
+	TCHAR buf[MY_MAX_PATH];
 	hdi.mask = HDI_TEXT;
-	hdi.cchTextMax = MAX_PATH;
+	hdi.cchTextMax = MY_MAX_PATH;
 	hdi.pszText = buf;
 	for (int i = 0; i < nCount; i++)
 	{

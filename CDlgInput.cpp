@@ -116,9 +116,7 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 	}
 	else if (pItem->m_nSubCommand == IDS_FOLDER_SPECIFIC)
 	{ //폴더 지정일때 마지막으로 열어본 폴더 
-		CFileDialog dlg(TRUE, _T("*.*"), NULL,
-			OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY,
-			_T("All Files(*.*)|*.*||"), this, 0, TRUE);
+		CFileDialog dlg(TRUE, _T("*.*"), NULL, OFN_EXPLORER, NULL, this, 0, TRUE);
 		SetDlgItemText(IDC_EDIT_1, dlg.GetFolderPath());
 		SetDlgItemText(IDC_EDIT_2, L"");
 	}
@@ -747,7 +745,7 @@ void CDlgInput::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 
 void CDlgInput::OnBnClickedBtnFolderSelect()
 {
-	CFolderPickerDialog dlg;
+	CFolderPickerDialog dlg(NULL, OFN_EXPLORER | OFN_ENABLESIZING, this, sizeof(OPENFILENAME));;
 	CString strTitle;
 	strTitle.LoadString(IDS_FOLDER_SPECIFIC);
 	dlg.GetOFN().lpstrTitle = strTitle;

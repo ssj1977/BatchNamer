@@ -573,7 +573,7 @@ CString GetFileSizeString(ULONGLONG nSize);
 
 void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 {
-	TCHAR fullpath[MAX_PATH];
+	TCHAR fullpath[MY_MAX_PATH];
 	ULARGE_INTEGER filesize;
 	filesize.HighPart = fd.nFileSizeHigh;
 	filesize.LowPart = fd.nFileSizeLow;
@@ -631,7 +631,7 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 			CString strName, strFolder, strSize, strTimeCreate, strTimeModify, strFind;
 			size_t nLen = 0;
 			strFind = strPath + _T("\\*");
-			TCHAR fullpath[MAX_PATH];
+			TCHAR fullpath[MY_MAX_PATH];
 			hFind = FindFirstFileExW(strFind, FindExInfoBasic, &fd, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
 			if (hFind == INVALID_HANDLE_VALUE) return;
 			BOOL b = TRUE , bIsDot = FALSE, bIsDir = FALSE;
@@ -786,15 +786,14 @@ CString CBatchNamerDlg::ProcessDropFiles(HDROP hDropInfo, int nActionType)
 {
 	CString strRet;
 	WORD cFiles;
-	TCHAR szFilePath[MAX_PATH];
-	int bufsize = sizeof(TCHAR) * MAX_PATH;
-	memset(szFilePath, 0, bufsize);
+	TCHAR szFilePath[MY_MAX_PATH];
+	memset(szFilePath, 0, sizeof(TCHAR) * MY_MAX_PATH);
 	CString strPath;
 	cFiles = DragQueryFile(hDropInfo, (UINT)-1, NULL, 0);
 	CStringArray aPath;
 	for (int i = 0; i < cFiles; i++)
 	{
-		DragQueryFile(hDropInfo, i, szFilePath, MAX_PATH);
+		DragQueryFile(hDropInfo, i, szFilePath, MY_MAX_PATH);
 		strPath = (LPCTSTR)szFilePath;
 		aPath.Add(strPath);
 	}
@@ -802,7 +801,6 @@ CString CBatchNamerDlg::ProcessDropFiles(HDROP hDropInfo, int nActionType)
 	//void* pArrayStart = (void*)&aPath[0];
 	//qsort(pArrayStart, aPath.GetSize(), sizeof(CString*), CompareFileName);
 	qsort(aPath.GetData(), aPath.GetSize(), sizeof(CString*), CompareFileName);
-
 
 	//정렬된 파일 목록을 처리한다.
 	if (nActionType == DF_ADDLIST) 		//순서대로 목록에 추가하기
@@ -836,7 +834,7 @@ void CBatchNamerDlg::LoadPathArray(CStringArray& aPath)
 //폴더 열기 시스템 다이얼로그를 사용해서 폴더를 목록에 추가한다
 void CBatchNamerDlg::AddByFolderPicker()
 {
-	CFolderPickerDialog dlg(NULL, OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY, this, sizeof(OPENFILENAME));
+	CFolderPickerDialog dlg(NULL, OFN_EXPLORER | OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING, this, sizeof(OPENFILENAME));
 	CString strTitle;
 	strTitle.LoadString(IDS_LOAD_FOLDERPICKER);
 	OPENFILENAME& ofn = dlg.GetOFN();
@@ -871,42 +869,56 @@ void CBatchNamerDlg::AddByFolderPicker()
 //파일 열기 시스템 다이얼로그를 사용해서 파일을 목록에 추가한다
 void CBatchNamerDlg::AddByFileDialog()
 {
-	CFileDialog dlg(TRUE, _T("*.*"), NULL,
-		OFN_ALLOWMULTISELECT | OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_LONGNAMES | OFN_HIDEREADONLY,
-		_T("All Files(*.*)|*.*||"), this, 0 , TRUE);
-	CString strTemp;
-	strTemp.LoadString(IDS_LOAD_FILEDIALOG);
-	OPENFILENAME& ofn = dlg.GetOFN();
-	ofn.lpstrTitle = strTemp;
-	ofn.nMaxFile = (MAX_PATH + sizeof(TCHAR)) * 10000;
-	ofn.hwndOwner = GetSafeHwnd();
-	TCHAR* buf = new TCHAR[ofn.nMaxFile];
-	memset(buf, 0, sizeof(buf));
-	ofn.lpstrFile = buf;
-	int nCount = 0;
-	if (dlg.DoModal() == IDOK)
+	OPENFILENAME ofn = { 0 };
+	CString strTitle;
+	if (strTitle.LoadString(IDS_LOAD_FILEDIALOG) == FALSE) strTitle.Empty();
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = this->GetSafeHwnd();
+	ofn.Flags = OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
+	ofn.lpstrTitle = strTitle;
+	//ofn.lpstrFilter = _T("All Files(*.*)\0*.*\0\0"); //모든 파일이 대상인 경우는 필터 불필요
+	ofn.nMaxFile = MAX_PATH * 10000; //여러개 선택시 파일이름만 포함되므로 MAX_PATH를 기본값으로 해도 될 것으로 생각
+	TCHAR* pBuf = new TCHAR[ofn.nMaxFile];
+	memset(pBuf, 0, sizeof(TCHAR) * ofn.nMaxFile);
+	ofn.lpstrFile = pBuf;
+	if (GetOpenFileName(&ofn) == FALSE)
 	{
+		if (CommDlgExtendedError() == 0x3003) //FNERR_BUFFERTOOSMALL
+		{
+			APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
+		}
+	}
+	else
+	{
+		//ofn.lpstrFile에 파일이 하나밖에 없는 경우에는 전체 경로가 하나만 들어가고
+		//파일이 여러개인 경우는 폴더명이 첫번째로 들어간 후 두번째부터 폴더명 없는 파일명만 저장되는 방식
 		if (APP()->m_bShowEverytime) ConfigLoadType();
 		SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
-		CString strPath;
-		POSITION pos = dlg.GetStartPosition();
 		m_list.SetRedraw(FALSE);
 		m_nTempLoadType = -1;
-		while (pos)
+		TCHAR* pCurrentPos = pBuf;
+		int nLen = (int)_tcslen(pCurrentPos);
+		if (*(pCurrentPos + nLen + 1) == _T('\0')) //아이템이 한개뿐인 경우
 		{
-			strPath = dlg.GetNextPathName(pos);
-			AddPathStart(strPath);
-			nCount++;
+			AddPathStart(pCurrentPos);
+		}
+		else //아이템이 여러개인 경우 
+		{
+			CString strFolder = pCurrentPos;
+			pCurrentPos += (nLen + 1);
+			nLen = (int)_tcslen(pCurrentPos);
+			while (nLen != 0)
+			{
+				AddPathStart(strFolder + _T('\\') + pCurrentPos);
+				pCurrentPos += (nLen + 1);
+				nLen = (int)_tcslen(pCurrentPos);
+			}
 		}
 		if (APP()->m_bAutoSort)	m_list.Sort(m_list.GetHeaderCtrl().GetSortColumn(), m_list.GetHeaderCtrl().IsAscending());
 		m_list.SetRedraw(TRUE);
 		UpdateCount();
 	}
-	delete[] buf;
-	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
-	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
-	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
-	SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+	delete[] pBuf;
 }
 
 
@@ -1677,10 +1689,10 @@ void StringArray2szzBuffer(CStringArray& aPath, TCHAR*& pszzBuf)
 BOOL CopyPath(CString& strOldPath, CString& strNewPath, BOOL bMove)
 {
 	//	if (aOldPath.GetSize() == 0 || aOldPath.GetSize() != aNewPath.GetSize()) return FALSE;
-	TCHAR pszzBuf_OldPath[MAX_PATH];
-	TCHAR pszzBuf_NewPath[MAX_PATH];
-	memset(pszzBuf_OldPath, 0, MAX_PATH * sizeof(TCHAR));
-	memset(pszzBuf_NewPath, 0, MAX_PATH * sizeof(TCHAR));
+	TCHAR pszzBuf_OldPath[MY_MAX_PATH];
+	TCHAR pszzBuf_NewPath[MY_MAX_PATH];
+	memset(pszzBuf_OldPath, 0, MY_MAX_PATH * sizeof(TCHAR));
+	memset(pszzBuf_NewPath, 0, MY_MAX_PATH * sizeof(TCHAR));
 	lstrcpy(pszzBuf_OldPath, (LPCTSTR)strOldPath);
 	lstrcpy(pszzBuf_NewPath, (LPCTSTR)strNewPath);
 	SHFILEOPSTRUCT FileOp = { 0 };
@@ -2108,19 +2120,23 @@ void CBatchNamerDlg::Export(int nMode)
 	}
 	else if (nMode == 1 || nMode == 3)
 	{
-		CFileDialog dlg(FALSE, _T("txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), this);
-		CString strTitle; 
+		OPENFILENAME ofn = { 0 };
+		CString strTitle;
 		if (nMode == 1)	strTitle.LoadString(IDS_EXPORTNAME); //_T("이름 목록 저장");
 		else			strTitle.LoadString(IDS_EXPORTFULLPATH); //_T("전체경로 목록 저장");
-		dlg.GetOFN().lpstrTitle = strTitle;
-		dlg.GetOFN().hwndOwner = GetSafeHwnd();
-		if (dlg.DoModal() == IDOK)
+		ofn.lStructSize = sizeof(OPENFILENAME);
+		ofn.hwndOwner = this->GetSafeHwnd();
+		ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_ENABLESIZING;
+		ofn.lpstrTitle = strTitle;
+		ofn.lpstrFilter = _T("Text Files(*.txt)\0*.txt\0All Files(*.*)\0*.*\0\0");
+		ofn.nMaxFile = MY_MAX_PATH;
+		ofn.lpstrDefExt = _T("txt");
+		TCHAR pBuf[MY_MAX_PATH] = { 0 };
+		ofn.lpstrFile = pBuf;
+		if (GetSaveFileName(&ofn) != FALSE)
 		{
-			WriteCStringToFile(dlg.GetPathName(), strData);
+			WriteCStringToFile(ofn.lpstrFile, strData);
 		}
-		//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
-		//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
-		SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
 }
 
@@ -2132,18 +2148,22 @@ void CBatchNamerDlg::ImportNewName(BOOL bFromFile)
 	CString strImportData, strName;
 	if (bFromFile == TRUE) // 파일에서 읽기
 	{
-		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), this);
+		OPENFILENAME ofn = { 0 };
 		CString strTitle;
-		strTitle.LoadString(IDS_IMPORTNAME); //"바꿀 파일 이름 불러오기"
-		dlg.GetOFN().lpstrTitle = strTitle;
-		dlg.GetOFN().hwndOwner = GetSafeHwnd();
-		if (dlg.DoModal() == IDOK)
+		if (strTitle.LoadString(IDS_IMPORTNAME) == FALSE) strTitle.Empty();
+		ofn.lStructSize = sizeof(OPENFILENAME);
+		ofn.hwndOwner = this->GetSafeHwnd();
+		ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
+		ofn.lpstrTitle = strTitle;
+		ofn.lpstrFilter = _T("Text Files(*.txt)\0*.txt\0All Files(*.*)\0*.*\0\0");
+		ofn.nMaxFile = MY_MAX_PATH;
+		ofn.lpstrDefExt = _T("txt");
+		TCHAR pBuf[MY_MAX_PATH] = { 0 };
+		ofn.lpstrFile = pBuf;
+		if (GetOpenFileName(&ofn) != FALSE)
 		{
-			ReadFileToCString(dlg.GetPathName(), strImportData);
+			ReadFileToCString(ofn.lpstrFile, strImportData);
 		}
-		//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
-		//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
-		SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
 	else // 클립보드에서 읽기
 	{
@@ -2201,18 +2221,22 @@ void CBatchNamerDlg::ImportPath(BOOL bFromFile)
 	CString strImportData;
 	if (bFromFile == TRUE) // 파일에서 읽기
 	{
-		CFileDialog dlg(TRUE, _T("*.txt"), NULL, OFN_ENABLESIZING | OFN_LONGNAMES | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY, _T("Text Files(*.txt)|*.txt|All Files(*.*)|*.*||"), this);
-		CString strTemp;
-		strTemp.LoadString(IDS_IMPORT_PATH);
-		dlg.GetOFN().lpstrTitle = strTemp;
-		dlg.GetOFN().hwndOwner = GetSafeHwnd();
-		if (dlg.DoModal() == IDOK)
+		OPENFILENAME ofn = { 0 };
+		CString strTitle;
+		if (strTitle.LoadString(IDS_IMPORT_PATH) == FALSE) strTitle.Empty();
+		ofn.lStructSize = sizeof(OPENFILENAME);
+		ofn.hwndOwner = this->GetSafeHwnd();
+		ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
+		ofn.lpstrTitle = strTitle;
+		ofn.lpstrFilter = _T("Text Files(*.txt)\0*.txt\0All Files(*.*)\0*.*\0\0");
+		ofn.nMaxFile = MY_MAX_PATH;
+		ofn.lpstrDefExt = _T("txt");
+		TCHAR pBuf[MY_MAX_PATH] = { 0 };
+		ofn.lpstrFile = pBuf;
+		if (GetOpenFileName(&ofn) != FALSE)
 		{
-			ReadFileToCString(dlg.GetPathName(), strImportData);
+			ReadFileToCString(ofn.lpstrFile, strImportData);
 		}
-		//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
-		//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
-		SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
 	}
 	else // 클립보드에서 읽기
 	{
