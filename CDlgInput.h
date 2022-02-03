@@ -27,7 +27,7 @@ public:
 // 대화 상자 데이터입니다.
 //#ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_INPUT };
-	CComboBox	m_cb;
+	CComboBox m_cb;
 //#endif
 
 protected:
@@ -43,4 +43,5 @@ public:
 	void ArrangeCtrl();
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	afx_msg void OnBnClickedBtnFolderSelect();
+	afx_msg void OnStnClickedStaticCombo();
 };

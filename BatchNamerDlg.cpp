@@ -426,7 +426,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.03 (2022-01-15 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.10 (2022-02-04 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -1045,62 +1045,68 @@ int GetStringTokens(CStringArray& aRet, CString str)
 
 CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bReturnBlockOnly)
 {
-	//원본 문자열을 와일드카드와 비와일드카드 단위 토큰으로 쪼갠다
-	CStringArray aStr1, aStr2, aRet;
-	int nLen1 = GetStringTokens(aStr1, str1);
-	int nLen2 = GetStringTokens(aStr2, str2);
-	int nPos = 0, nPrevTokenPos = -1;
-	int nLen = strSrc.GetLength();
-	int nMaxPos = nLen - 1;
-	int nBlockBeginPos = -1; //검색된 블록의 시작점
+	//*와 ?를 이용해서 패턴을 교체하기
+	//str1은 찾을 패턴, str2는 교체할 패턴
+	//str2는 비어있는 경우 삭제처럼 동작, 교체인 경우는 str1과 str2의 구조가 1:1 매칭이거나 str2가 상수여야 함
+	CStringArray aStr1, aStr2, aRet; //토큰을 저장하기 위한 배열 
+	int nLen1 = GetStringTokens(aStr1, str1); //str1을 토큰으로 쪼개서 aStr1에 넣는다, 토큰은 *, ? , 일반 문자열 3종류
+	int nLen2 = GetStringTokens(aStr2, str2); //str2를 쪼갠다
+	int nPos = 0; //strSrc에서 현재 탐색중인 위치를 나타낸다
+	int nPrevTokenPos = -1;	//바로 앞에 찾았던 토큰의 위치, ?나 * 다음에 특정 문자열이 오는 경우에 필요
+	int nLenSrc = strSrc.GetLength(); //strSrc 문자열 길이
+	int nMaxPos = nLenSrc - 1; //현재 토큰의 일치 여부를 판정할때 검색하는 끝지점, ?로 한글자만 검색할때를 식별한다.
+	int nBlockBeginPos = -1; //검색된 블록의 시작점, 블록은 전체 패턴에 매칭되는 단위로 하나의 문자열 안에 여러개의 블록 존재 가능
 	int nBlockEndPos = -1; //검색된 블록의 끝점
 	int nBlockPrevEndPos = -1; //직전 발견한 블록의 끝점
 	int i =0 ;
 	aRet.SetSize(nLen1);
 	CString strRet;
 	TCHAR cToken = _T('_');
-	while (nPos < nLen) //블록을 여러번 반복해서 찾기
+	while (nPos < nLenSrc) //문자열 끝에 도달할 때까지 블록을 여러번 반복해서 찾기
 	{
-		nBlockBeginPos = -1;
-		nBlockEndPos = -1;
-		nMaxPos = nLen - 1;
-		for (i = 0; i < nLen1; i++) //단위 블록 검색
+		nBlockBeginPos = -1; //초기화
+		nBlockEndPos = -1; //초기화
+		nMaxPos = nLenSrc - 1; //초기화
+		for (i = 0; i < nLen1; i++) //단위 블록 검색, 토큰 갯수만큼 돈다
 		{
-			if (aStr1[i] == _T("?")) 
+			if (aStr1[i] == _T("?")) //탐색할 토큰이 아무거나 한글자인 경우 
 			{
-				if (i==0) nBlockBeginPos = nPos;
-				if (strSrc.GetLength() <= nPos)
-				{
-					break;
-				}
-				aRet[i] = strSrc.GetAt(nPos); //추가할 글자 쌓기
-				nPrevTokenPos = nPos;
-				nBlockEndPos = nPos;
-				nPos += 1;
-				nMaxPos = nPos; //한글자 이내에서 검색하여야 함
-				cToken = _T('?');
+				if (i == 0) nBlockBeginPos = nPos; //처음 시작할 때 만났다면 블록 시작점을 현재 위치로 초기화
+				//if (nPos >= nLenSrc) break;//현재 탐색중인 위치가 원본 문자열의 끝을 넘어간 경우 중단
+				aRet[i] = strSrc.GetAt(nPos); //블록을 구성하는 실제 글자 토큰을 aRet에 쌓는다.
+				nPrevTokenPos = nPos; //토큰의 문자열 내 위치 기억
+				nBlockEndPos = nPos; //블록이 끝나는 위치를 현재 탐색 위치로 설정
+				nPos += 1; //다음 문자로 이동
+				nMaxPos = nPos; //nMaxPos == nPos면 이번 토큰의 처리는 끝났다는 뜻
+				cToken = _T('?'); 
 			}
-			else if (aStr1[i] == _T("*"))
+			else if (aStr1[i] == _T("*")) //탐색할 토큰이 임의의 문자열인 경우
 			{
-				if (i == 0) nBlockBeginPos = nPos;
-				nPrevTokenPos = nPos;
+				if (i == 0) nBlockBeginPos = nPos; //처음 시작할 때 만났다면 블록 시작점을 현재 위치로 초기화
+				nPrevTokenPos = nPos; //토큰의 문자열 내 위치 기억
 				cToken = _T('*');
-				nMaxPos = nLen - 1; //끝가지 검색 가능
+				nMaxPos = nLenSrc - 1; //다음 토큰을 찾을 때 문자열 끝까지 찾는다
+				if (i == nLen1 - 1) // '*' 이 검색패턴의 마지막인 경우는 남은 문자열을 모두 추가하고 끝냄
+				{
+					aRet[i] = strSrc.Mid(nPos); //현재위치부터 끝까지를 잘라내서 aRet에 토큰으로 쌓는다
+					nBlockEndPos = nLenSrc - 1; //블록 끝점 = 문자열 끝점
+					nPos = nLenSrc; //nPos를 끝으로 이동시켜서 더이상 처리할 것이 없음을 표시
+					nMaxPos = nPos;
+					break; //검색을 끝낸다
+				}
 			}
-			else
+			else //일반 문자열 토큰인 경우
 			{
-				nPos = strSrc.Find(aStr1[i], nPos);
-				// 상수 토큰이 없다면 매칭되는 내용이 없으므로 무조건 중단
-				if (nPos == -1)
+				nPos = strSrc.Find(aStr1[i], nPos); //현재 위치부터 해당 토큰을 검색, 발견되는 위치로 현재 위치를 옮긴다
+				if (nPos == -1)	// 상수 토큰이 없다면 매칭되는 내용이 없으므로 aRet에 저장된 토큰을 모두 지우고 무조건 중단
 				{
 					aRet.RemoveAll();
 					aRet.SetSize(nLen1);
 					break;
 				}
-				//매칭되는 상수 토큰이 범위 이후인 경우 ('?' 사용시) 중단
-				if (nPos > nMaxPos)
+				else if (nPos > nMaxPos) //매칭되는 상수 토큰이 범위 이후인 경우 ('?' 사용시) 중단
 				{
-					nPos = nBlockBeginPos + 1; //다음번 검색 시작점을 앞으로 이동
+					nPos = nBlockBeginPos + 1; //다음번 검색 시작점을 한칸 뒤로 이동해서 다시 시작
 					aRet.RemoveAll();
 					aRet.SetSize(nLen1);
 					nBlockEndPos = -1;
@@ -1108,8 +1114,8 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bR
 				}
 				else //매칭되는 상수토큰을 찾은 경우
 				{
-					if (i == 0) nBlockBeginPos = nPos;
-					if (nLen1 == nLen2) //1:1매칭형
+					if (i == 0) nBlockBeginPos = nPos; //처음 시작할 때 만났다면 블록 시작점을 현재 위치로 초기화
+					if (nLen1 == nLen2) //1:1매칭형인 경우 토큰 쌓기, 이게 아닌 경우에는 단순 삭제임
 					{
 						if (i > 0 && cToken == _T('*')) //앞의 토큰이 * 였던 경우 추출하여 추가
 						{
@@ -1134,7 +1140,8 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bR
 		//블록을 찾은 경우
 		if (nPos <= nMaxPos && nBlockEndPos >= 0)
 		{
-			//찾아낸 블록과 이전 블록 간 사이의 문자는 그냥 추가
+			//bReturnBlockOnly로 발견된 패턴 매칭 부분만 처리한다면 문자열 추가 불필요
+			//아니면 찾아낸 블록과 이전 블록 간 사이의 문자는 그냥 추가
 			if (bReturnBlockOnly == FALSE) strRet += strSrc.Mid(nBlockPrevEndPos + 1, nBlockBeginPos - nBlockPrevEndPos - 1);
 			if (nLen1 == nLen2) //1:1 매칭인 경우
 			{
@@ -1147,13 +1154,13 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bR
 				if (nLen2 == 1) strRet += aStr2[0];
 			}
 		}
-		if (nPos >= nLen) break;
+		if (nPos >= nLenSrc) break;
 		if (nBlockEndPos != -1) nBlockPrevEndPos = nBlockEndPos;
 	}
 	//뒤에 남은 문자열 추가
-	if (nPos == -1) nPos = 0;
-	if (nBlockEndPos == -1) nBlockEndPos = nBlockPrevEndPos;
-	if (bReturnBlockOnly == FALSE || cToken == L'*')
+	//if (nPos == -1) nPos = 0;
+	if (nBlockEndPos == -1) nBlockEndPos = nBlockPrevEndPos; //마지막으로 끝난 블록의 끝부분
+	if (bReturnBlockOnly == FALSE) // || cToken == L'*')
 	{
 		strRet += strSrc.Mid(nBlockEndPos + 1);
 	}
@@ -1844,7 +1851,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 		}
 		else
 		{
-			strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), IDSTR(IDS_MSG_DUPNAME),	strTemp, strNewPath);
+			strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), IDSTR(IDS_MSG_DUPNAME), strTemp, strNewPath);
 			APP()->ShowMsg(strErr, IDSTR(IDS_MSG_ERROR));
 			m_list.SetFocus();
 			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);

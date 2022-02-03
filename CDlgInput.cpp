@@ -39,6 +39,7 @@ BEGIN_MESSAGE_MAP(CDlgInput, CDialogEx)
 	ON_WM_SIZE()
 	ON_WM_GETMINMAXINFO()
 	ON_BN_CLICKED(IDC_BTN_FOLDER_SELECT, &CDlgInput::OnBnClickedBtnFolderSelect)
+	ON_STN_CLICKED(IDC_STATIC_COMBO, &CDlgInput::OnStnClickedStaticCombo)
 END_MESSAGE_MAP()
 
 
@@ -690,16 +691,17 @@ void CDlgInput::ArrangeCtrl()
 	GetClientRect(rc);
 	rc.DeflateRect(m_nFontHeight, m_nFontHeight);
 	int nInputHeight = rc.Height();
+	CRect rcStaticCombo; GetDlgItem(IDC_STATIC_COMBO)->GetWindowRect(rcStaticCombo);
 	CRect rcStatic; GetDlgItem(IDC_STATIC_1)->GetWindowRect(rcStatic); int nStaticHeight = rcStatic.Height();
 	CRect rcCombo;	m_cb.GetWindowRect(rcCombo);	int nComboHeight = rcCombo.Height();
 	CRect rcButton; GetDlgItem(IDOK)->GetWindowRect(rcButton); int nButtonHeight = rcButton.Height(); int nButtonWidth = rcButton.Width();
 	//
-	GetDlgItem(IDC_STATIC_3)->MoveWindow(rc.left,rc.top,rc.Width(),nStaticHeight);
-	rc.top += nStaticHeight + 2;
+	GetDlgItem(IDC_STATIC_COMBO)->MoveWindow(rc.left,rc.top,rc.Width(), rcStaticCombo.Height());
+	rc.top += rcStaticCombo.Height() + 2;
 	m_cb.MoveWindow(rc.left, rc.top, rc.Width(), nComboHeight);
-	rc.top += nComboHeight + m_nFontHeight;
+	rc.top += nComboHeight + m_nFontHeight + 2;
 	//
-	nInputHeight -= (nStaticHeight + 2) * 3 + nComboHeight + (m_nFontHeight * 3) + nButtonHeight;
+	nInputHeight -= (nStaticHeight + 2) * 2 + (m_nFontHeight * 3) + nButtonHeight + rcStaticCombo.Height() + nComboHeight + 2;
 	nInputHeight /= 2;
 
 	CButton* pBtn = (CButton*)(GetDlgItem(IDC_BTN_FOLDER_SELECT));
@@ -752,4 +754,10 @@ void CDlgInput::OnBnClickedBtnFolderSelect()
 	dlg.GetOFN().lpstrTitle = strTitle;
 	if (dlg.DoModal() == IDCANCEL) return;
 	SetDlgItemText(IDC_EDIT_1, dlg.GetPathName());
+}
+
+
+void CDlgInput::OnStnClickedStaticCombo()
+{
+	m_cb.ShowDropDown(TRUE);
 }

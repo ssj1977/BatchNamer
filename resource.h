@@ -181,6 +181,7 @@
 #define IDC_CB_INPUT                    1006
 #define IDC_ST_BAR                      1007
 #define IDC_STATIC_3                    1007
+#define IDC_STATIC_COMBO                1007
 #define IDC_TOOLBORDER_1                1012
 #define IDC_TOOLBORDER_2                1013
 #define IDC_RADIO_LOAD_0                1014
