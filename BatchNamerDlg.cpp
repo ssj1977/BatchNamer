@@ -426,7 +426,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.10 (2022-02-04 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.11 (2022-02-06 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -1435,7 +1435,11 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 		}
 		if (bForExt == FALSE)	strName = strNew;
 		else					strExt = strNew;
-		if (strExt.IsEmpty() == FALSE)	strOutput = strName + L'.' + strExt;
+		if (strExt.IsEmpty() == FALSE)
+		{
+			if (strExt.GetAt(0)==L'.') strOutput = strName + strExt;
+			else strOutput = strName + L'.' + strExt;
+		}
 		else							strOutput = strName;
 		m_list.SetItemText(i, COL_NEWNAME, strOutput);
 	}
