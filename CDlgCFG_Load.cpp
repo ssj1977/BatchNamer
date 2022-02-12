@@ -15,7 +15,7 @@ IMPLEMENT_DYNAMIC(CDlgCFG_Load, CDialogEx)
 CDlgCFG_Load::CDlgCFG_Load(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CFG_LOAD, pParent)
 {
-	m_nLoadType = 2; // 0 = Add a Folder itself, 1 = Add Files in a Folder
+	m_nLoadType = 2; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가 / 2 = 폴더를 추가할때 물어보기
 	m_bShowEverytime = FALSE;
 	m_bAutoSort = TRUE;
 }

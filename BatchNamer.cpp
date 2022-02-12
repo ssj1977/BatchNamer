@@ -29,7 +29,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_strUILanguage = _T("Default");
 	m_bShowEverytime = FALSE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
 	m_bAutoSort = TRUE; //항목 추가시 자동 정렬 여부
-	m_nLoadType = 0; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가
+	m_nLoadType = 2; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가 / 2 = 폴더를 추가할때 물어보기
 	m_nShowFlag = 0; //칼럼 표시 여부
 	m_rcMain = CRect(0, 0, 0, 0);
 	m_rcInput = CRect(0, 0, 0, 0);
