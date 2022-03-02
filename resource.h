@@ -149,6 +149,7 @@
 #define IDD_CFG_LOAD                    137
 #define IDS_MOVE_POS                    137
 #define IDS_MOVE_POS_REVERSE            138
+#define IDS_ADDDATETIMENOW              139
 #define IDD_CFG_VIEW                    141
 #define IDD_SORT                        149
 #define IDD_PRESET                      151
@@ -199,6 +200,8 @@
 #define IDC_ST_COLOR_TEXT               1033
 #define IDC_ST_COLOR_BK                 1034
 #define IDC_CHK_SHOWEVERYTIME           1035
+#define IDC_ST_FONTSIZE2                1035
+#define IDC_EDIT_FONTNAME               1036
 #define IDC_BTN_STOPTHREAD              1037
 #define IDC_RADIO_SORT_ASCEND           1047
 #define IDC_RADIO_SORT_DESCEND          1048
@@ -218,6 +221,7 @@
 #define IDC_CHK_CTRL                    1065
 #define IDC_CHK_USETHREAD               1065
 #define IDC_CHK_SHIFT                   1066
+#define IDC_CHK_EXTINCLUDE              1066
 #define IDC_EDIT_HOTKEY                 1067
 #define IDC_BTN_EDIT_HOTKEY             1068
 #define IDC_BTN_CLEAR_HOTKEY            1069
@@ -232,6 +236,7 @@
 #define IDC_EDIT_FILTER_NAME_WORD       1079
 #define IDC_EDIT_FILTER_EXT_WORD        1080
 #define IDC_RADIO_APPLY_MOVE            1081
+#define IDC_BTN_FONT                    1082
 #define IDC_RADIO_APPLY_COPY            1083
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
@@ -294,7 +299,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        180
 #define _APS_NEXT_COMMAND_VALUE         32858
-#define _APS_NEXT_CONTROL_VALUE         1082
+#define _APS_NEXT_CONTROL_VALUE         1083
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

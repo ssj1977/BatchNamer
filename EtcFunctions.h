@@ -2,7 +2,6 @@
 #define __ETCFUNCTIONS__ 
 BOOL FlagGET(int& nFlagType, int nField);
 void FlagSET(int& nFlagType, int nField, BOOL bSet);
-int GetFileImageIndex(CString strPath, BOOL bIsDirectory);
 int CompareFileName(const void* left, const void* right);
 //int CompareFileName(TCHAR* name1, TCHAR* name2);
 //int CompareFileName(CString& name1, CString& name2);
@@ -17,6 +16,8 @@ CString Get_Name(CString strFile, BOOL bKeepExt = TRUE);
 CString Get_Ext(CString strFile, BOOL bIsDirectory = FALSE, BOOL bIncludeDot = TRUE);
 CString ConvertKeyCodeToName(DWORD code);
 BOOL CString2BOOL(CString str);
+CString PathBackSlash(CString strPath, BOOL bUseBackSlash = TRUE);
+
 inline BOOL IsChecked(CWnd* pWnd, int nID)
 {
 	return (((CButton*)pWnd->GetDlgItem(nID))->GetCheck() == BST_CHECKED) ? TRUE : FALSE;
@@ -26,3 +27,4 @@ inline void SetCheckByID(CWnd* pWnd, int nID, BOOL bCheck)
 	((CButton*)pWnd->GetDlgItem(nID))->SetCheck(bCheck ? BST_CHECKED : BST_UNCHECKED);
 }
 #endif
+

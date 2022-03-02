@@ -24,9 +24,11 @@ public:
 	COLORREF m_clrText;
 	COLORREF m_clrBk;
 	BOOL m_bUseDefaultColor;
-	int m_nFontSize;
 	BOOL m_bUseDefaultFont;
+	int m_nFontSize;
 	int m_nIconType;
+	LOGFONT m_lf;
+	BOOL m_bUpdateFont;
 	void UpdateControl();
 
 	virtual BOOL OnInitDialog();
@@ -34,4 +36,5 @@ public:
 	virtual void OnCancel();
 	afx_msg void OnBnClickedCheckDefaultColor();
 	afx_msg void OnBnClickedCheckDefaultFont();
+	afx_msg void OnBnClickedBtnFont();
 };

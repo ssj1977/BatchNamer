@@ -13,7 +13,7 @@
 #include <map>
 
 #ifndef MY_MAX_PATH
-#define MY_MAX_PATH 2048
+#define MY_MAX_PATH 32768
 #endif
 
 //CDlgInput 및 CDlgPreset에 사용되는 입력창 설정용 구조체
@@ -150,7 +150,7 @@ public:
 	int m_nLoadType;
 	int m_nShowFlag;
 	int m_nSortCol;
-	int m_bSortAscend; 
+	int m_bSortAscend;
 	CRect m_rcMain;
 	CRect m_rcInput;
 	COLORREF m_clrText;
@@ -161,6 +161,7 @@ public:
 	int m_nIconType;
 	PresetArray m_aPreset;
 	CUIntArray m_aColWidth;
+	BOOL m_bIncludeExt;
 	void PresetExport();
 	void PresetImport();
 	void INISave(CString strFile);

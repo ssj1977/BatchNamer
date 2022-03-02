@@ -23,7 +23,7 @@ public:
 	HIMAGELIST* m_pSysImgList;
 	int m_nTempLoadType;
 	void UpdateImageList();
-	void UpdateFontSize();
+	void UpdateListFont();
 	void ConfigLoadType();
 	void ConfigViewOption();
 	void ConfigEtc();
@@ -86,7 +86,7 @@ protected:
 	void StringAdd(int nSubCommand, CString str1, CString str2, BOOL bFront, BOOL bForExt);
 	void NameReplace();
 	void ExtReplace();
-	void StringReplace(int nSubCommand, CString str1, CString str2, BOOL bForExt);
+	void StringReplace(int nSubCommand, CString str1, CString str2, BOOL bForExtOnly);
 	//void ExtReplace(int nSubCommand, CString str1, CString str2, BOOL bForExt);
 	//void ExtAdd(int nSubCommand, CString str1, CString str2);
 	void ExtDel(BOOL bToggleRedraw = TRUE);

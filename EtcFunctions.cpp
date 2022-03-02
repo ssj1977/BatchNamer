@@ -27,16 +27,6 @@ void FlagSET(int& nFlagType, int nField, BOOL bSet)
 }
 
 
-//해당 파일의 아이콘 정보를 가져온다
-int GetFileImageIndex(CString strPath, BOOL bIsDirectory)
-{
-	SHFILEINFO sfi;
-	SHGetFileInfo((LPCTSTR)strPath, bIsDirectory ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL,
-		&sfi, sizeof(SHFILEINFO), SHGFI_USEFILEATTRIBUTES|SHGFI_SYSICONINDEX|SHGFI_ICON|SHGFI_SMALLICON);
-//	return bIsDirectory ? 4 : 3;
-	return sfi.iIcon;
-}
-
 //두 파일명 비교하기 :윈도우처럼 비교 가능, 폴더식별은 별도의 처리 필요
 int CompareFileName(const void* left, const void* right)
 {
@@ -319,4 +309,20 @@ CString ConvertKeyCodeToName(DWORD code)
 BOOL CString2BOOL(CString str)
 {
 	return (_ttoi(str) == 0) ? FALSE : TRUE;
+}
+
+
+CString PathBackSlash(CString strPath, BOOL bUseBackSlash)
+{
+	if (strPath.IsEmpty()) return strPath;
+	int nPos = strPath.GetLength() - 1;
+	if (strPath.GetAt(nPos) == _T('\\')) //끝이 '\' 일때
+	{
+		if (bUseBackSlash == FALSE) strPath = strPath.Left(nPos);
+	}
+	else // 끝이 '\'가 아닐때
+	{
+		if (bUseBackSlash == TRUE) strPath += _T('\\');
+	}
+	return strPath;
 }

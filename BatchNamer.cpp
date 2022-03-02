@@ -52,6 +52,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_bUseThread = TRUE;
 	m_nSortCol = COL_OLDNAME;
 	m_bSortAscend = TRUE;
+	m_bIncludeExt = FALSE;
 }
 
 
@@ -98,7 +99,7 @@ int CBatchNamerApp::ExitInstance()
 		delete CMFCVisualManager::GetInstance();
 
 //	Gdiplus::GdiplusShutdown(m_gdiplusToken);
-
+	CoUninitialize();
 	return CWinAppEx::ExitInstance();
 }
 
@@ -110,6 +111,7 @@ void CBatchNamerApp::UpdateThreadLocale()
 
 BOOL CBatchNamerApp::InitInstance()
 {
+	CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
 	TCHAR szBuff[MY_MAX_PATH];
 	GetModuleFileName(m_hInstance, szBuff, MY_MAX_PATH);
 	CString strExePath = szBuff;
@@ -228,6 +230,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("IconType=%d\r\n"), m_nIconType);	strData += strLine;
 	strLine.Format(_T("NameAutoFix=%d\r\n"), m_bNameAutoFix);	strData += strLine;
 	strLine.Format(_T("UseThread=%d\r\n"), m_bUseThread);	strData += strLine;
+	strLine.Format(_T("IncludeExt=%d\r\n"), m_bIncludeExt);	strData += strLine;
 	strData += GetPresetExportString();
 	//컬럼폭 저장
 	strData += _T("ColWidths=");
@@ -301,6 +304,7 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("UseThread")) == 0) m_bUseThread = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("IncludeExt")) == 0) m_bIncludeExt = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0)
 			{   //예전 버전의 호환성을 위한 코드
 				if (CString2BOOL(str2) == FALSE) m_strUILanguage = _T("Default");
@@ -465,7 +469,7 @@ void CBatchNamerApp::InitHotKey()
 void CBatchNamerApp::PresetExport()
 {
 	CWnd* pWnd = AfxGetMainWnd();
-	OPENFILENAME ofn = { 0 };
+	OPENFILENAME ofn = {};
 	CString strTitle;
 	if (strTitle.LoadString(IDS_PRESET_EXPORT) == FALSE) strTitle.Empty();
 	ofn.lStructSize = sizeof(OPENFILENAME);
@@ -473,9 +477,9 @@ void CBatchNamerApp::PresetExport()
 	ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_ENABLESIZING;
 	ofn.lpstrTitle = strTitle;
 	ofn.lpstrFilter = _T("BatchNamer Preset(*.bnp)\0*.bnp\0All Files(*.*)\0*.*\0\0"); //모든 파일이 대상인 경우는 필터 불필요
-	ofn.nMaxFile = MY_MAX_PATH;
 	ofn.lpstrDefExt = _T("bnp");
-	TCHAR pBuf[MY_MAX_PATH] = { 0 };
+	ofn.nMaxFile = MY_MAX_PATH;
+	TCHAR pBuf[MY_MAX_PATH] = {};
 	ofn.lpstrFile = pBuf;
 	if (GetSaveFileName(&ofn) != FALSE)
 	{
@@ -486,7 +490,7 @@ void CBatchNamerApp::PresetExport()
 void CBatchNamerApp::PresetImport()
 {
 	CWnd* pWnd = AfxGetMainWnd();
-	OPENFILENAME ofn = { 0 };
+	OPENFILENAME ofn = {};
 	CString strTitle;
 	if (strTitle.LoadString(IDS_PRESET_IMPORT) == FALSE) strTitle.Empty();
 	ofn.lStructSize = sizeof(OPENFILENAME);
@@ -494,9 +498,9 @@ void CBatchNamerApp::PresetImport()
 	ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
 	ofn.lpstrTitle = strTitle;
 	ofn.lpstrFilter = _T("BatchNamer Preset(*.bnp)\0*.bnp\0All Files(*.*)\0*.*\0\0");
-	ofn.nMaxFile = MY_MAX_PATH;
 	ofn.lpstrDefExt = _T("bnp");
-	TCHAR pBuf[MY_MAX_PATH] = { 0 };
+	ofn.nMaxFile = MY_MAX_PATH;
+	TCHAR pBuf[MY_MAX_PATH] = {};
 	ofn.lpstrFile = pBuf;
 	if (GetOpenFileName(&ofn)!= FALSE)
 	{

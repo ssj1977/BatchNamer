@@ -373,6 +373,13 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		if (nCommand == IDS_TB_02)	item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_FRONT);
 		else						item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_BACK);
 		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_ADDDATETIMENOW);
+		item.m_nSubCommand = IDS_ADDDATETIMENOW;
+		item.m_strLabel1 = IDSTR(IDS_DATETIME_FORMAT);
+		if (nCommand == IDS_TB_02)	item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_FRONT);
+		else						item.m_strLabel2 = IDSTR(IDS_INSERT_BYPOS_BACK);
+		m_aInput.Add(item);
 		break;
 	case IDS_TB_05: // 삭제하기
 		item.m_strItemName = IDSTR(IDS_DELPOS_FRONT);
@@ -751,7 +758,11 @@ void CDlgInput::OnBnClickedBtnFolderSelect()
 	CFolderPickerDialog dlg(NULL, OFN_EXPLORER | OFN_ENABLESIZING, this, sizeof(OPENFILENAME));;
 	CString strTitle;
 	strTitle.LoadString(IDS_FOLDER_SPECIFIC);
-	dlg.GetOFN().lpstrTitle = strTitle;
+	OPENFILENAME& ofn = dlg.GetOFN();
+	ofn.lpstrTitle = strTitle;
+	ofn.nMaxFile = MY_MAX_PATH;
+	TCHAR pBuf[MY_MAX_PATH] = {};
+	ofn.lpstrFile = pBuf;
 	if (dlg.DoModal() == IDCANCEL) return;
 	SetDlgItemText(IDC_EDIT_1, dlg.GetPathName());
 }

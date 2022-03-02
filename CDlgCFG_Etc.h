@@ -12,6 +12,7 @@ public:
 	virtual ~CDlgCFG_Etc();
 	BOOL m_bNameAutoFix;
 	BOOL m_bUseThread;
+	BOOL m_bIncludeExt;
 	CMenu* m_pMenu;
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME

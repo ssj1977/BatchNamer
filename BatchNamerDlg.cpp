@@ -112,27 +112,79 @@ inline CString FormatTimeString(CString strDateTime, CString strFormat)
 	return dt.Format(strTemp);
 }
 
+LPITEMIDLIST GetPIDLfromPath(CString strPath)
+{
+	//경로 길이가 MAX_PATH 보다 짧다면 간단히 끝난다
+	if (strPath.GetLength() < MAX_PATH) return ILCreateFromPath(strPath);
+	//경로 길이가 MAX_PATH 이상인 경우
+	//상위(폴더)경로 PIDL과 상대경로 PIDL로 쪼개서 만든 후 다시 합친다.
+	//이때 상위 폴더 경로에 대해서는 재귀적 호출로 만든다
+	LPITEMIDLIST pidl_result = NULL;
+	CString strParent = Get_Folder(strPath);
+	CString strChild = Get_Name(strPath);
+	if (strChild.GetLength() < MAX_PATH)
+	{
+		IShellFolder* pisf = NULL;
+		if ((SHGetDesktopFolder(&pisf)) == S_OK)
+		{
+			LPITEMIDLIST pidl_parent = GetPIDLfromPath(strParent);
+			LPITEMIDLIST pidl_child = NULL;
+			if (pidl_parent)
+			{
+				if (pisf->BindToObject(pidl_parent, NULL, IID_IShellFolder, (void**)&pisf) == S_OK)
+				{
+					if (pisf->ParseDisplayName(NULL, 0, strChild.GetBuffer(0), NULL, &pidl_child, NULL) == S_OK)
+					{
+						UINT cb1 = ILGetSize(pidl_parent) - sizeof(pidl_parent->mkid.cb);
+						UINT cb2 = ILGetSize(pidl_child);
+						pidl_result = (LPITEMIDLIST)CoTaskMemAlloc(cb1 + cb2);
+						if (pidl_result != NULL)
+						{
+							CopyMemory(pidl_result, pidl_parent, cb1);
+							CopyMemory(((LPSTR)pidl_result) + cb1, pidl_child, cb2);
+						}
+						CoTaskMemFree(pidl_child);
+					}
+					strChild.ReleaseBuffer();
+				}
+				CoTaskMemFree(pidl_parent);
+			}
+		}
+		pisf->Release();
+	}
+	return pidl_result;
+}
+
+
 
 int GetFileImageIndex(CString strPath)
 {
 	SHFILEINFO sfi;
 	memset(&sfi, 0x00, sizeof(sfi));
-	SHGetFileInfo((LPCTSTR)strPath, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX);
+	if (strPath.GetLength() < MAX_PATH)
+	{
+		SHGetFileInfo((LPCTSTR)strPath, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX);
+	}
+	else
+	{
+		LPITEMIDLIST pidl = GetPIDLfromPath(strPath);
+		SHGetFileInfo((LPCTSTR)pidl, 0, &sfi, sizeof(sfi), SHGFI_SYSICONINDEX | SHGFI_PIDL);
+		CoTaskMemFree(pidl);
+	}
 	return sfi.iIcon;
 }
 int GetFileImageIndexFromMap(CString strPath, BOOL bIsDirectory)
 {
-	if (bIsDirectory)
-	{
-		//return GetFileImageIndex(_T(""));
-		return 3;		// SI_FOLDER_CLOSE
-	}
-	CPath path = CPath(strPath);
-	CString strExt = path.GetExtension();
+	if (bIsDirectory) return 3;		// SI_FOLDER_CLOSE
+	CString strExt = Get_Ext(strPath, bIsDirectory, TRUE);
 	if (strExt.CompareNoCase(_T(".exe")) == 0
 		|| strExt.CompareNoCase(_T(".ico")) == 0
-		|| strExt.CompareNoCase(_T(".lnk")) == 0
-		) return GetFileImageIndex(strPath);
+		|| strExt.CompareNoCase(_T(".lnk")) == 0)
+	{
+		//확장자가 같아도 아이콘이 다를 수 있는 파일들은 바로 조회
+		return GetFileImageIndex(strPath);
+	}
+	//나머지 파일에 대해서는 맵에서 우선 찾아서 속도 향상
 	CExtMap::iterator it = mapExt.find(strExt);
 	if (it == mapExt.end())
 	{
@@ -142,6 +194,37 @@ int GetFileImageIndexFromMap(CString strPath, BOOL bIsDirectory)
 	}
 	return (*it).second;
 }
+
+
+/*CString GetParentFolder(CString strFolder)
+{
+	if (strFolder.IsEmpty()) return strFolder;
+	strFolder = PathBackSlash(strFolder, FALSE);
+	int nPos = strFolder.ReverseFind(_T('\\'));
+	if (nPos <= 0) return _T("");
+	return strFolder.Left(nPos);
+}
+
+CString GetActualPath(CString strPath)
+{
+	if (strPath.IsEmpty()) return strPath;
+	if (strPath.GetAt(0) == L'\\') return strPath;
+	CString strParent = GetParentFolder(strPath);
+	WIN32_FIND_DATA fd;
+	HANDLE hFind;
+	hFind = FindFirstFileExW(strPath, FindExInfoBasic, &fd, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
+	CString strReturn;
+	if (strParent.IsEmpty())
+	{	//각 드라이브의 루트이므로 드라이브 문자는 대문자로
+		strReturn = strPath.MakeUpper();
+	}
+	else
+	{
+		strReturn = PathBackSlash(GetActualPath(strParent)) + fd.cFileName;
+	}
+	FindClose(hFind);
+	return strReturn;
+}*/
 
 BOOL FindBracketPart(CString& strSrc, TCHAR c1, TCHAR c2, int& nStart, int& nEnd);
 
@@ -196,12 +279,13 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	UpdateImageList();
 	DragAcceptFiles(TRUE);
 	// Windows 기본 UI 설정값을 저장한다.
+	m_clrDefault_Bk = m_list.GetBkColor();
+	m_clrDefault_Text = m_list.GetTextColor();
 	LOGFONT lf;
 	m_list.GetFont()->GetLogFont(&lf);
 	m_nDefault_FontSize = MulDiv(-1 * lf.lfHeight, 72, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY));
-	m_clrDefault_Bk = m_list.GetBkColor();
-	m_clrDefault_Text = m_list.GetTextColor();
 	m_lfHeight = abs(lf.lfHeight);
+	UpdateListFont();
 
 	m_tool1.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST, WS_CHILD | WS_VISIBLE);
 	m_tool1.LoadToolBar(IDR_TOOLBAR1);
@@ -236,7 +320,6 @@ BOOL CBatchNamerDlg::OnInitDialog()
 		m_list.SetBkColor(APP()->m_clrBk);
 		m_list.SetTextColor(APP()->m_clrText);
 	}
-	if (APP()->m_bUseDefaultFont == FALSE) UpdateFontSize();
 	int nIconWidth = 0;
 	switch (APP()->m_nIconType)
 	{
@@ -573,19 +656,18 @@ CString GetFileSizeString(ULONGLONG nSize);
 
 void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 {
-	TCHAR fullpath[MY_MAX_PATH];
+	CString strPath = PathBackSlash(strDir, TRUE) + fd.cFileName;
 	ULARGE_INTEGER filesize;
 	filesize.HighPart = fd.nFileSizeHigh;
 	filesize.LowPart = fd.nFileSizeLow;
-	PathCombineW(fullpath, strDir, fd.cFileName);
 	CString strSize, strTimeCreate, strTimeModify;
 	//중복체크
-	CPathSet::iterator it = m_list.m_setPath.find(fullpath);
-	if (it == m_list.m_setPath.end()) m_list.m_setPath.insert(fullpath);
+	CPathSet::iterator it = m_list.m_setPath.find(strPath);
+	if (it == m_list.m_setPath.end()) m_list.m_setPath.insert(strPath);
 	else 
 		return; // 이미 존재하는 이름
 	BOOL bIsDir = (BOOL)((fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-	int nImage = GetFileImageIndexFromMap(fullpath, bIsDir);
+	int nImage = GetFileImageIndexFromMap(strPath, bIsDir);
 	COleDateTime tTemp;
 	tTemp = COleDateTime(fd.ftCreationTime);
 	strTimeCreate = tTemp.Format(_T("%Y-%m-%d %H:%M:%S"));
@@ -599,7 +681,7 @@ void CBatchNamerDlg::AddListItem(WIN32_FIND_DATA& fd, CString strDir)
 	m_list.SetItemText(nItem, COL_FILESIZE, strSize);
 	m_list.SetItemText(nItem, COL_TIMEMODIFY, strTimeModify);
 	m_list.SetItemText(nItem, COL_TIMECREATE, strTimeCreate);
-	m_list.SetItemText(nItem, COL_FULLPATH, fullpath);
+	m_list.SetItemText(nItem, COL_FULLPATH, strPath);
 	m_list.SetItemData(nItem, bIsDir);
 }
 
@@ -631,7 +713,6 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 			CString strName, strFolder, strSize, strTimeCreate, strTimeModify, strFind;
 			size_t nLen = 0;
 			strFind = strPath + _T("\\*");
-			TCHAR fullpath[MY_MAX_PATH];
 			hFind = FindFirstFileExW(strFind, FindExInfoBasic, &fd, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
 			if (hFind == INVALID_HANDLE_VALUE) return;
 			BOOL b = TRUE , bIsDot = FALSE, bIsDir = FALSE;
@@ -646,8 +727,7 @@ void CBatchNamerDlg::AddPath(CString strPath, BOOL bIsDirectory)
 					bIsDir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
 					if (bIsDir == TRUE) //폴더인 경우 재귀호출
 					{
-						PathCombineW(fullpath, strPath, fd.cFileName);
-						AddPath(fullpath, bIsDir);
+						AddPath(PathBackSlash(strPath, TRUE) + fd.cFileName, bIsDir);
 					}
 					else //폴더 내 파일
 					{
@@ -673,10 +753,9 @@ CString CBatchNamerDlg::GetItemFullPath(int nItem, BOOL bOld)
 {
 	int nColFolder = bOld ? COL_OLDFOLDER : COL_NEWFOLDER;
 	int nColName = bOld ? COL_OLDNAME : COL_NEWNAME;
-	CPath path = CPath(m_list.GetItemText(nItem, nColFolder));
-	path.AddBackslash();
-	path.Append(m_list.GetItemText(nItem, nColName));
-	return path.m_strPath;
+	CString strFullPath;
+	strFullPath = PathBackSlash(m_list.GetItemText(nItem, nColFolder)) + m_list.GetItemText(nItem, nColName);
+	return strFullPath;
 }
 
 void CBatchNamerDlg::ConfigLoadType()
@@ -702,8 +781,15 @@ void CBatchNamerDlg::ConfigViewOption()
 	dlg.m_nFontSize = APP()->m_nFontSize;
 	dlg.m_bUseDefaultFont = APP()->m_bUseDefaultFont;
 	dlg.m_nIconType = APP()->m_nIconType;
+	m_font.GetLogFont(&dlg.m_lf);
 	if (dlg.DoModal() == IDOK)
 	{
+		if (dlg.m_bUpdateFont)
+		{
+			m_font.DeleteObject();
+			m_font.CreateFontIndirect(&dlg.m_lf);
+			m_list.SetFont(&m_font);
+		}
 		if (APP()->m_bUseDefaultColor != dlg.m_bUseDefaultColor)
 		{
 			APP()->m_bUseDefaultColor = dlg.m_bUseDefaultColor;
@@ -733,12 +819,12 @@ void CBatchNamerDlg::ConfigViewOption()
 		if (APP()->m_nFontSize != dlg.m_nFontSize)
 		{
 			APP()->m_nFontSize = dlg.m_nFontSize;
-			if (APP()->m_bUseDefaultFont == FALSE)	UpdateFontSize();
+			if (APP()->m_bUseDefaultFont == FALSE) UpdateListFont();
 		}
 		if (APP()->m_bUseDefaultFont != dlg.m_bUseDefaultFont)
 		{
 			APP()->m_bUseDefaultFont = dlg.m_bUseDefaultFont;
-			UpdateFontSize();
+			UpdateListFont();
 		}
 		if (APP()->m_nIconType != dlg.m_nIconType)
 		{
@@ -754,11 +840,13 @@ void CBatchNamerDlg::ConfigEtc()
 	CDlgCFG_Etc dlg;
 	dlg.m_bNameAutoFix = APP()->m_bNameAutoFix;
 	dlg.m_bUseThread = APP()->m_bUseThread;
+	dlg.m_bIncludeExt = APP()->m_bIncludeExt;
 	dlg.m_pMenu = GetMenu();
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
 		APP()->m_bUseThread = dlg.m_bUseThread;
+		APP()->m_bIncludeExt = dlg.m_bIncludeExt;
 		UpdateMenuHotkey();
 	}
 }
@@ -767,7 +855,8 @@ void CBatchNamerDlg::AddPathStart(CString strPath)
 {
 	//디렉토리인지 여부를 판정하여 인자로 넘김
 	DWORD dwAttribute = GetFileAttributes(strPath);
-	if (dwAttribute != -1)
+	int nLen = strPath.GetLength();
+	if (dwAttribute != INVALID_FILE_ATTRIBUTES)
 	{
 		BOOL bIsDirectory = (dwAttribute & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
 		AddPath(strPath, bIsDirectory);
@@ -786,16 +875,16 @@ CString CBatchNamerDlg::ProcessDropFiles(HDROP hDropInfo, int nActionType)
 {
 	CString strRet;
 	WORD cFiles;
-	TCHAR szFilePath[MY_MAX_PATH];
-	memset(szFilePath, 0, sizeof(TCHAR) * MY_MAX_PATH);
-	CString strPath;
+	TCHAR szPathIn[MY_MAX_PATH] = {};
+	TCHAR szPathOut[MY_MAX_PATH] = {};
 	cFiles = DragQueryFile(hDropInfo, (UINT)-1, NULL, 0);
 	CStringArray aPath;
 	for (int i = 0; i < cFiles; i++)
 	{
-		DragQueryFile(hDropInfo, i, szFilePath, MY_MAX_PATH);
-		strPath = (LPCTSTR)szFilePath;
-		aPath.Add(strPath);
+		DragQueryFile(hDropInfo, i, szPathIn, MY_MAX_PATH);
+		//윈도우 기본 탐색기는 Drag시 긴 경로를 짧은 경로로 변환하는 경우가 있으므로 긴 경로로 명시적 변환
+		GetLongPathName(szPathIn, szPathOut, MY_MAX_PATH);
+		aPath.Add(szPathOut);
 	}
 	//1)드래그 앤 드롭, 2)클립보드 복사 둘다 정렬이 제대로 안되므로 이름으로 먼저 정렬한다
 	//void* pArrayStart = (void*)&aPath[0];
@@ -818,6 +907,7 @@ CString CBatchNamerDlg::ProcessDropFiles(HDROP hDropInfo, int nActionType)
 	}
 	return strRet;
 }
+
 void CBatchNamerDlg::LoadPathArray(CStringArray& aPath)
 {
 	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
@@ -840,6 +930,11 @@ void CBatchNamerDlg::AddByFolderPicker()
 	OPENFILENAME& ofn = dlg.GetOFN();
 	ofn.lpstrTitle = strTitle;
 	ofn.hwndOwner = GetSafeHwnd();
+	ofn.nMaxFile = MAX_PATH * 10000; //여러개 선택시 파일이름만 포함되므로 MAX_PATH를 기본값으로 해도 될 것으로 생각
+	TCHAR* pBuf = new TCHAR[ofn.nMaxFile];
+	memset(pBuf, 0, sizeof(TCHAR) * ofn.nMaxFile);
+	ofn.lpstrFile = pBuf;
+
 	int nCount = 0;
 	if (dlg.DoModal() == IDOK)
 	{
@@ -860,16 +955,17 @@ void CBatchNamerDlg::AddByFolderPicker()
 		UpdateCount();
 	}
 	if (nCount > 10000) APP()->ShowMsg(IDSTR(IDS_ERR_TOOMANYITEMS), IDSTR(IDS_MSG_ERROR));
-	//CFileDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
+	//CFileDialog/CFolderPickerDialog의 버그로 인해 Modal 창을 닫고 원래 창으로 복귀한 후 넌클라이언트 영역이 다시 그려지지 않음
 	//일단 메뉴만이라도 복구, 타이틀 창은 아직 해결책 못찾음
 	SetWindowPos(0, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+	delete[] pBuf;
 }
 
 
 //파일 열기 시스템 다이얼로그를 사용해서 파일을 목록에 추가한다
 void CBatchNamerDlg::AddByFileDialog()
 {
-	OPENFILENAME ofn = { 0 };
+	OPENFILENAME ofn = {};
 	CString strTitle;
 	if (strTitle.LoadString(IDS_LOAD_FILEDIALOG) == FALSE) strTitle.Empty();
 	ofn.lStructSize = sizeof(OPENFILENAME);
@@ -1168,23 +1264,29 @@ CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bR
 	return strRet;
 }
 
-void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, BOOL bForExt)
+void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, BOOL bForExtOnly)
 {
-	CString strOutput, strName, strExt, strOld, strNew;
+	CString strNameExt, strName, strExt, strOld, strNew;
 	int nPos = -1;
 	BOOL bIsDir = FALSE;
 	BOOL bUseWildCard = FALSE;
 	if (nSubCommand == IDS_REPLACESTRING &&
 		(str1.Find(_T('?')) != -1 || str1.Find(_T('*')) != -1) ) bUseWildCard = TRUE;
-
 	for (int i = 0; i < m_list.GetItemCount(); i++)
 	{
 		bIsDir = (BOOL)m_list.GetItemData(i);
-		strOutput = m_list.GetItemText(i, COL_NEWNAME);
-		strName = Get_Name(strOutput, bIsDir);
-		strExt = Get_Ext(strOutput, bIsDir, FALSE); // 확장자 처리를 위해 '.' 을 뺀다
-		if (bForExt == FALSE) strOld = strName;
-		else strOld = strExt;
+		strNameExt = m_list.GetItemText(i, COL_NEWNAME); //이름 + 확장자
+		strName = Get_Name(strNameExt, bIsDir); // 이름만
+		strExt = Get_Ext(strNameExt, bIsDir, FALSE); // 확장자만, '.' 은 빼고 가져옴
+		if (bForExtOnly == FALSE)
+		{	//이름 부분 또는 전체 문자열에서 교체
+			if (APP()->m_bIncludeExt == FALSE)	strOld = strName; //이름에서 교체
+			else								strOld = strNameExt; //전체에서 교체
+		}
+		else
+		{	//확장자 부분 문자열 교체
+			strOld = strExt;
+		}
 		if (nSubCommand == IDS_REPLACESTRING)
 		{
 			if (bUseWildCard == TRUE)
@@ -1268,11 +1370,28 @@ void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, 
 			else strNew = strOld;
 		}
 		else strNew = strOld;
-		if (bForExt == FALSE)	strName = strNew;
-		else					strExt = strNew;
-		if (strExt.IsEmpty() == FALSE)	strOutput = strName + L'.' + strExt;
-		else							strOutput = strName;
-		m_list.SetItemText(i, COL_NEWNAME, strOutput);
+
+		if (strNew.Compare(strOld) != 0) //차이가 있을때만 변경
+		{
+			if (bForExtOnly == FALSE)
+			{
+				if (APP()->m_bIncludeExt == FALSE)
+				{  //이름만 대상으로 바꾼 경우
+					if (strExt.IsEmpty() == FALSE)	strNameExt = strNew + L'.' + strExt;
+					else							strNameExt = strNew;
+				}
+				else
+				{  //전체를 대상으로 바꾼 경우
+					strNameExt = strNew;
+				}
+			}
+			else
+			{	//확장자를 대상으로 변경한 경우
+				if (strExt.IsEmpty() == FALSE)	strNameExt = strName + L'.' + strNew;
+				else							strNameExt = strName;
+			}
+			m_list.SetItemText(i, COL_NEWNAME, strNameExt);
+		}
 	}
 }
 
@@ -1309,6 +1428,7 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 	case IDS_ADDPARENT: break;
 	case IDS_ADDDATETIMEMODIFY:
 	case IDS_ADDDATETIMECREATE:
+	case IDS_ADDDATETIMENOW:
 		if (str1.IsEmpty()) return;
 		nPos = _ttoi(str2);
 		break;
@@ -1364,6 +1484,11 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 		{
 			strAdd = FormatTimeString(m_list.GetItemText(i, COL_TIMECREATE), str1);
 		}
+		else if (nSubCommand == IDS_ADDDATETIMENOW)
+		{
+			strAdd = FormatTimeString(COleDateTime::GetCurrentTime().Format(_T("%Y-%m-%d %H:%M:%S")), str1);
+		}
+
 		//이전 버전 호환성을 위한 코드 시작
 		else if (nSubCommand == IDS_ADDDATEMODIFY) strAdd = str1 + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMEMODIFY), TRUE, FALSE) + str2;
 		else if (nSubCommand == IDS_ADDDATECREATE) strAdd = str1 + GetTimeStringToAdd(m_list.GetItemText(i, COL_TIMECREATE), TRUE, FALSE) + str2;
@@ -1674,6 +1799,7 @@ UINT CBatchNamerDlg::ApplyChange_Thread(void* lParam)
 	CBatchNamerDlg* dlg = (CBatchNamerDlg*)lParam;
 	APP()->UpdateThreadLocale();
 	dlg->ApplyChange(st_nApplyOption);
+	//CoUninitialize();
 	return 0;
 }
 
@@ -1768,14 +1894,17 @@ void StringArray2szzBuffer(CStringArray& aPath, TCHAR*& pszzBuf)
 //BOOL CopyPath(CStringArray& aOldPath, CStringArray& aNewPath, BOOL bMove)
 BOOL CopyPath(CString& strOldPath, CString& strNewPath, BOOL bMove)
 {
+/*	IFileOperation* pifo;
+	if (CoCreateInstance(CLSID_FileOperation, NULL, CLSCTX_ALL, IID_PPV_ARGS(&pifo)) == S_OK)
+	{
+		pifo->CopyItem()
+	}*/
 	//	if (aOldPath.GetSize() == 0 || aOldPath.GetSize() != aNewPath.GetSize()) return FALSE;
-	TCHAR pszzBuf_OldPath[MY_MAX_PATH];
-	TCHAR pszzBuf_NewPath[MY_MAX_PATH];
-	memset(pszzBuf_OldPath, 0, MY_MAX_PATH * sizeof(TCHAR));
-	memset(pszzBuf_NewPath, 0, MY_MAX_PATH * sizeof(TCHAR));
+	TCHAR pszzBuf_OldPath[MY_MAX_PATH] = {};
+	TCHAR pszzBuf_NewPath[MY_MAX_PATH] = {};
 	lstrcpy(pszzBuf_OldPath, (LPCTSTR)strOldPath);
 	lstrcpy(pszzBuf_NewPath, (LPCTSTR)strNewPath);
-	SHFILEOPSTRUCT FileOp = { 0 };
+	SHFILEOPSTRUCT FileOp = {};
 	FileOp.hwnd = NULL;
 	FileOp.wFunc = bMove ? FO_MOVE : FO_COPY;
 	FileOp.pFrom = pszzBuf_OldPath;
@@ -1920,7 +2049,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 				}
 				else if (nApplyOption == APPLY_COPY)
 				{
-					if (bIsDir == FALSE)
+					if (bIsDir == FALSE )
 					{
 						//일반 파일 카피는 중간 캔슬이 가능한 CopyFileEx 사용
 						bSuccess = CopyFileExW(strOldPath, aNewPath[i], NULL, NULL, &st_bIsIdle, COPY_FILE_FAIL_IF_EXISTS | COPY_FILE_ALLOW_DECRYPTED_DESTINATION);
@@ -1928,6 +2057,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 					else
 					{
 						//폴더를 복사하는 경우 간편한 재귀 복사를 위해 SHFileOperation을 사용한다.
+						//IFileOperation의 CopyItem()은 이름 변경을 기본 지원하지 않아서 SHFileOperation 사용
 						bSuccess = CopyPath(strOldPath, aNewPath[i], FALSE);
 					}
 				}
@@ -2200,7 +2330,7 @@ void CBatchNamerDlg::Export(int nMode)
 	}
 	else if (nMode == 1 || nMode == 3)
 	{
-		OPENFILENAME ofn = { 0 };
+		OPENFILENAME ofn = {};
 		CString strTitle;
 		if (nMode == 1)	strTitle.LoadString(IDS_EXPORTNAME); //_T("이름 목록 저장");
 		else			strTitle.LoadString(IDS_EXPORTFULLPATH); //_T("전체경로 목록 저장");
@@ -2209,9 +2339,9 @@ void CBatchNamerDlg::Export(int nMode)
 		ofn.Flags = OFN_EXPLORER | OFN_OVERWRITEPROMPT | OFN_ENABLESIZING;
 		ofn.lpstrTitle = strTitle;
 		ofn.lpstrFilter = _T("Text Files(*.txt)\0*.txt\0All Files(*.*)\0*.*\0\0");
-		ofn.nMaxFile = MY_MAX_PATH;
 		ofn.lpstrDefExt = _T("txt");
-		TCHAR pBuf[MY_MAX_PATH] = { 0 };
+		ofn.nMaxFile = MY_MAX_PATH;
+		TCHAR pBuf[MY_MAX_PATH] = {};
 		ofn.lpstrFile = pBuf;
 		if (GetSaveFileName(&ofn) != FALSE)
 		{
@@ -2228,7 +2358,7 @@ void CBatchNamerDlg::ImportNewName(BOOL bFromFile)
 	CString strImportData, strName;
 	if (bFromFile == TRUE) // 파일에서 읽기
 	{
-		OPENFILENAME ofn = { 0 };
+		OPENFILENAME ofn = {};
 		CString strTitle;
 		if (strTitle.LoadString(IDS_IMPORTNAME) == FALSE) strTitle.Empty();
 		ofn.lStructSize = sizeof(OPENFILENAME);
@@ -2236,9 +2366,9 @@ void CBatchNamerDlg::ImportNewName(BOOL bFromFile)
 		ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
 		ofn.lpstrTitle = strTitle;
 		ofn.lpstrFilter = _T("Text Files(*.txt)\0*.txt\0All Files(*.*)\0*.*\0\0");
-		ofn.nMaxFile = MY_MAX_PATH;
 		ofn.lpstrDefExt = _T("txt");
-		TCHAR pBuf[MY_MAX_PATH] = { 0 };
+		ofn.nMaxFile = MY_MAX_PATH;
+		TCHAR pBuf[MY_MAX_PATH] = {};
 		ofn.lpstrFile = pBuf;
 		if (GetOpenFileName(&ofn) != FALSE)
 		{
@@ -2301,7 +2431,7 @@ void CBatchNamerDlg::ImportPath(BOOL bFromFile)
 	CString strImportData;
 	if (bFromFile == TRUE) // 파일에서 읽기
 	{
-		OPENFILENAME ofn = { 0 };
+		OPENFILENAME ofn = {};
 		CString strTitle;
 		if (strTitle.LoadString(IDS_IMPORT_PATH) == FALSE) strTitle.Empty();
 		ofn.lStructSize = sizeof(OPENFILENAME);
@@ -2309,9 +2439,9 @@ void CBatchNamerDlg::ImportPath(BOOL bFromFile)
 		ofn.Flags = OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_ENABLESIZING;
 		ofn.lpstrTitle = strTitle;
 		ofn.lpstrFilter = _T("Text Files(*.txt)\0*.txt\0All Files(*.*)\0*.*\0\0");
-		ofn.nMaxFile = MY_MAX_PATH;
 		ofn.lpstrDefExt = _T("txt");
-		TCHAR pBuf[MY_MAX_PATH] = { 0 };
+		ofn.nMaxFile = MY_MAX_PATH;
+		TCHAR pBuf[MY_MAX_PATH] = {};
 		ofn.lpstrFile = pBuf;
 		if (GetOpenFileName(&ofn) != FALSE)
 		{
@@ -2806,17 +2936,36 @@ void CBatchNamerDlg::UpdateColumnSizes()
 	APP()->m_bSortAscend = header.IsAscending();
 }
 
-void CBatchNamerDlg::UpdateFontSize()
+void CBatchNamerDlg::UpdateListFont()
 {
-	int nFontSize = APP()->m_nFontSize;
-	if (APP()->m_bUseDefaultFont == TRUE) nFontSize = m_nDefault_FontSize;
-	CFont* pFont = m_list.GetFont();
+	LOGFONT lf;
+	if (APP()->m_bUseDefaultFont == TRUE)
+	{
+		CFont* pFont = GetFont(); 
+		pFont->GetLogFont(&lf);
+		m_font.DeleteObject();
+		lf.lfHeight = m_nDefault_FontSize * 10;
+		m_font.CreatePointFontIndirect(&lf);
+	}
+	else
+	{
+		if (m_font.GetSafeHandle() == NULL)
+		{
+			CFont* pFont = GetFont();
+			pFont->GetLogFont(&lf);
+			m_font.DeleteObject();
+			lf.lfHeight = APP()->m_nFontSize * 10;
+			m_font.CreatePointFontIndirect(&lf);
+		}
+	}
+	m_list.SetFont(&m_font);
+/*	CFont* pFont = m_list.GetFont();
 	LOGFONT lf;
 	pFont->GetLogFont(&lf);
 	lf.lfHeight = -1 * MulDiv(nFontSize, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY), 72);
 	m_font.DeleteObject();
 	m_font.CreateFontIndirect(&lf); //자동 소멸되지 않도록 멤버 변수 사용
-	m_list.SetFont(&m_font);
+	m_list.SetFont(&m_font);*/
 }
 
 
