@@ -105,6 +105,7 @@ void CDlgCFG_View::UpdateControl()
 	GetDlgItem(IDC_EDIT_FONTNAME)->EnableWindow(!m_bUseDefaultFont);
 	GetDlgItem(IDC_BTN_FONT)->EnableWindow(!m_bUseDefaultFont);
 	GetDlgItem(IDC_ST_FONTSIZE)->EnableWindow(!m_bUseDefaultFont);
+	GetDlgItem(IDC_ST_FONTNAME)->EnableWindow(!m_bUseDefaultFont);
 }
 
 
@@ -155,10 +156,16 @@ void CDlgCFG_View::OnBnClickedCheckDefaultFont()
 
 void CDlgCFG_View::OnBnClickedBtnFont()
 {
+	CString strFontNameOld = m_lf.lfFaceName;
 	CFontDialog dlg(&m_lf, CF_SCREENFONTS);
 	if (dlg.DoModal() == IDOK)
 	{
 		dlg.GetCurrentFont(&m_lf);
+		CString strFontNameNew = m_lf.lfFaceName;
+		if (strFontNameNew.IsEmpty())
+		{
+			_tcsncpy_s(m_lf.lfFaceName, LF_FACESIZE, strFontNameOld, _TRUNCATE);
+		}
 		GetDlgItem(IDC_EDIT_FONTNAME)->SetWindowText(GetLogFontInfoString(m_lf));
 		int nFontSize = MulDiv(-1 * m_lf.lfHeight, 72, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY));
 		GetDlgItem(IDC_EDIT_FONTSIZE)->SetWindowText(INTtoSTR(nFontSize));

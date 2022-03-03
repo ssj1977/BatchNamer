@@ -45,6 +45,8 @@ CBatchNamerApp::CBatchNamerApp()
 	m_clrBk = RGB(255, 255, 255);
 	m_bUseDefaultColor = TRUE;
 	m_nFontSize = 12;
+	m_nFontWeight = FW_NORMAL;
+	m_bFontItalic = FALSE;
 	m_bUseDefaultFont = TRUE;
 	m_nIconType = SHIL_EXTRALARGE;
 	m_aPreset.SetSize(5);
@@ -226,7 +228,13 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("ColorBk=%d\r\n"), m_clrBk);	strData += strLine;
 	strLine.Format(_T("ColorText=%d\r\n"), m_clrText);	strData += strLine;
 	strLine.Format(_T("UseDefaultFont=%d\r\n"), m_bUseDefaultFont);	strData += strLine;
-	strLine.Format(_T("FontSize=%d\r\n"), m_nFontSize);	strData += strLine;
+	if (m_strFontName.IsEmpty() == FALSE)
+	{
+		strLine.Format(_T("FontName=%s\r\n"), m_strFontName);	strData += strLine;
+		strLine.Format(_T("FontSize=%d\r\n"), m_nFontSize);	strData += strLine;
+		strLine.Format(_T("FontWeight=%d\r\n"), m_nFontWeight);	strData += strLine;
+		strLine.Format(_T("FontItalic=%d\r\n"), m_bFontItalic);	strData += strLine;
+	}
 	strLine.Format(_T("IconType=%d\r\n"), m_nIconType);	strData += strLine;
 	strLine.Format(_T("NameAutoFix=%d\r\n"), m_bNameAutoFix);	strData += strLine;
 	strLine.Format(_T("UseThread=%d\r\n"), m_bUseThread);	strData += strLine;
@@ -300,7 +308,10 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("ColorBk")) == 0) m_clrBk = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("ColorText")) == 0) m_clrText = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("UseDefaultFont")) == 0) m_bUseDefaultFont = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("FontName")) == 0) m_strFontName = str2;
 			else if (str1.CompareNoCase(_T("FontSize")) == 0) m_nFontSize = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("FontWeight")) == 0) m_nFontWeight = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("FontItalic")) == 0) m_bFontItalic = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("IconType")) == 0) m_nIconType = _ttoi(str2);
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("UseThread")) == 0) m_bUseThread = CString2BOOL(str2);

@@ -155,8 +155,11 @@ public:
 	CRect m_rcInput;
 	COLORREF m_clrText;
 	COLORREF m_clrBk;
-	BOOL m_bUseDefaultColor;
+	CString m_strFontName;
+	LONG m_nFontWeight;
 	int m_nFontSize;
+	BYTE m_bFontItalic;
+	BOOL m_bUseDefaultColor;
 	BOOL m_bUseDefaultFont;
 	int m_nIconType;
 	PresetArray m_aPreset;

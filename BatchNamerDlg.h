@@ -19,7 +19,7 @@ public:
 	COLORREF m_clrDefault_Bk;
 	COLORREF m_clrDefault_Text;
 	CFont m_font;
-	int m_lfHeight;
+	CFont m_fontDefault;
 	HIMAGELIST* m_pSysImgList;
 	int m_nTempLoadType;
 	void UpdateImageList();
@@ -34,6 +34,7 @@ public:
 	void UpdateMenuPreset();
 	void UpdateMenuHotkey();
 	void ArrangeCtrl();
+	int GetFontSize();
 	static UINT ApplyChange_Thread(void* lParam);
 // 대화 상자 데이터입니다.
 //#ifdef AFX_DESIGN_TIME

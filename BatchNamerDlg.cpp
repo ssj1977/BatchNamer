@@ -240,7 +240,6 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_nDefault_FontSize = 12;
 	m_clrDefault_Bk = RGB(255, 255, 255);
 	m_clrDefault_Text = RGB(0, 0, 0);
-	m_lfHeight = 0;
 	m_pSysImgList = NULL;
 	st_bIsIdle = TRUE;
 	m_nTempLoadType = -1;
@@ -281,10 +280,29 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	// Windows 기본 UI 설정값을 저장한다.
 	m_clrDefault_Bk = m_list.GetBkColor();
 	m_clrDefault_Text = m_list.GetTextColor();
+	//기본 폰트 생성하기
 	LOGFONT lf;
-	m_list.GetFont()->GetLogFont(&lf);
+	GetFont()->GetLogFont(&lf);
 	m_nDefault_FontSize = MulDiv(-1 * lf.lfHeight, 72, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY));
-	m_lfHeight = abs(lf.lfHeight);
+	m_fontDefault.DeleteObject();
+	m_fontDefault.CreateFontIndirect(&lf);
+	//설정된 폰트가 있으면 생성하기
+	if (APP()->m_strFontName.IsEmpty() == FALSE)
+	{
+		memset(&lf, 0, sizeof(LOGFONT));
+		lf.lfHeight = APP()->m_nFontSize * 10;
+		lf.lfWeight = APP()->m_nFontWeight;
+		lf.lfItalic = APP()->m_bFontItalic;
+		_tcsncpy_s(lf.lfFaceName, LF_FACESIZE, APP()->m_strFontName, _TRUNCATE);
+		m_font.DeleteObject();
+		m_font.CreatePointFontIndirect(&lf);
+	}
+	else
+	{
+		m_font.DeleteObject();
+		m_font.CreateFontIndirect(&lf);
+		APP()->m_nFontSize = m_nDefault_FontSize;
+	}
 	UpdateListFont();
 
 	m_tool1.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST, WS_CHILD | WS_VISIBLE);
@@ -337,7 +355,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	m_list.InsertColumn(COL_TIMEMODIFY, IDSTR(IDS_COL_TIMEMODIFY)); //_T("변경시각")); 
 	m_list.InsertColumn(COL_TIMECREATE, IDSTR(IDS_COL_TIMECREATE)); //_T("생성시각")); 
 	m_list.InsertColumn(COL_FULLPATH, IDSTR(IDS_COL_FULLPATH)); //_T("전체경로")); 
-	int HU = m_lfHeight;
+	int HU = GetFontSize();
 	if (APP()->m_aColWidth.GetSize() != COL_TOTAL)
 	{
 		m_list.SetColumnWidth(COL_OLDNAME, nIconWidth + HU * 16 * FlagGET(APP()->m_nShowFlag, COL_OLDNAME));
@@ -421,7 +439,7 @@ void CBatchNamerDlg::ArrangeCtrl()
 	m_tool2.GetToolBarCtrl().SetButtonWidth(rcButton.Width(), rcButton.Width() * 2);
 	int TOOLHEIGHT = (rcButton.Height() + rcSplit.Width()) * 10;
 	int TOOLWIDTH = rcButton.Width() + rcSplit.Width();
-	int BARHEIGHT = m_lfHeight * 2;
+	int BARHEIGHT = GetFontSize() * 2;
 	CRect rc;
 	GetClientRect(rc);
 
@@ -581,7 +599,7 @@ void CBatchNamerDlg::ToggleListColumn(int nCol)
 	{
 		//FlagSET(APP()->m_nShowFlag, nCol, TRUE);
 		if (APP()->m_aColWidth.GetSize() > nCol) nNewWidth = APP()->m_aColWidth.GetAt(nCol);
-		if (nNewWidth == 0) nNewWidth = m_lfHeight * 11;
+		if (nNewWidth == 0) nNewWidth = GetFontSize() * 11;
 	}
 	else
 	{
@@ -788,7 +806,15 @@ void CBatchNamerDlg::ConfigViewOption()
 		{
 			m_font.DeleteObject();
 			m_font.CreateFontIndirect(&dlg.m_lf);
-			m_list.SetFont(&m_font);
+			CString strFontName = dlg.m_lf.lfFaceName;
+			if (strFontName.IsEmpty() == FALSE)
+			{
+				APP()->m_strFontName = dlg.m_lf.lfFaceName;
+			}
+			APP()->m_nFontSize = dlg.m_nFontSize;
+			APP()->m_nFontWeight = dlg.m_lf.lfWeight;
+			APP()->m_bFontItalic = dlg.m_lf.lfItalic;
+			UpdateListFont();
 		}
 		if (APP()->m_bUseDefaultColor != dlg.m_bUseDefaultColor)
 		{
@@ -819,6 +845,11 @@ void CBatchNamerDlg::ConfigViewOption()
 		if (APP()->m_nFontSize != dlg.m_nFontSize)
 		{
 			APP()->m_nFontSize = dlg.m_nFontSize;
+			LOGFONT lf;
+			m_font.GetLogFont(&lf);
+			lf.lfHeight = dlg.m_nFontSize * 10;
+			m_font.DeleteObject();
+			m_font.CreatePointFontIndirect(&lf);
 			if (APP()->m_bUseDefaultFont == FALSE) UpdateListFont();
 		}
 		if (APP()->m_bUseDefaultFont != dlg.m_bUseDefaultFont)
@@ -2903,15 +2934,22 @@ void CBatchNamerDlg::UpdateCount()
 	SetDlgItemText(IDC_ST_BAR, strTemp);
 }
 
+int CBatchNamerDlg::GetFontSize()
+{
+	if (APP()->m_bUseDefaultFont) return m_nDefault_FontSize;
+	else return APP()->m_nFontSize;
+}
+
 void CBatchNamerDlg::UpdateColumnSizes()
 {
+	int nW = GetFontSize();
 	if (APP()->m_aColWidth.GetSize() != m_list.GetHeaderCtrl().GetItemCount())
 	{
 		APP()->m_aColWidth.RemoveAll();
 		APP()->m_aColWidth.SetSize(m_list.GetHeaderCtrl().GetItemCount());
 		for (int i = 0; i < APP()->m_aColWidth.GetSize(); i++)
 		{
-			APP()->m_aColWidth.SetAt(i, m_lfHeight * 11);
+			APP()->m_aColWidth.SetAt(i, nW * 11);
 		}
 	}
 	int nColWidth = 0;
@@ -2926,7 +2964,7 @@ void CBatchNamerDlg::UpdateColumnSizes()
 		else
 		{
 			FlagSET(APP()->m_nShowFlag, i, FALSE);
-			if (APP()->m_aColWidth.GetAt(i) == 0) APP()->m_aColWidth.SetAt(i, m_lfHeight * 11);
+			if (APP()->m_aColWidth.GetAt(i) == 0) APP()->m_aColWidth.SetAt(i, nW * 11);
 		}
 	}
 
@@ -2938,34 +2976,14 @@ void CBatchNamerDlg::UpdateColumnSizes()
 
 void CBatchNamerDlg::UpdateListFont()
 {
-	LOGFONT lf;
 	if (APP()->m_bUseDefaultFont == TRUE)
 	{
-		CFont* pFont = GetFont(); 
-		pFont->GetLogFont(&lf);
-		m_font.DeleteObject();
-		lf.lfHeight = m_nDefault_FontSize * 10;
-		m_font.CreatePointFontIndirect(&lf);
+		if (m_fontDefault.GetSafeHandle() != NULL)	m_list.SetFont(&m_fontDefault);
 	}
 	else
 	{
-		if (m_font.GetSafeHandle() == NULL)
-		{
-			CFont* pFont = GetFont();
-			pFont->GetLogFont(&lf);
-			m_font.DeleteObject();
-			lf.lfHeight = APP()->m_nFontSize * 10;
-			m_font.CreatePointFontIndirect(&lf);
-		}
+		if (m_font.GetSafeHandle() != NULL)	m_list.SetFont(&m_font);
 	}
-	m_list.SetFont(&m_font);
-/*	CFont* pFont = m_list.GetFont();
-	LOGFONT lf;
-	pFont->GetLogFont(&lf);
-	lf.lfHeight = -1 * MulDiv(nFontSize, GetDeviceCaps(GetDC()->GetSafeHdc(), LOGPIXELSY), 72);
-	m_font.DeleteObject();
-	m_font.CreateFontIndirect(&lf); //자동 소멸되지 않도록 멤버 변수 사용
-	m_list.SetFont(&m_font);*/
 }
 
 
