@@ -150,7 +150,10 @@
 #define IDS_MOVE_POS                    137
 #define IDS_MOVE_POS_REVERSE            138
 #define IDS_ADDDATETIMENOW              139
+#define IDS_BOLD                        140
 #define IDD_CFG_VIEW                    141
+#define IDS_THIN                        141
+#define IDS_ITALIC                      142
 #define IDD_SORT                        149
 #define IDD_PRESET                      151
 #define IDR_TOOLBAR_PRESET              153
@@ -200,7 +203,6 @@
 #define IDC_ST_COLOR_TEXT               1033
 #define IDC_ST_COLOR_BK                 1034
 #define IDC_CHK_SHOWEVERYTIME           1035
-#define IDC_ST_FONTSIZE2                1035
 #define IDC_ST_FONTNAME                 1035
 #define IDC_EDIT_FONTNAME               1036
 #define IDC_BTN_STOPTHREAD              1037

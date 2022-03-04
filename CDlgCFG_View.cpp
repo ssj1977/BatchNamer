@@ -13,9 +13,9 @@
 static CString GetLogFontInfoString(LOGFONT& ft)
 {
 	CString str = ft.lfFaceName;
-	if (ft.lfWeight > FW_NORMAL) str += _T("/ 굵게");
-	else if (ft.lfWeight < FW_NORMAL) str += _T("/ 얇게");
-	if (ft.lfItalic != FALSE) str += _T("/ 이탤릭체");
+	if (ft.lfWeight > FW_NORMAL) str += IDSTR(IDS_BOLD); // _T("/ 굵게");
+	else if (ft.lfWeight < FW_NORMAL) str += IDSTR(IDS_THIN); // _T("/ 얇게");
+	if (ft.lfItalic != FALSE) str += IDSTR(IDS_ITALIC); //str += _T("/ 이탤릭체");
 	return str;
 }
 // CDlgCFG_View 대화 상자
