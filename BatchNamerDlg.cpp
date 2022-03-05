@@ -1343,16 +1343,19 @@ void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, 
 		}
 		else if (nSubCommand == IDS_LOWERCASE)
 		{
-			strNew = strOld.MakeLower();
+			strNew = strOld;
+			strNew.MakeLower();
 		}
 		else if (nSubCommand == IDS_UPPERCASE)
 		{
-			strNew = strOld.MakeUpper();
+			strNew = strOld;
+			strNew.MakeUpper();
 		}
 		else if (nSubCommand == IDS_UPPERCASE_FIRST)
 		{
 			TCHAR c;
-			strNew = strOld.MakeLower();
+			strNew = strOld;
+			strNew.MakeLower();
 			for (int i = 0; i < strNew.GetLength(); i++)
 			{
 				c = strNew.GetAt(i);
