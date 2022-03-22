@@ -154,6 +154,8 @@
 #define IDD_CFG_VIEW                    141
 #define IDS_THIN                        141
 #define IDS_ITALIC                      142
+#define IDS_CONVERT_HANGEUL_NFD         143
+#define IDS_STRING_FILTER               144
 #define IDD_SORT                        149
 #define IDD_PRESET                      151
 #define IDR_TOOLBAR_PRESET              153
@@ -174,6 +176,13 @@
 #define IDS_FOLDER_EXT                  177
 #define IDS_DATETIME_FORMAT             178
 #define IDD_LIST_FILTER                 178
+#define IDS_CLEAR_LIST_ALL              180
+#define IDS_CLEAR_LIST_BYNAME           181
+#define IDS_CLEAR_LIST_BYNAME_INVERT    182
+#define IDS_CLEAR_LIST_BYEXT            183
+#define IDS_CLEAR_LIST_BYEXT_INVERT     184
+#define IDS_CLEAR_LIST_NOCHANGE         185
+#define IDS_CLEAR_LIST_CHANGE           186
 #define IDC_LIST_FILE                   1000
 #define IDC_STATIC_TITLE                1001
 #define IDC_LIST_PRESET                 1001
@@ -300,7 +309,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        180
+#define _APS_NEXT_RESOURCE_VALUE        181
 #define _APS_NEXT_COMMAND_VALUE         32858
 #define _APS_NEXT_CONTROL_VALUE         1083
 #define _APS_NEXT_SYMED_VALUE           101

@@ -228,11 +228,110 @@ CString GetActualPath(CString strPath)
 
 BOOL FindBracketPart(CString& strSrc, TCHAR c1, TCHAR c2, int& nStart, int& nEnd);
 
+////////////////////////////////////////////////////////
+//풀어쓰기 방식의 한글을 모아쓰기로 바꾸기 위한 코드
+WCHAR Hangeul_NFDtoNFC(CString strNFD)
+{
+	// 초성 19개 0x1100 ~ 0x1112
+	// 중성 21개 0x1161 ~ 0x1175
+	// 종성 27개 0x11A8 ~ 0x11C2  => 종성이 없는 경우까지 28개 경우
+	// 완성형 시작 코드 : 가 = 0xAC00 
+	WCHAR cNFC = L'\0';
+	if (strNFD.GetLength() >= 2)
+	{
+		cNFC = (strNFD.GetAt(0) - 0x1100) * 28 * 21 + (strNFD.GetAt(1) - 0x1161) * 28;
+		if (strNFD.GetLength() == 3) cNFC += (strNFD.GetAt(2) - 0x11A7);
+		cNFC += 0xAC00;
+	}
+	return cNFC;
+}
+CString ConvertNFD(CString strSrc)
+{
+	CString strRet, strTemp;
+	CString strNFD; //TCHAR NFD[3] = {}; //[0]=초성, [1]=중성, [2]=종성
+	for (int i = 0; i < strSrc.GetLength(); i++)
+	{
+		TCHAR c = strSrc.GetAt(i);
+		if (0x1100 <= c && c <= 0x1112) //초성 발견
+		{
+			if (strNFD.GetLength() == 0) //처음 발견
+			{
+				strNFD = c; //토큰을 버퍼에 저장
+			}
+			else if (strNFD.GetLength() == 1) // 중성을 찾고 있는데 초성이 발견된 경우
+			{
+				strRet += strNFD; //이전까지를 그대로 출력(단일 초성)
+				strNFD = c; //초성이 처음 발견된 경우로 초기화
+			}
+			else if (strNFD.GetLength() == 2) // 종성을 찾고 있는데 초성이 발견된 경우
+			{
+				strRet += Hangeul_NFDtoNFC(strNFD); //이전까지를 종성이 없는 문자로 해석하여 출력
+				strNFD = c; //초성이 처음 발견된 경우로 초기화
+			}
+		}
+		else if (0x1161 <= c && c <= 0x1175) // 중성(모음) 발견
+		{
+			if (strNFD.GetLength() == 0) //초성을 찾고 있는데 중성이 발견된 경우
+			{
+				strRet += c; //현재 토큰을 그대로 출력
+			}
+			else if (strNFD.GetLength() == 1) //원하는 시점에 발견된 경우
+			{
+				strNFD += c; //토큰을 버퍼에 저장
+			}
+			else if (strNFD.GetLength() == 2) //종성을 찾고 있는데 중성이 발견된 경우
+			{
+				strRet += Hangeul_NFDtoNFC(strNFD); //이전까지를 종성이 없는 문자로 해석하여 출력
+				strRet += c; //현재 토큰을 그대로 출력
+			}
+		}
+		else if (0x11A8 <= c && c <= 0x11C2) // 종성 발견
+		{
+			if (strNFD.GetLength() == 0) //초성을 찾고 있는데 종성이 발견된 경우
+			{
+				strRet += c; //현재 토큰을 그대로 출력
+			}
+			else if (strNFD.GetLength() == 1) //중성을 찾고 있는데 종성이 발견된 경우
+			{
+				strRet += strNFD; //저장된 토큰(초성만 있는 경우) 그대로 출력
+				strRet += c; //발견된 종성 그대로 출력
+			}
+			else if (strNFD.GetLength() == 2) //적합한 시점에 발견된 경우
+			{
+				strNFD += c; //토큰을 버퍼에 저장
+				strRet += Hangeul_NFDtoNFC(strNFD); //변환하여 출력
+				strNFD.Empty(); // 버퍼 초기화
+			}
+		}
+		else //조합형 한글이 아닌 경우
+		{
+			if (strNFD.GetLength() < 2) //저장된 토큰이 한글자 이하라면
+			{
+				strRet += strNFD; //그대로 출력
+			}
+			else //저장된 토큰이 두글자 이상이라면
+			{
+				strRet += Hangeul_NFDtoNFC(strNFD);  //변환해서 출력
+			}
+			strNFD.Empty(); //버퍼를 비움
+			strRet += c; //현재 토큰을 그대로 출력
+		}
+	}
+	//끝나고 남은 토큰 처리
+	if (strNFD.GetLength() == 1) //저장된 토큰이 한글자라면
+	{
+		strRet += strNFD; //그대로 출력
+	}
+	else if (strNFD.GetLength() > 1) //저장된 토큰이 두글자 이상이라면
+	{
+		strRet += Hangeul_NFDtoNFC(strNFD);  //변환해서 출력
+	}
+	return strRet;
+}
+////////////////////////////////////////////////////////
+
 
 // CBatchNamerDlg 대화 상자
-
-
-
 CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_BATCHNAMER, pParent)
 {
@@ -582,6 +681,7 @@ void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 		case IDS_TB_07: NameNumberFilter(TRUE); break;
 		case IDS_TB_08: NameDigit(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Digits
 		case IDS_TB_09: NameAddNum(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Add Number
+		case IDS_TB_11: ClearList(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Remove or Clear items
 		case IDS_TB_16: NameSetFolder(task.m_nSubCommand, task.m_str1, task.m_str2); break; // Set Parent
 		case IDS_TB_17: ExtDel(FALSE); break; // Delete Extension
 		case IDS_TB_18: StringAdd(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE, TRUE); break;// Add Extension
@@ -1049,10 +1149,81 @@ void CBatchNamerDlg::AddByFileDialog()
 }
 
 
-//리스트 모두 삭제
+//리스트에서 항목 삭제
+void CBatchNamerDlg::ClearList(int nSubCommand, CString str1, CString str2)
+{
+	if (nSubCommand == IDS_CLEAR_LIST_ALL)
+	{
+		m_list.DeleteAllItems();
+		m_list.m_setPath.clear();
+	}
+	else if (nSubCommand == IDS_CLEAR_LIST_BYNAME || nSubCommand == IDS_CLEAR_LIST_BYNAME_INVERT
+			|| nSubCommand == IDS_CLEAR_LIST_BYEXT || nSubCommand == IDS_CLEAR_LIST_BYEXT_INVERT)
+	{
+		BOOL bInvert = (nSubCommand == IDS_CLEAR_LIST_BYNAME_INVERT 
+						|| nSubCommand == IDS_CLEAR_LIST_BYEXT_INVERT) ? TRUE : FALSE;
+		int nCount = m_list.GetItemCount() - 1;
+		BOOL bIsDir = FALSE, bFound = FALSE;
+		CString strSrc;
+		for (int i = nCount; i >= 0; i--) //삭제는 끝에서부터
+		{
+			bIsDir = (BOOL)m_list.GetItemData(i);
+			if (nSubCommand == IDS_CLEAR_LIST_BYNAME || nSubCommand == IDS_CLEAR_LIST_BYNAME_INVERT)
+			{
+				strSrc = Get_Name(m_list.GetItemText(i, COL_OLDNAME), bIsDir);
+			}
+			else //nSubCommand == IDS_CLEAR_LIST_BYEXT || nSubCommand == IDS_CLEAR_LIST_BYEXT_INVERT
+			{
+				strSrc = Get_Ext(m_list.GetItemText(i, COL_OLDNAME), bIsDir, FALSE);
+			}
+			bFound = (ReplaceWithWildCards(strSrc, str1, str1, TRUE).IsEmpty()) ? FALSE : TRUE;
+			if (bInvert != bFound)
+			{
+				m_list.m_setPath.erase(m_list.GetOldPath(i));
+				m_list.DeleteItem(i);
+			}
+		}
+	}
+	else if (nSubCommand == IDS_CLEAR_LIST_NOCHANGE || nSubCommand == IDS_CLEAR_LIST_CHANGE)
+	{
+		BOOL bInvert = (nSubCommand == IDS_CLEAR_LIST_CHANGE) ? TRUE : FALSE;
+		int nCount = m_list.GetItemCount() - 1;
+		BOOL bFound = FALSE;
+		CString strSrc;
+		for (int i = nCount; i >= 0; i--) //삭제는 끝에서부터
+		{
+			bFound == (m_list.GetOldPath(i).Compare(m_list.GetNewPath(i)) == 0) ? TRUE : FALSE;
+			if (bInvert != bFound)
+			{
+				m_list.m_setPath.erase(m_list.GetOldPath(i));
+				m_list.DeleteItem(i);
+			}
+		}
+	}
+	m_bSelected = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
+	UpdateCount();
+}
+
 void CBatchNamerDlg::ClearList(BOOL bClearAll)
 {
 	if (bClearAll == FALSE)
+	{
+		CDlgInput dlg;
+		dlg.InitInputByCommand(IDS_TB_11);
+		if (dlg.DoModal() == IDCANCEL) return;
+		if (dlg.VerifyReturnValue() == FALSE) return;
+		CString strTemp;
+		m_list.SetRedraw(FALSE);
+		ClearList(dlg.GetSubCommand(), dlg.m_strReturn1, dlg.m_strReturn2);
+		m_list.SetRedraw(TRUE);
+	}
+	else
+	{
+		m_list.SetRedraw(FALSE);
+		ClearList(IDM_CLEAR_LIST_ALL, _T(""), _T(""));
+		m_list.SetRedraw(TRUE);
+	}
+/*	if (bClearAll == FALSE)
 	{
 		CDlgListFilter dlg;
 		if (dlg.DoModal() == IDCANCEL) return;
@@ -1105,7 +1276,7 @@ void CBatchNamerDlg::ClearList(BOOL bClearAll)
 		m_bSelected = FALSE;
 		UpdateCount();
 		return;
-	}
+	}*/
 }
 
 //바뀔 이름을 원래 이름으로 다시 복구
@@ -1382,6 +1553,10 @@ void CBatchNamerDlg::StringReplace(int nSubCommand, CString str1, CString str2, 
 				}
 				else bIsAlphabet = FALSE;
 			}
+		}
+		else if (nSubCommand == IDS_CONVERT_HANGEUL_NFD) //풀어쓰기 -> 모아쓰기
+		{
+			strNew = ConvertNFD(strOld);
 		}
 		else if (nSubCommand == IDS_EXT_REPLACE && bIsDir == FALSE)
 		{

@@ -57,6 +57,7 @@ protected:
 	void AddListItem(WIN32_FIND_DATA& fd, CString strDir);
 	void SortList();
 	void ClearList(BOOL bClearAll);
+	void ClearList(int nSubCommand, CString str1, CString str2);
 	void ToggleListColumn(int nCol);
 	void Export(int nMode);
 	void ImportNewName(BOOL bFromFile);
