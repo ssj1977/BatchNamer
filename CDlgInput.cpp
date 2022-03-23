@@ -188,7 +188,10 @@ void CDlgInput::OnOK()
 	BOOL bWildCard = FALSE;
 	BOOL bPathWithFolder = (m_nCommand == IDS_TB_16) ? TRUE : FALSE;
 	int nSubCommand = GetSubCommand();
-	if (nSubCommand == IDS_REPLACESTRING || nSubCommand == IDS_FOLDER_PATTERN || nSubCommand == IDS_MOVE_PATTERN) bWildCard = TRUE;
+	if (nSubCommand == IDS_REPLACESTRING || nSubCommand == IDS_FOLDER_PATTERN || nSubCommand == IDS_MOVE_PATTERN 
+		|| nSubCommand == IDS_CLEAR_LIST_BYNAME || nSubCommand == IDS_CLEAR_LIST_BYNAME_INVERT
+		|| nSubCommand == IDS_CLEAR_LIST_BYEXT || nSubCommand == IDS_CLEAR_LIST_BYEXT_INVERT)
+		bWildCard = TRUE;
 	RemoveEnter(m_strReturn1);
 	RemoveEnter(m_strReturn2);
 	if (APP()->m_bNameAutoFix)
@@ -477,6 +480,39 @@ void CDlgInput::InitInputByCommand(int nCommand)
 		item.m_strLabel2 = IDSTR(IDS_STARTNUMBER); //_T("시작값")
 		m_aInput.Add(item);
 		break;
+	case IDS_TB_11: //목록에서 항목 삭제
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_ALL);
+		item.m_nSubCommand = IDS_CLEAR_LIST_ALL;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_BYNAME); 
+		item.m_nSubCommand = IDS_CLEAR_LIST_BYNAME;
+		item.m_strLabel1 = IDSTR(IDS_STRING_FILTER);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_BYNAME_INVERT); 
+		item.m_nSubCommand = IDS_CLEAR_LIST_BYNAME_INVERT;
+		item.m_strLabel1 = IDSTR(IDS_STRING_FILTER);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_BYEXT);
+		item.m_nSubCommand = IDS_CLEAR_LIST_BYEXT;
+		item.m_strLabel1 = IDSTR(IDS_STRING_FILTER);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_BYEXT_INVERT);
+		item.m_nSubCommand = IDS_CLEAR_LIST_BYEXT_INVERT;
+		item.m_strLabel1 = IDSTR(IDS_STRING_FILTER);
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_NOCHANGE);
+		item.m_nSubCommand = IDS_CLEAR_LIST_NOCHANGE;
+		m_aInput.Add(item);
+		item.Clear();
+		item.m_strItemName = IDSTR(IDS_CLEAR_LIST_CHANGE);
+		item.m_nSubCommand = IDS_CLEAR_LIST_CHANGE;
+		m_aInput.Add(item);
+		break;
 	case IDS_TB_13: // Manual Change
 		item.m_strItemName = IDSTR(IDS_MANUAL_CHANGE);
 		item.m_nSubCommand = IDS_MANUAL_CHANGE;
@@ -616,6 +652,13 @@ BOOL CDlgInput::VerifyReturnValue()
 				AfxMessageBox(IDSTR(IDS_MSG_INVALIDDIGIT));
 				return FALSE;
 			}
+		}
+		break;
+	case IDS_TB_11: //목록에서 항목 삭제
+		if (nSubCommand == IDS_CLEAR_LIST_BYNAME || nSubCommand == IDS_CLEAR_LIST_BYNAME_INVERT ||
+			nSubCommand == IDS_CLEAR_LIST_BYEXT || nSubCommand == IDS_CLEAR_LIST_BYEXT_INVERT)
+		{
+			if (m_strReturn1.IsEmpty()) return FALSE;
 		}
 		break;
 	case IDS_TB_13: // Manual Change

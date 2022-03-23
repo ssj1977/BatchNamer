@@ -626,7 +626,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.20 (2022-03-05 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.30 (2022-03-23 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -1192,7 +1192,7 @@ void CBatchNamerDlg::ClearList(int nSubCommand, CString str1, CString str2)
 		CString strSrc;
 		for (int i = nCount; i >= 0; i--) //삭제는 끝에서부터
 		{
-			bFound == (m_list.GetOldPath(i).Compare(m_list.GetNewPath(i)) == 0) ? TRUE : FALSE;
+			bFound = (m_list.GetOldPath(i).Compare(m_list.GetNewPath(i)) == 0) ? TRUE : FALSE;
 			if (bInvert != bFound)
 			{
 				m_list.m_setPath.erase(m_list.GetOldPath(i));
@@ -1220,7 +1220,7 @@ void CBatchNamerDlg::ClearList(BOOL bClearAll)
 	else
 	{
 		m_list.SetRedraw(FALSE);
-		ClearList(IDM_CLEAR_LIST_ALL, _T(""), _T(""));
+		ClearList(IDS_CLEAR_LIST_ALL, _T(""), _T(""));
 		m_list.SetRedraw(TRUE);
 	}
 /*	if (bClearAll == FALSE)

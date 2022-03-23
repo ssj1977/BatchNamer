@@ -58,7 +58,7 @@ BOOL CDlgPreset::OnInitDialog()
 	int nTextIndex = 0;
 	int aID[] = {	IDS_TB_01, IDS_TB_02, IDS_TB_03, IDS_TB_04, IDS_TB_05, 
 					IDS_TB_06, IDS_TB_07, IDS_TB_08, IDS_TB_09, IDS_TB_16,
-					IDS_TB_17, IDS_TB_18, IDS_TB_19 };
+					IDS_TB_17, IDS_TB_18, IDS_TB_19, IDS_TB_11};
 	for (int i = 0; i < nCount; i++)
 	{
 		nStyle = m_toolPreset.GetButtonStyle(i);
@@ -231,6 +231,7 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_NAME_REMOVESELECTED: nCommand = IDS_TB_05;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_EXTRACTNUMBER: nCommand = IDS_TB_06;	break;
 	case IDM_NAME_REMOVENUMBER: nCommand = IDS_TB_07;	break;
+	case IDM_CLEAR_LIST:		nCommand = IDS_TB_11;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_DIGIT:		nCommand = IDS_TB_08;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_ADDNUM:		nCommand = IDS_TB_09;	bUseInputDlg = TRUE;		break;
 	case IDM_NAME_SETFOLDER:	nCommand = IDS_TB_16;	bUseInputDlg = TRUE;		break;
