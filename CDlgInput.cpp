@@ -88,7 +88,7 @@ BOOL CDlgInput::OnInitDialog()
 		}
 	}
 	ArrangeCtrl();
-	return TRUE;  // return TRUE unless you set the focus to a control
+	return FALSE;  // return TRUE unless you set the focus to a control
 				  // EXCEPTION: OCX Property Pages should return FALSE
 }
 
@@ -128,6 +128,18 @@ void CDlgInput::SetInputItem(InputItem* pItem)
 	}
 	GetDlgItem(IDC_BTN_FOLDER_SELECT)->ShowWindow((pItem->m_nSubCommand == IDS_FOLDER_SPECIFIC) ? SW_SHOW : SW_HIDE);
 	ArrangeCtrl();
+	if (bShow1 == FALSE && bShow2 == FALSE) 	// 입력창이 없는 경우에는 OK 버튼에 포커스
+	{
+		GotoDlgCtrl(GetDlgItem(IDOK));
+	}
+	else if (bShow1 != FALSE)
+	{
+		GotoDlgCtrl(GetDlgItem(IDC_EDIT_1));	// 입력창1이 있는 경우에는 해당 입력창에 포커스
+	}
+	else if (bShow2 != FALSE)
+	{
+		GotoDlgCtrl(GetDlgItem(IDC_EDIT_2));	// 입력창2만 있는 경우에는 해당 입력창에 포커스
+	}
 }
 
 //파일 이름에 맞지 않는 글자(\, /, | ,<. >, :, ", ?, *) 를 미리 체크
