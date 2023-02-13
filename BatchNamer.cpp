@@ -185,15 +185,19 @@ CString CBatchNamerApp::GetPresetExportString()
 	for (int i = 0; i < m_aPreset.GetSize(); i++)
 	{
 		BatchNamerPreset& ps = m_aPreset[i];
-		strLine.Format(_T("Preset_Name=%s\r\n"), ps.m_strName);	strData += strLine;
-		//strLine.Format(_T("Preset_ApplyOption=%d\r\n"), ps.m_nApplyOption);	strData += strLine;
+		strLine.Format(_T("Preset_Name=%s\r\n"), (LPCTSTR)ps.m_strName);	strData += strLine;
+		strLine.Format(_T("Preset_AutoApply=%d\r\n"), ps.m_bAutoApply);	strData += strLine;
+		strLine.Format(_T("Preset_ApplyType=%d\r\n"), ps.m_nApplyType);	strData += strLine;
+		strLine.Format(_T("Preset_AutoSort=%d\r\n"), ps.m_bAutoSort);	strData += strLine;
+		strLine.Format(_T("Preset_SortColumn=%d\r\n"), ps.m_nSortColumn);	strData += strLine;
+		strLine.Format(_T("Preset_SortAscend=%d\r\n"), ps.m_bSortAscsend);	strData += strLine;
 		for (int j = 0; j < ps.m_aTask.GetSize(); j++)
 		{
 			PresetTask& pt = ps.m_aTask[j];
 			strLine.Format(_T("PresetTask_Command=%d\r\n"), pt.m_nCommand);	strData += strLine;
 			strLine.Format(_T("PresetTask_SubCommand=%d\r\n"), pt.m_nSubCommand);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), pt.m_str1);	strData += strLine;
-			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), pt.m_str2);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg1=<%s>\r\n"), (LPCTSTR)pt.m_str1);	strData += strLine;
+			strLine.Format(_T("PresetTask_Arg2=<%s>\r\n"), (LPCTSTR)pt.m_str2);	strData += strLine;
 		}
 	}
 	return strData;
@@ -352,32 +356,33 @@ void CBatchNamerApp::INILoad(CString strFile)
 					i->second.bShift = CString2BOOL(strShift);
 				}
 			}
+			else if (str1.CompareNoCase(L"Preset_AutoApply") == 0 && nPreset >= 0) m_aPreset[nPreset].m_bAutoApply = _ttoi(str2);
+			else if (str1.CompareNoCase(L"Preset_ApplyType") == 0 && nPreset >= 0) m_aPreset[nPreset].m_nApplyType = _ttoi(str2);
+			else if (str1.CompareNoCase(L"Preset_AutoSort") == 0 && nPreset >= 0) m_aPreset[nPreset].m_bAutoSort = _ttoi(str2);
+			else if (str1.CompareNoCase(L"Preset_SortColumn") == 0 && nPreset >= 0) m_aPreset[nPreset].m_nSortColumn = _ttoi(str2);
+			else if (str1.CompareNoCase(L"Preset_SortAscend") == 0 && nPreset >= 0) m_aPreset[nPreset].m_bSortAscsend = _ttoi(str2);
+			else if (str1.CompareNoCase(_T("PresetTask_Command")) == 0)
+			{
+				PresetTask pt;
+				nTask++;
+				m_aPreset[nPreset].m_aTask.Add(pt);
+				if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
+					if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+						m_aPreset[nPreset].m_aTask[nTask].m_nCommand = _ttoi(str2);
+			}
+			else if (str1.CompareNoCase(_T("PresetTask_SubCommand")) == 0)
+			{
+				if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
+					if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
+						m_aPreset[nPreset].m_aTask[nTask].m_nSubCommand = _ttoi(str2);
+			}
 		}
-		//이 부분은 str2가 비어 있더라도 받는다
+		//아래의 항목은 str2가 비어 있더라도 받는다
 		if (str1.CompareNoCase(_T("Preset_Name")) == 0)
 		{
 			nTask = -1;
 			nPreset++;
 			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_strName = str2;
-		}
-/*		else if (str1.CompareNoCase(_T("Preset_ApplyOption")) == 0)
-		{
-			if (nPreset >= 0 && nPreset < m_aPreset.GetSize()) m_aPreset[nPreset].m_nApplyOption = _ttoi(str2);
-		}*/
-		else if (str1.CompareNoCase(_T("PresetTask_Command")) == 0)
-		{
-			PresetTask pt;
-			nTask++;
-			m_aPreset[nPreset].m_aTask.Add(pt);
-			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
-				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
-					m_aPreset[nPreset].m_aTask[nTask].m_nCommand = _ttoi(str2);
-		}
-		else if (str1.CompareNoCase(_T("PresetTask_SubCommand")) == 0)
-		{
-			if (nPreset >= 0 && nPreset < m_aPreset.GetSize())
-				if (nTask >= 0 && nTask < m_aPreset[nPreset].m_aTask.GetSize())
-					m_aPreset[nPreset].m_aTask[nTask].m_nSubCommand = _ttoi(str2);
 		}
 		else if (str1.CompareNoCase(_T("PresetTask_Arg1")) == 0)
 		{
