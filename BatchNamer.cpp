@@ -26,7 +26,7 @@ END_MESSAGE_MAP()
 CBatchNamerApp::CBatchNamerApp()
 {
 	//m_bEnglishUI = FALSE;
-	m_strUILanguage = _T("Default");
+	m_strUILanguage = _T("default");
 	m_bShowEverytime = FALSE; // 목록 읽기 방법 설정창을 매번 표시할지 여부
 	m_bAutoSort = TRUE; //항목 추가시 자동 정렬 여부
 	m_nLoadType = 2; //목록 읽기 방법 : 0 = 폴더를 그대로 추가 / 1 = 폴더 안의 파일을 추가 / 2 = 폴더를 추가할때 물어보기
@@ -109,6 +109,7 @@ void CBatchNamerApp::UpdateThreadLocale()
 {
 	if (m_strUILanguage.CompareNoCase(_T("english")) == 0) SetLocale(LANG_ENGLISH);
 	else if (m_strUILanguage.CompareNoCase(_T("korean")) == 0) SetLocale(LANG_KOREAN);
+	//else SetLocale(LANG_NEUTRAL);
 }
 
 BOOL CBatchNamerApp::InitInstance()
@@ -318,8 +319,8 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("IncludeExt")) == 0) m_bIncludeExt = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0)
 			{   //예전 버전의 호환성을 위한 코드
-				if (CString2BOOL(str2) == FALSE) m_strUILanguage = _T("Default");
-				else m_strUILanguage = _T("English");
+				if (CString2BOOL(str2) == FALSE) m_strUILanguage = _T("default");
+				else m_strUILanguage = _T("english");
 			}
 			else if (str1.CompareNoCase(_T("UILanguage")) == 0) m_strUILanguage = str2;
 			else if (str1.CompareNoCase(_T("ColWidths")) == 0)
@@ -407,7 +408,8 @@ void CBatchNamerApp::INILoad(CString strFile)
 void CBatchNamerApp::SetLocale(int nLanguageID)
 {
 	//LANG_KOREAN / LANG_ENGLISH
-	SetThreadLocaleEx(MAKELCID(MAKELANGID(nLanguageID, SUBLANG_DEFAULT), SORT_DEFAULT));
+	//SetThreadLocaleEx(MAKELCID(MAKELANGID(nLanguageID, SUBLANG_DEFAULT), SORT_DEFAULT));
+	SetThreadUILanguage(MAKELCID(MAKELANGID(nLanguageID, SUBLANG_DEFAULT), SORT_DEFAULT));
 }
 
 void CBatchNamerApp::ShowMsg(CString strMsg, CString strTitle)

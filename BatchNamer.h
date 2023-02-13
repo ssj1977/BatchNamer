@@ -69,15 +69,21 @@ typedef CArray<PresetTask, PresetTask&> PresetTaskArray;
 #define APPLY_COPY 1
 #endif
 
+
 //프리셋을 나타내는 구조체
 struct BatchNamerPreset
 {
-	CString m_strName;
-//	int m_nApplyOption;
+	CString m_strName; //프리셋 이름
+	BOOL m_bAutoApply; //자동 적용 여부
+	int m_nApplyType; //적용 방식
+	BOOL m_bAutoSort; //사전 정렬 여부
+	BOOL m_bSortAscsend; //오름차순 정렬 여부
+	int m_nSortColumn; //정렬 대상 컬럼
+
 	PresetTaskArray m_aTask;
 	BatchNamerPreset()
 	{
-//		m_nApplyOption = APPLY_MOVE;
+		Clear();
 	};
 	~BatchNamerPreset()
 	{
@@ -86,10 +92,12 @@ struct BatchNamerPreset
 	void Clear()
 	{
 		m_strName = L"";
-		for (int i = 0; i < m_aTask.GetSize(); i++)
-		{
-			m_aTask.RemoveAll();
-		}
+		m_bAutoApply = FALSE;
+		m_nApplyType = APPLY_MOVE;
+		m_bAutoSort = FALSE;
+		m_bSortAscsend = TRUE;
+		m_nSortColumn = 0; //COL_OLDNAME
+		m_aTask.RemoveAll();
 	};
 };
 
@@ -150,7 +158,7 @@ public:
 	int m_nLoadType;
 	int m_nShowFlag;
 	int m_nSortCol;
-	int m_bSortAscend;
+	BOOL m_bSortAscend;
 	CRect m_rcMain;
 	CRect m_rcInput;
 	COLORREF m_clrText;

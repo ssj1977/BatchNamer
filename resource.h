@@ -156,7 +156,12 @@
 #define IDS_ITALIC                      142
 #define IDS_CONVERT_HANGEUL_NFD         143
 #define IDS_STRING_FILTER               144
+#define IDS_LANGUAGE_CHANGE             145
+#define IDS_APPLY_COPY                  146
+#define IDS_APPLY_MOVE                  147
+#define IDS_ASCENDING                   148
 #define IDD_SORT                        149
+#define IDS_DESCENDING                  149
 #define IDD_PRESET                      151
 #define IDR_TOOLBAR_PRESET              153
 #define IDD_MSG                         155
@@ -250,6 +255,10 @@
 #define IDC_RADIO_APPLY_MOVE            1081
 #define IDC_BTN_FONT                    1082
 #define IDC_RADIO_APPLY_COPY            1083
+#define IDC_CHK_PRESET_SORT             1083
+#define IDC_BTN_PRESET_SORT             1084
+#define IDC_CHK_PRESET_APPLY            1086
+#define IDC_CB_PRESET_APPLY             1087
 #define IDM_PRESET_EDIT                 32770
 #define IDM_PRESET_APPLY1               32771
 #define IDM_PRESET_APPLY2               32772
@@ -304,14 +313,21 @@
 #define IDM_CLEAR_LIST_ALL              32855
 #define ID_EDIT_CLEARLIST               32856
 #define ID_CLEAR_LIST_ALL               32857
+#define ID_OPTIONS_UILANGUAGE           32858
+#define ID_UILANGUAGE_ENGLISH           32859
+#define ID_UILANGUAGE_KOREAN            32860
+#define IDM_UI_ENGLISH                  32861
+#define IDM_UI_KOREAN                   32862
+#define ID_32863                        32863
+#define IDM_UI_DEFAULT                  32864
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        181
-#define _APS_NEXT_COMMAND_VALUE         32858
-#define _APS_NEXT_CONTROL_VALUE         1083
+#define _APS_NEXT_COMMAND_VALUE         32865
+#define _APS_NEXT_CONTROL_VALUE         1088
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

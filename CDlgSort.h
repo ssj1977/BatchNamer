@@ -10,7 +10,7 @@ class CDlgSort : public CDialogEx
 public:
 	CDlgSort(CWnd* pParent = nullptr);   // 표준 생성자입니다.
 	virtual ~CDlgSort();
-	CWnd* m_pSortWnd;
+	CWnd* m_pSortWnd; // 값이 NULL이라면 프리셋용 설정창
 	int m_nSortCol;
 	BOOL m_bSortAscend;
 

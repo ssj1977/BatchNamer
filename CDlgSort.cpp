@@ -40,24 +40,36 @@ END_MESSAGE_MAP()
 BOOL CDlgSort::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-	if (m_pSortWnd == NULL) return FALSE;
 	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_SORTCOL);
-	CMFCHeaderCtrl& header = ((CNameListCtrl*)m_pSortWnd)->GetHeaderCtrl();
-	int nCount = header.GetItemCount();
-	m_nSortCol = header.GetSortColumn();
-	m_bSortAscend = header.IsAscending();
-	HDITEM hdi;
-	TCHAR buf[MY_MAX_PATH];
-	hdi.mask = HDI_TEXT;
-	hdi.cchTextMax = MY_MAX_PATH;
-	hdi.pszText = buf;
-	for (int i = 0; i < nCount; i++)
-	{
-		header.GetItem(i, &hdi);
-		pCB->AddString(hdi.pszText);
+	if (m_pSortWnd == NULL)
+	{	//프리셋용 설정창
+		pCB->AddString(IDSTR(IDS_COL_OLDNAME));
+		pCB->AddString(IDSTR(IDS_COL_NEWNAME));
+		pCB->AddString(IDSTR(IDS_COL_OLDFOLDER));
+		pCB->AddString(IDSTR(IDS_COL_NEWFOLDER));
+		pCB->AddString(IDSTR(IDS_COL_FILESIZE));
+		pCB->AddString(IDSTR(IDS_COL_TIMEMODIFY));
+		pCB->AddString(IDSTR(IDS_COL_TIMECREATE));
+		pCB->AddString(IDSTR(IDS_COL_FULLPATH));
+	}
+	else
+	{	//일반 설정창
+		CMFCHeaderCtrl& header = ((CNameListCtrl*)m_pSortWnd)->GetHeaderCtrl();
+		int nCount = header.GetItemCount();
+		m_nSortCol = header.GetSortColumn();
+		m_bSortAscend = header.IsAscending();
+		HDITEM hdi;
+		TCHAR buf[MY_MAX_PATH];
+		hdi.mask = HDI_TEXT;
+		hdi.cchTextMax = MY_MAX_PATH;
+		hdi.pszText = buf;
+		for (int i = 0; i < nCount; i++)
+		{
+			header.GetItem(i, &hdi);
+			pCB->AddString(hdi.pszText);
+		}
 	}
 	pCB->SetCurSel(m_nSortCol);
-
 	if (m_bSortAscend == TRUE)	SetCheckByID(this, IDC_RADIO_SORT_ASCEND, TRUE);
 	else						SetCheckByID(this, IDC_RADIO_SORT_DESCEND, TRUE);
 

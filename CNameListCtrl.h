@@ -6,15 +6,15 @@ using namespace std;
 typedef set<CString> CPathSet; //중복이름 체크용 맵 해당하는 이미지맵의 번호를 기억
 
 #ifndef COL_OLDNAME
-	#define COL_OLDNAME 0
-	#define COL_NEWNAME 1
-	#define COL_OLDFOLDER 2
-	#define COL_NEWFOLDER 3
-	#define COL_FILESIZE 4
-	#define COL_TIMEMODIFY 5
-	#define COL_TIMECREATE 6
-	#define COL_FULLPATH 7
-	#define COL_TOTAL 8
+#define COL_OLDNAME 0
+#define COL_NEWNAME 1
+#define COL_OLDFOLDER 2
+#define COL_NEWFOLDER 3
+#define COL_FILESIZE 4
+#define COL_TIMEMODIFY 5
+#define COL_TIMECREATE 6
+#define COL_FULLPATH 7
+#define COL_TOTAL 8
 #endif
 
 class CNameListCtrl : public CMFCListCtrl

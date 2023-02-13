@@ -7,7 +7,9 @@
 #include "afxdialogex.h"
 #include "EtcFunctions.h"
 #include "CDlgInput.h"
-
+#include "CDlgSort.h"
+#include "CDlgApplyOption.h"
+#include "CNameListCtrl.h" //COL_ 상수 정의 때문에 필요
 // CDlgPreset 대화 상자
 
 IMPLEMENT_DYNAMIC(CDlgPreset, CDialogEx)
@@ -16,6 +18,7 @@ CDlgPreset::CDlgPreset(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_PRESET, pParent)
 {
 	m_nLogFontHeight = 0;
+	m_nButtonCount = 0;
 }
 
 CDlgPreset::~CDlgPreset()
@@ -40,6 +43,10 @@ BEGIN_MESSAGE_MAP(CDlgPreset, CDialogEx)
 	ON_WM_GETMINMAXINFO()
 //	ON_BN_CLICKED(IDC_RADIO_APPLY_MOVE, &CDlgPreset::OnBnClickedRadioApplyMove)
 //	ON_BN_CLICKED(IDC_RADIO_APPLY_COPY, &CDlgPreset::OnBnClickedRadioApplyCopy)
+ON_BN_CLICKED(IDC_BTN_PRESET_SORT, &CDlgPreset::OnBnClickedBtnPresetSort)
+ON_BN_CLICKED(IDC_CHK_PRESET_SORT, &CDlgPreset::OnBnClickedChkPresetSort)
+ON_BN_CLICKED(IDC_CHK_PRESET_APPLY, &CDlgPreset::OnBnClickedChkPresetApply)
+ON_CBN_SELCHANGE(IDC_CB_PRESET_APPLY, &CDlgPreset::OnSelchangeCbPresetApply)
 END_MESSAGE_MAP()
 
 
@@ -56,15 +63,17 @@ BOOL CDlgPreset::OnInitDialog()
 	UINT nStyle;
 	int nCount = m_toolPreset.GetCount();
 	int nTextIndex = 0;
+	m_nButtonCount = 0;
 	int aID[] = {	IDS_TB_01, IDS_TB_02, IDS_TB_03, IDS_TB_04, IDS_TB_05, 
 					IDS_TB_06, IDS_TB_07, IDS_TB_08, IDS_TB_09, IDS_TB_16,
-					IDS_TB_17, IDS_TB_18, IDS_TB_19, IDS_TB_11};
+					IDS_TB_17, IDS_TB_18, IDS_TB_19, IDS_TB_11	};
 	for (int i = 0; i < nCount; i++)
 	{
 		nStyle = m_toolPreset.GetButtonStyle(i);
 		if (!(nStyle & TBBS_SEPARATOR))
 		{
 			m_toolPreset.SetButtonText(i, IDSTR(aID[nTextIndex]));
+			m_nButtonCount++;
 			nTextIndex += 1;
 		}
 	}
@@ -92,6 +101,9 @@ BOOL CDlgPreset::OnInitDialog()
 		nIndex = pCBPreset->AddString(strTemp);
 	}
 	pCBPreset->SetCurSel(0);
+	CComboBox* pCBApply = (CComboBox*)GetDlgItem(IDC_CB_PRESET_APPLY);
+	pCBApply->AddString(IDSTR(IDS_APPLY_MOVE));
+	pCBApply->AddString(IDSTR(IDS_APPLY_COPY));
 	OnSelchangeCbPresetSelect();
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -114,21 +126,29 @@ void CDlgPreset::OnCancel()
 }
 
 
+BatchNamerPreset* CDlgPreset::CurrentPreset()
+{
+	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	return &(APP()->m_aPreset[pCB->GetCurSel()]);
+}
+
+
 void CDlgPreset::ArrangeCtrl()
 {
 	int LH = m_nLogFontHeight;
 	CRect rc, rcButton, rcSplit, rcToolButton, rcAdd, rcTemp;
 	GetClientRect(rc);
 	rc.DeflateRect(LH, LH, LH, LH);
+	//선택용 콤보박스
 	GetDlgItem(IDC_CB_PRESET_SELECT)->GetWindowRect(rcTemp);
 	GetDlgItem(IDC_CB_PRESET_SELECT)->MoveWindow(rc.left, rc.top, rc.Width(), rcTemp.Height());
 	rc.DeflateRect(0, rcTemp.Height() + (LH/2), 0, 0);
-
+	//툴바 크기 계산
 	m_toolPreset.GetToolBarCtrl().GetItemRect(0, rcToolButton);
 	m_toolPreset.GetToolBarCtrl().GetItemRect(1, rcSplit);
 	int n1 = (rc.Width() - (LH*2)) / (rcToolButton.Width() + rcSplit.Width());
 	if (n1 == 0) n1 = 1;
-	int n2 = int(13 / n1) + 1;
+	int n2 = int((m_nButtonCount - 1) / n1) + 1;
 	int TOOLWIDTH = (rcToolButton.Width() + rcSplit.Width()) * n1;
 	int TOOLHEIGHT = (rcToolButton.Height() + rcSplit.Width()) * n2;
 	int ADDHEIGHT = TOOLHEIGHT + LH * 3;
@@ -136,16 +156,33 @@ void CDlgPreset::ArrangeCtrl()
 	int BTNWIDTH = rcButton.Width();
 	if (BTNWIDTH * 6 + LH*5 > rc.Width()) BTNWIDTH = (rc.Width() - BTNWIDTH) / 5 - LH;
 	int BTNHEIGHT = rcButton.Height() + LH * 2; 
-/*	GetDlgItem(IDC_RADIO_APPLY_MOVE)->GetWindowRect(rcTemp);
-	GetDlgItem(IDC_RADIO_APPLY_MOVE)->MoveWindow(rc.left, rc.top, rc.Width()/2 - 1, rcTemp.Height());
-	GetDlgItem(IDC_RADIO_APPLY_COPY)->MoveWindow(rc.left + rc.Width() / 2, rc.top, rc.Width()/2, rcTemp.Height());
-	rc.top += rcTemp.Height() + (LH / 2);*/
+	//정렬 및 적용여부 UI
+	GetDlgItem(IDC_CHK_PRESET_SORT)->GetWindowRect(rcTemp);
+	int SORT_CHK_WIDTH = rcTemp.Width();
+	int SORT_CHK_HEIGHT = rcTemp.Height();
+	GetDlgItem(IDC_BTN_PRESET_SORT)->GetWindowRect(rcTemp);
+	int SORT_BTN_WIDTH = rc.Width() / 2 - SORT_CHK_WIDTH;
+	int SORT_BTN_HEIGHT = SORT_CHK_HEIGHT;
+	GetDlgItem(IDC_CHK_PRESET_APPLY)->GetWindowRect(rcTemp);
+	int APPLY_CHK_WIDTH = rcTemp.Width();
+	int APPLY_CHK_HEIGHT = SORT_CHK_HEIGHT;
+	//GetDlgItem(IDC_CB_PRESET_APPLY)->GetWindowRect(rcTemp);
+	int APPLY_CB_WIDTH = rc.Width() / 2 - APPLY_CHK_WIDTH - LH;
+	int APPLY_CB_HEIGHT = APPLY_CHK_HEIGHT;
+
+	GetDlgItem(IDC_CHK_PRESET_SORT)->MoveWindow(rc.left, rc.top, SORT_CHK_WIDTH, SORT_CHK_HEIGHT);
+	GetDlgItem(IDC_BTN_PRESET_SORT)->MoveWindow(rc.left + SORT_CHK_WIDTH, rc.top, SORT_BTN_WIDTH, SORT_BTN_HEIGHT);
+	GetDlgItem(IDC_CHK_PRESET_APPLY)->MoveWindow(rc.left + rc.Width() / 2 + LH, rc.top, APPLY_CHK_WIDTH, APPLY_CHK_HEIGHT);
+	GetDlgItem(IDC_CB_PRESET_APPLY)->MoveWindow(rc.left + rc.Width() / 2 + APPLY_CHK_WIDTH + LH, rc.top, APPLY_CB_WIDTH, APPLY_CB_HEIGHT);
+	rc.top += SORT_BTN_HEIGHT + (LH / 2);
+	//목록 
 	GetDlgItem(IDC_LIST_PRESET)->MoveWindow(rc.left, rc.top, rc.Width(), rc.Height() - ADDHEIGHT - BTNHEIGHT);
 	GetDlgItem(IDC_LIST_PRESET)->GetWindowRect(rcTemp);
 	rc.DeflateRect(0, rcTemp.Height() + LH, 0, 0);
 	GetDlgItem(IDC_ST_PRESET_ADD)->MoveWindow(rc.left, rc.top, rc.Width(), ADDHEIGHT);
 	m_toolPreset.MoveWindow(rc.left + LH, rc.top + LH*2, TOOLWIDTH, TOOLHEIGHT);
 	rc.DeflateRect(0, ADDHEIGHT + LH, 0, 0);
+	//버튼 배치
 	GetDlgItem(IDC_BTN_PRESET_UP)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
 	rc.left = rc.left + BTNWIDTH + LH;
 	GetDlgItem(IDC_BTN_PRESET_DOWN)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
@@ -157,31 +194,29 @@ void CDlgPreset::ArrangeCtrl()
 	GetDlgItem(IDC_BTN_PRESET_NAME)->MoveWindow(rc.left, rc.top, BTNWIDTH, rcButton.Height());
 	rc.left = rc.left + BTNWIDTH + LH;
 	GetDlgItem(IDCANCEL)->MoveWindow(rc.right-rcButton.Width(), rc.top, rcButton.Width(), rcButton.Height());
-	m_toolPreset.Invalidate();
+	//m_toolPreset.Invalidate();
 }
 
 
 void CDlgPreset::OnBnClickedBtnPresetTaskDelete()
 {
-	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	BatchNamerPreset* pPreset = CurrentPreset();
 	CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
-	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
 	int nItem = pList->GetNextItem(-1, LVNI_SELECTED);
 	if (nItem == -1) return;
 	pList->DeleteItem(nItem);
-	preset.m_aTask.RemoveAt(nItem);
+	pPreset->m_aTask.RemoveAt(nItem);
 	if (nItem >= pList->GetItemCount()) nItem = pList->GetItemCount() - 1;
 	if (nItem >= 0 && nItem < pList->GetItemCount()) pList->SetItemState(nItem, LVIS_SELECTED, LVIS_SELECTED);
 }
 
 void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 {
-	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	BatchNamerPreset* pPreset = CurrentPreset();
 	CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
-	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
 	int nItem = pList->GetNextItem(-1, LVNI_SELECTED);
 	if (nItem == -1) return;
-	PresetTask& task = preset.m_aTask[nItem];
+	PresetTask& task = pPreset->m_aTask[nItem];
 	CDlgInput dlg;
 	dlg.InitInputByCommand(task.m_nCommand);
 	dlg.InitValue(task.m_nSubCommand, task.m_str1, task.m_str2);
@@ -198,22 +233,43 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 	SetListTask(nItem, task);
 }
 
+void CDlgPreset::UpdateSortButton(int nCol, BOOL bAscending)
+{
+	CString strSort;
+	int nColStringID = 0;
+	switch (nCol)
+	{
+	case COL_OLDNAME:		nColStringID = IDS_COL_OLDNAME;		break;
+	case COL_NEWNAME:		nColStringID = IDS_COL_NEWNAME;		break;
+	case COL_OLDFOLDER:		nColStringID = IDS_COL_OLDFOLDER;	break;
+	case COL_NEWFOLDER:		nColStringID = IDS_COL_NEWFOLDER;	break;
+	case COL_FILESIZE:		nColStringID = IDS_COL_FILESIZE;	break;
+	case COL_TIMEMODIFY:	nColStringID = IDS_COL_TIMEMODIFY;	break;
+	case COL_TIMECREATE:	nColStringID = IDS_COL_TIMECREATE;	break;
+	case COL_FULLPATH:		nColStringID = IDS_COL_FULLPATH;	break;
+	default:				nColStringID = IDS_COL_OLDNAME;		break;
+	}
+	strSort.Format(L"%s / %s", (LPCTSTR)IDSTR(nColStringID), (LPCTSTR)IDSTR(bAscending ? IDS_ASCENDING : IDS_DESCENDING));
+	GetDlgItem(IDC_BTN_PRESET_SORT)->SetWindowText(strSort);
+}
+
+
 void CDlgPreset::OnSelchangeCbPresetSelect()
 {
-	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
+	BatchNamerPreset* pPreset = CurrentPreset();
 	CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
-	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
-
+	SetCheckByID(this, IDC_CHK_PRESET_SORT, pPreset->m_bAutoSort);
+	GetDlgItem(IDC_BTN_PRESET_SORT)->EnableWindow(IsChecked(this, IDC_CHK_PRESET_SORT));
+	UpdateSortButton(pPreset->m_nSortColumn, pPreset->m_bSortAscsend);
+	SetCheckByID(this, IDC_CHK_PRESET_APPLY, pPreset->m_bAutoApply);
+	CComboBox* pCBApply = (CComboBox*)GetDlgItem(IDC_CB_PRESET_APPLY);
+	pCBApply->EnableWindow(IsChecked(this, IDC_CHK_PRESET_APPLY));
+	pCBApply->SetCurSel(pPreset->m_nApplyType);
 	BOOL bTemp = FALSE;
-	//프리셋에서 ApplyOption은 현재 의미가 없으므로 제거
-/*	if (preset.m_nApplyOption == APPLY_MOVE) bTemp = TRUE;
-	SetCheckByID(this, IDC_RADIO_APPLY_MOVE, bTemp);
-	SetCheckByID(this, IDC_RADIO_APPLY_COPY, !bTemp);*/
-
 	pList->DeleteAllItems();
-	for (int i = 0; i<preset.m_aTask.GetSize(); i++)
+	for (int i = 0; i< pPreset->m_aTask.GetSize(); i++)
 	{
-		SetListTask(i, preset.m_aTask[i]);
+		SetListTask(i, pPreset->m_aTask[i]);
 	}
 }
 
@@ -238,6 +294,8 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_EXT_DEL:			nCommand = IDS_TB_17;	break;
 	case IDM_EXT_ADD:			nCommand = IDS_TB_18;	bUseInputDlg = TRUE;		break;
 	case IDM_EXT_REPLACE:		nCommand = IDS_TB_19;	bUseInputDlg = TRUE;		break;
+	case IDM_SORT_LIST:			nCommand = IDS_TB_12;	break;
+	case IDM_APPLY_CHANGE:		nCommand = IDS_TB_00;	break;
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
@@ -258,11 +316,10 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 			str1 = dlg.m_strReturn1;
 			str2 = dlg.m_strReturn2;
 		}
-		CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
-		BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
+		BatchNamerPreset* pPreset = CurrentPreset();
 		CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
 		int nItem = pList->GetItemCount();
-		if (nItem == preset.m_aTask.GetSize())
+		if (nItem == pPreset->m_aTask.GetSize())
 		{
 			PresetTask task;
 			task.m_nCommand = nCommand;
@@ -270,7 +327,7 @@ BOOL CDlgPreset::OnCommand(WPARAM wParam, LPARAM lParam)
 			task.m_str1 = str1;
 			task.m_str2 = str2;
 			SetListTask(nItem, task);
-			preset.m_aTask.Add(task);
+			pPreset->m_aTask.Add(task);
 		}
 	}
 	return TRUE;
@@ -287,11 +344,10 @@ BOOL CDlgPreset::PreTranslateMessage(MSG* pMsg)
 	GetDlgItem(IDC_BTN_PRESET_TASK_DELETE)->EnableWindow(bSelected);
 	if (bSelected)
 	{
-		CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
-		BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
-		if (nItem < preset.m_aTask.GetSize())
+		BatchNamerPreset* pPreset = CurrentPreset();
+		if (nItem < pPreset->m_aTask.GetSize())
 		{
-			PresetTask& task = preset.m_aTask[nItem];
+			PresetTask& task = pPreset->m_aTask[nItem];
 			if (task.m_nSubCommand == 0 && task.m_str1.IsEmpty()) bSelected = FALSE;
 		}
 	}
@@ -319,12 +375,11 @@ void CDlgPreset::OnBnClickedBtnPresetDown()
 
 void CDlgPreset::SwapListItem(int n1, int n2)
 {
-	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
-	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
+	BatchNamerPreset* pPreset = CurrentPreset();
 	CListCtrl* pList = (CListCtrl*)GetDlgItem(IDC_LIST_PRESET);
-	PresetTask task1(preset.m_aTask[n1]), task2(preset.m_aTask[n2]);
-	preset.m_aTask[n1] = task2;
-	preset.m_aTask[n2] = task1;
+	PresetTask task1(pPreset->m_aTask[n1]), task2(pPreset->m_aTask[n2]);
+	pPreset->m_aTask[n1] = task2;
+	pPreset->m_aTask[n2] = task1;
 	SetListTask(n1, task2);
 	SetListTask(n2, task1);
 	pList->SetItemState(n2, LVIS_SELECTED, LVIS_SELECTED);
@@ -414,18 +469,42 @@ void CDlgPreset::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 }
 
 
-/*void CDlgPreset::OnBnClickedRadioApplyMove()
+void CDlgPreset::OnBnClickedBtnPresetSort()
 {
-	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
-	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
-	preset.m_nApplyOption = APPLY_MOVE;
+	BatchNamerPreset* pPreset = CurrentPreset();
+	CDlgSort dlg;
+	dlg.m_bSortAscend = pPreset->m_bSortAscsend;
+	dlg.m_nSortCol = pPreset->m_nSortColumn;
+	if (dlg.DoModal() == IDOK)
+	{
+		pPreset->m_bSortAscsend = dlg.m_bSortAscend;
+		pPreset->m_nSortColumn = dlg.m_nSortCol;
+		UpdateSortButton(dlg.m_nSortCol, dlg.m_bSortAscend);
+	}
 }
 
 
-void CDlgPreset::OnBnClickedRadioApplyCopy()
+void CDlgPreset::OnBnClickedChkPresetSort()
 {
-	CComboBox* pCB = (CComboBox*)GetDlgItem(IDC_CB_PRESET_SELECT);
-	BatchNamerPreset& preset = APP()->m_aPreset[pCB->GetCurSel()];
-	preset.m_nApplyOption = APPLY_COPY;
+	BOOL b = IsChecked(this, IDC_CHK_PRESET_SORT);
+	GetDlgItem(IDC_BTN_PRESET_SORT)->EnableWindow(b);
+	CurrentPreset()->m_bAutoSort = b;
 }
-*/
+
+
+void CDlgPreset::OnBnClickedChkPresetApply()
+{
+	BOOL b = IsChecked(this, IDC_CHK_PRESET_APPLY);
+	GetDlgItem(IDC_CB_PRESET_APPLY)->EnableWindow(b);
+	CurrentPreset()->m_bAutoApply = b;
+}
+
+
+void CDlgPreset::OnSelchangeCbPresetApply()
+{
+	BatchNamerPreset* pPreset = CurrentPreset();
+	CComboBox* pCBApply = (CComboBox*)GetDlgItem(IDC_CB_PRESET_APPLY);
+	int nSel = pCBApply->GetCurSel();
+	if (nSel == 0) pPreset->m_nApplyType = APPLY_MOVE;
+	else if (nSel == 1) pPreset->m_nApplyType = APPLY_COPY;
+}

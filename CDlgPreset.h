@@ -12,6 +12,7 @@ public:
 
 	CToolBar m_toolPreset;
 	int m_nLogFontHeight;
+	int m_nButtonCount;
 
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
@@ -37,10 +38,14 @@ public:
 	void ArrangeCtrl();
 	void SwapListItem(int n1, int n2);
 	void SetListTask(int nItem, PresetTask& task);
+	void UpdateSortButton(int nCol, BOOL bAscending);
+	BatchNamerPreset* CurrentPreset();
 	afx_msg void OnDblclkListPreset(NMHDR* pNMHDR, LRESULT* pResult);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnBnClickedBtnPresetName();
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
-//	afx_msg void OnBnClickedRadioApplyMove();
-//	afx_msg void OnBnClickedRadioApplyCopy();
+	afx_msg void OnBnClickedBtnPresetSort();
+	afx_msg void OnBnClickedChkPresetSort();
+	afx_msg void OnBnClickedChkPresetApply();
+	afx_msg void OnSelchangeCbPresetApply();
 };

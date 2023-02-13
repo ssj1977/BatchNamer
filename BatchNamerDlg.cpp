@@ -112,6 +112,15 @@ inline CString FormatTimeString(CString strDateTime, CString strFormat)
 	return dt.Format(strTemp);
 }
 
+inline UINT GetUILanguageMenuID(CString strLanguage)
+{
+	UINT nID = 0;
+	if (strLanguage.CompareNoCase(_T("korean")) == 0) nID = IDM_UI_KOREAN;
+	else if (strLanguage.CompareNoCase(_T("english")) == 0) nID = IDM_UI_ENGLISH;
+	else nID = IDM_UI_DEFAULT;
+	return nID;
+}
+
 LPITEMIDLIST GetPIDLfromPath(CString strPath)
 {
 	//경로 길이가 MAX_PATH 보다 짧다면 간단히 끝난다
@@ -626,7 +635,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.31 (2022-03-31 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.32 (2022-10-14 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -651,6 +660,20 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 		UpdateCount();
 	}
 	break;
+	case IDM_UI_DEFAULT:
+	case IDM_UI_ENGLISH:
+	case IDM_UI_KOREAN:
+		if (GetUILanguageMenuID(APP()->m_strUILanguage) != wParam)
+		{
+			if (wParam == IDM_UI_DEFAULT) APP()->m_strUILanguage = L"default";
+			else if (wParam == IDM_UI_KOREAN) APP()->m_strUILanguage = L"korean";
+			else if (wParam == IDM_UI_ENGLISH) APP()->m_strUILanguage = L"english";
+			if (AfxMessageBox(IDSTR(IDS_LANGUAGE_CHANGE), MB_YESNO) == IDYES)
+			{
+				OnCancel();
+			}
+		}
+		break;
 	default:
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
@@ -1672,7 +1695,6 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 		bIsDir = (BOOL)m_list.GetItemData(i);
 		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir, FALSE);
-
 		if (nSubCommand == IDS_ADDSTRING)
 		{
 			//strAdd = str1; //여기서 strAdd는 고정값
@@ -1715,6 +1737,7 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 		}
 		else if (nSubCommand == IDS_MOVE_BRACKET)
 		{
+			strAdd.Empty(); // 없는 경우를 감안해서 초기화가 반드시 필요
 			if (FindBracketPart(strName, c1, c2, nStart, nEnd) == TRUE)
 			{
 				strAdd = strName.Mid(nStart, nEnd - nStart + 1);
@@ -1736,7 +1759,11 @@ void CBatchNamerDlg::StringAdd(int nSubCommand, CString str1, CString str2, BOOL
 			}
 			if (strAdd.IsEmpty() == FALSE)
 			{
-				if (nSubCommand == IDS_MOVE_POS_REVERSE) strAdd = strAdd.MakeReverse();
+				if (nSubCommand == IDS_MOVE_POS_REVERSE)
+				{
+					strAdd = strAdd.MakeReverse();
+					strName = strName.MakeReverse();
+				}
 			}
 		}
 
@@ -3057,6 +3084,12 @@ void CBatchNamerDlg::UpdateMenuEnable()
 	{
 		nWidth = m_list.GetColumnWidth(COL_OLDFOLDER + i);
 		pMenu->CheckMenuItem(aShowMenuID[i], (nWidth != 0) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
+	}
+	UINT nID = GetUILanguageMenuID(APP()->m_strUILanguage);
+	UINT aIDs[] = { IDM_UI_DEFAULT, IDM_UI_KOREAN, IDM_UI_ENGLISH };
+	for (int i = 0; i < 3; i++)
+	{
+		pMenu->CheckMenuItem(aIDs[i], (nID == aIDs[i]) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
 	}
 }
 
