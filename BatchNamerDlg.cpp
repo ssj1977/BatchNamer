@@ -603,7 +603,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_NAME_REPLACE:		NameReplace();	break;
 	case IDM_NAME_ADD_FRONT:	NameAdd(TRUE);	break;
 	case IDM_NAME_ADD_REAR:		NameAdd(FALSE);	break;
-	case IDM_NAME_REMOVESELECTED:	NameRemoveSelected();		break;
+	case IDM_NAME_REMOVESELECTED:	NameRemoveSelected();	break;
 	case IDM_NAME_EXTRACTNUMBER:	NameNumberFilter(FALSE); break;
 	case IDM_NAME_REMOVENUMBER:		NameNumberFilter(TRUE);	break;
 	case IDM_NAME_DIGIT:		NameDigit();		break;
@@ -635,7 +635,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.32 (2022-10-14 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.40 (2023-02-15 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
@@ -687,8 +687,17 @@ void CBatchNamerDlg::PresetEdit()
 	UpdateMenuPreset();
 }
 
+static int st_nApplyOption = APPLY_MOVE;
+
 void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 {
+	//사전 정렬하기
+	if (preset.m_bAutoSort)
+	{
+		m_list.SetRedraw(FALSE);
+		m_list.Sort(preset.m_nSortColumn, preset.m_bSortAscsend);
+		m_list.SetRedraw(TRUE);
+	}
 	INT_PTR nSize = preset.m_aTask.GetSize();
 	for (INT_PTR i = 0; i < nSize; i++)
 	{
@@ -709,6 +718,19 @@ void CBatchNamerDlg::PresetApply(BatchNamerPreset& preset)
 		case IDS_TB_17: ExtDel(FALSE); break; // Delete Extension
 		case IDS_TB_18: StringAdd(task.m_nSubCommand, task.m_str1, task.m_str2, FALSE, TRUE); break;// Add Extension
 		case IDS_TB_19: StringReplace(task.m_nSubCommand, task.m_str1, task.m_str2, TRUE); break;// Replace Extension
+		}
+	}
+	//자동적용
+	if (preset.m_bAutoApply)
+	{
+		st_nApplyOption = preset.m_nApplyType;
+		if (APP()->m_bUseThread == FALSE)
+		{
+			ApplyChange(st_nApplyOption);
+		}
+		else
+		{
+			AfxBeginThread(ApplyChange_Thread, this);
 		}
 	}
 }
@@ -995,12 +1017,14 @@ void CBatchNamerDlg::ConfigEtc()
 	dlg.m_bNameAutoFix = APP()->m_bNameAutoFix;
 	dlg.m_bUseThread = APP()->m_bUseThread;
 	dlg.m_bIncludeExt = APP()->m_bIncludeExt;
+	dlg.m_bAutoNumber = APP()->m_bAutoNumber;
 	dlg.m_pMenu = GetMenu();
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
 		APP()->m_bUseThread = dlg.m_bUseThread;
 		APP()->m_bIncludeExt = dlg.m_bIncludeExt;
+		APP()->m_bAutoNumber = dlg.m_bAutoNumber;
 		UpdateMenuHotkey();
 	}
 }
@@ -2012,8 +2036,6 @@ void CBatchNamerDlg::ExtReplace(int nSubCommand, CString str1, CString str2)
 	}
 }*/
 
-static int st_nApplyOption = APPLY_MOVE;
-
 void CBatchNamerDlg::ApplyChange_Start()
 {
 	CDlgApplyOption dlg;
@@ -2178,7 +2200,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 	}
 	clock_t st, et;
 	st = clock();
-	CString strNewPath, strTemp, strLog, strErr;
+	CString strNewPath, strName, strLog, strErr;
 	//선택된 부분 초기화
 	int nItemSel = m_list.GetNextItem(-1, LVNI_SELECTED);
 	while (nItemSel != -1)
@@ -2196,11 +2218,11 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 	int nMsg = 0;
 	for (int i = 0; i < nCount; i++)
 	{
-		strTemp = m_list.GetItemText(i, COL_NEWNAME);
+		strName = m_list.GetItemText(i, COL_NEWNAME);
 		nMsg = 0;
 		//변경할 이름이 비어있어나 잘못된 문자가 포함된 경우를 검사한다.
-		if (strTemp.IsEmpty() == TRUE) nMsg = IDS_MSG_NONAME;
-		else if (CheckInvalidCharForFile(strTemp, FALSE, FALSE)) nMsg = IDS_INVALID_CHAR;
+		if (strName.IsEmpty() == TRUE) nMsg = IDS_MSG_NONAME;
+		else if (CheckInvalidCharForFile(strName, FALSE, FALSE)) nMsg = IDS_INVALID_CHAR;
 		if (nMsg != 0)
 		{
 			APP()->ShowMsg(IDSTR(nMsg), IDSTR(IDS_MSG_ERROR));
@@ -2211,22 +2233,56 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 			break;
 		}
 		//이름을 만든다
-		strNewPath = m_list.GetItemText(i, COL_NEWFOLDER) + _T("\\") + strTemp;
+		strNewPath = m_list.GetItemText(i, COL_NEWFOLDER) + _T("\\") + strName;
 		//중복되는 이름이 있는지 검사한다
-		it = setNewPath.find(strNewPath);
-		if (it == setNewPath.end())
-		{
-			setNewPath.insert(strNewPath); //없으므로 Set에 등록
+		if (APP()->m_bAutoNumber == FALSE)
+		{	//자동 번호 붙이기가 아닌 경우 멈추기
+			it = setNewPath.find(strNewPath);
+			if (it == setNewPath.end())
+			{
+				setNewPath.insert(strNewPath); //없으므로 Set에 등록
+			}
+			else
+			{
+				strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), IDSTR(IDS_MSG_DUPNAME), strName, strNewPath);
+				APP()->ShowMsg(strErr, IDSTR(IDS_MSG_ERROR));
+				m_list.SetFocus();
+				m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+				m_list.EnsureVisible(i, FALSE);
+				bError = TRUE;
+				break;
+			}
 		}
-		else
+		else // 자동 번호 붙이기인 경우 뒤에 번호 붙이기
 		{
-			strErr.Format(_T("%s\r\n\r\n%s\r\n(%s)"), IDSTR(IDS_MSG_DUPNAME), strTemp, strNewPath);
-			APP()->ShowMsg(strErr, IDSTR(IDS_MSG_ERROR));
-			m_list.SetFocus();
-			m_list.SetItemState(i, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-			m_list.EnsureVisible(i, FALSE);
-			bError = TRUE; 
-			break;
+			if (setNewPath.find(strNewPath) != setNewPath.end())
+			{
+				CString strTempPath = strNewPath;
+				BOOL bIsDir = (BOOL)m_list.GetItemData(i);
+				CString strFolder = m_list.GetItemText(i, COL_NEWFOLDER);
+				CString strNameOnly, strExt;
+				int nNumber = 2; //중첩되는 파일명에 대해 2번부터 번호 부여
+				if (bIsDir == FALSE)
+				{
+					strNameOnly = Get_Name(strName, FALSE);
+					strExt = Get_Ext(strName, FALSE, TRUE);
+				}
+				do
+				{
+					if (bIsDir == FALSE)
+					{
+						strTempPath.Format(L"%s\\%s (%d)%s", strFolder, strNameOnly, nNumber, strExt);
+					}
+					else
+					{
+						strTempPath.Format(L"%s\\%s (%d)", strFolder, strName, nNumber);
+					}
+					nNumber++;
+				} while (setNewPath.find(strTempPath) != setNewPath.end());
+				m_list.SetItemText(i, COL_NEWNAME, Get_Name(strTempPath, TRUE));
+				strNewPath = strTempPath;
+			}
+			setNewPath.insert(strNewPath);
 		}
 		aNewPath.push_back(strNewPath); // Array에 추가
 	}
@@ -2246,7 +2302,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 	}
 
 	//실제 파일이름을 바꾸는 곳
-	CString strOldPath, strOldExt, strNewExt, strBar, strNewFolder;
+	CString strOldPath, strOldExt, strNewExt, strBar, strNewFolder, strTemp;
 	int i=0, nImage = 0;
 	int nChanged = 0, nPercent = 0, nPreviousPercent = 0;
 	BOOL bIsDir = FALSE;

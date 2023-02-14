@@ -240,6 +240,7 @@
 #define IDC_CHK_SHIFT                   1066
 #define IDC_CHK_EXTINCLUDE              1066
 #define IDC_EDIT_HOTKEY                 1067
+#define IDC_CHK_AUTONUMBER              1067
 #define IDC_BTN_EDIT_HOTKEY             1068
 #define IDC_BTN_CLEAR_HOTKEY            1069
 #define IDC_BTN_DEFAULT_HOTKEY          1070

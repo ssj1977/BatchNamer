@@ -47,6 +47,7 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 	SetCheckByID(this, IDC_CHK_NAMEAUTOFIX, m_bNameAutoFix);
 	SetCheckByID(this, IDC_CHK_USETHREAD, m_bUseThread);
 	SetCheckByID(this, IDC_CHK_EXTINCLUDE, m_bIncludeExt);
+	SetCheckByID(this, IDC_CHK_AUTONUMBER, m_bAutoNumber);
 	m_listHotKey.InsertColumn(0, IDSTR(IDS_HOTKEY_COMMAND), LVCFMT_LEFT, 250);
 	m_listHotKey.InsertColumn(1, IDSTR(IDS_HOTKEY_KEY), LVCFMT_LEFT, 150);
 
@@ -63,6 +64,7 @@ void CDlgCFG_Etc::OnOK()
 	m_bNameAutoFix = IsChecked(this, IDC_CHK_NAMEAUTOFIX);
 	m_bUseThread = IsChecked(this, IDC_CHK_USETHREAD);
 	m_bIncludeExt = IsChecked(this, IDC_CHK_EXTINCLUDE);
+	m_bAutoNumber = IsChecked(this, IDC_CHK_AUTONUMBER);
 	CDialogEx::OnOK();
 }
 

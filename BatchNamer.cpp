@@ -55,6 +55,7 @@ CBatchNamerApp::CBatchNamerApp()
 	m_nSortCol = COL_OLDNAME;
 	m_bSortAscend = TRUE;
 	m_bIncludeExt = FALSE;
+	m_bAutoNumber = FALSE;
 }
 
 
@@ -244,6 +245,7 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("NameAutoFix=%d\r\n"), m_bNameAutoFix);	strData += strLine;
 	strLine.Format(_T("UseThread=%d\r\n"), m_bUseThread);	strData += strLine;
 	strLine.Format(_T("IncludeExt=%d\r\n"), m_bIncludeExt);	strData += strLine;
+	strLine.Format(_T("AutoNumber=%d\r\n"), m_bAutoNumber);	strData += strLine;
 	strData += GetPresetExportString();
 	//컬럼폭 저장
 	strData += _T("ColWidths=");
@@ -321,6 +323,7 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("NameAutoFix")) == 0) m_bNameAutoFix = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("UseThread")) == 0) m_bUseThread = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("IncludeExt")) == 0) m_bIncludeExt = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("AutoNumber")) == 0) m_bAutoNumber = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("EnglishUI")) == 0)
 			{   //예전 버전의 호환성을 위한 코드
 				if (CString2BOOL(str2) == FALSE) m_strUILanguage = _T("default");

@@ -155,6 +155,7 @@ public:
 	BOOL m_bAutoSort;
 	BOOL m_bNameAutoFix;
 	BOOL m_bUseThread;
+	BOOL m_bAutoNumber;
 	int m_nLoadType;
 	int m_nShowFlag;
 	int m_nSortCol;

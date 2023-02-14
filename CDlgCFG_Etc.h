@@ -13,6 +13,7 @@ public:
 	BOOL m_bNameAutoFix;
 	BOOL m_bUseThread;
 	BOOL m_bIncludeExt;
+	BOOL m_bAutoNumber;
 	CMenu* m_pMenu;
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
