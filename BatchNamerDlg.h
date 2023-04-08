@@ -21,11 +21,13 @@ public:
 	CFont m_font;
 	CFont m_fontDefault;
 	HIMAGELIST* m_pSysImgList;
+	int m_nLogHeight;
 	int m_nTempLoadType;
 	void UpdateImageList();
 	void UpdateListFont();
 	void ConfigLoadType();
 	void ConfigViewOption();
+	void ConfigHotkey();
 	void ConfigEtc();
 	void UpdateCount();
 	void UpdateColumnSizes();
@@ -33,6 +35,7 @@ public:
 	void UpdateMenuEnable();
 	void UpdateMenuPreset();
 	void UpdateMenuHotkey();
+	void LogAppend(CString strLog);
 	void ArrangeCtrl();
 	int GetFontSize();
 	static UINT ApplyChange_Thread(void* lParam);

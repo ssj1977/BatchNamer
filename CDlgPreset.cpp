@@ -217,6 +217,10 @@ void CDlgPreset::OnBnClickedBtnPresetTaskEdit()
 	int nItem = pList->GetNextItem(-1, LVNI_SELECTED);
 	if (nItem == -1) return;
 	PresetTask& task = pPreset->m_aTask[nItem];
+
+	//설정할 옵션이 없는 기능들은 그냥 반환
+	if (task.m_nSubCommand == 0 && task.m_str1.IsEmpty()) return; 
+
 	CDlgInput dlg;
 	dlg.InitInputByCommand(task.m_nCommand);
 	dlg.InitValue(task.m_nSubCommand, task.m_str1, task.m_str2);

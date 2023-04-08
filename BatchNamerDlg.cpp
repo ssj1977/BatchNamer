@@ -15,12 +15,14 @@
 #include "EtcFunctions.h"
 #include "CDlgCFG_Load.h"
 #include "CDlgCFG_View.h"
+#include "CDlgCFG_Hotkey.h"
 #include "CDlgCFG_Etc.h"
 #include "CDlgInput.h"
 #include "CDlgSort.h"
 #include "CDlgPreset.h"
 #include "CDlgApplyOption.h"
 #include "CDlgListFilter.h"
+#include "CWndDragBar.h"
 #pragma warning(disable:4786)
 //#include <map>
 #include <vector>
@@ -351,6 +353,7 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_pSysImgList = NULL;
 	st_bIsIdle = TRUE;
 	m_nTempLoadType = -1;
+	m_nLogHeight = 50;
 }
 
 void CBatchNamerDlg::DoDataExchange(CDataExchange* pDX)
@@ -372,7 +375,7 @@ BEGIN_MESSAGE_MAP(CBatchNamerDlg, CDialogEx)
 	ON_WM_INITMENU()
 END_MESSAGE_MAP()
 
-
+static CWndDragBar m_wndDragBar; 
 // CBatchNamerDlg 메시지 처리기
 
 BOOL CBatchNamerDlg::OnInitDialog()
@@ -382,7 +385,8 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	//  when the application's main window is not a dialog
 	SetIcon(APP()->m_hIcon, TRUE);		// Set big icon
 	SetIcon(APP()->m_hIcon, FALSE);		// Set small icon
-
+	m_wndDragBar.CreateDragBar(TRUE, this, 35000);
+	m_wndDragBar.m_pOldSize = &(m_nLogHeight);
 	UpdateImageList();
 	DragAcceptFiles(TRUE);
 	// Windows 기본 UI 설정값을 저장한다.
@@ -548,6 +552,7 @@ void CBatchNamerDlg::ArrangeCtrl()
 	int TOOLHEIGHT = (rcButton.Height() + rcSplit.Width()) * 10;
 	int TOOLWIDTH = rcButton.Width() + rcSplit.Width();
 	int BARHEIGHT = GetFontSize() * 2;
+	int DRAGHEIGHT = 10;
 	CRect rc;
 	GetClientRect(rc);
 
@@ -557,13 +562,21 @@ void CBatchNamerDlg::ArrangeCtrl()
 	{
 		GetDlgItem(IDC_TOOLBORDER_2)->MoveWindow(0, TOOLHEIGHT, TOOLWIDTH, 4);
 		m_tool2.MoveWindow(0, TOOLHEIGHT + 4, TOOLWIDTH, TOOLHEIGHT);
-		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH, rc.Height() - BARHEIGHT);
+		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight);
+
+		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight, rc.Width() - TOOLWIDTH , DRAGHEIGHT);
+
+		GetDlgItem(IDC_EDIT_LOG)->MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight + DRAGHEIGHT, rc.Width() - TOOLWIDTH, m_nLogHeight - DRAGHEIGHT);
 	}
 	else
 	{
 		GetDlgItem(IDC_TOOLBORDER_2)->MoveWindow(rc.right - TOOLWIDTH, 0, TOOLWIDTH, 4);
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
-		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT);
+		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT - m_nLogHeight);
+
+		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight, rc.Width() - TOOLWIDTH * 2, DRAGHEIGHT);
+
+		GetDlgItem(IDC_EDIT_LOG)->MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight + DRAGHEIGHT, rc.Width() - TOOLWIDTH * 2, m_nLogHeight - DRAGHEIGHT);
 	}
 	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsIdle ? SW_HIDE : SW_SHOW);
 	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(!st_bIsIdle);
@@ -585,14 +598,18 @@ void CBatchNamerDlg::OnSize(UINT nType, int cx, int cy)
 
 BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 {
+	if (wParam == IDM_ARRANGECTRL)
+	{
+		ArrangeCtrl();
+		return TRUE;
+	}
 	if (st_bIsIdle == FALSE)
 	{
 		return CDialogEx::OnCommand(wParam, lParam);
 	}
 	CMenu* pMenu = GetMenu();
 	UINT state = pMenu->GetMenuState((UINT)wParam, MF_BYCOMMAND);
-	if ((state & MF_GRAYED) != 0) 
-		return TRUE;
+	if ((state & MF_GRAYED) != 0) return TRUE;
 	switch (wParam)
 	{
 	case IDM_CLEAR_LIST:		ClearList(((GetKeyState(VK_SHIFT) & 0xFF00) != 0) ? TRUE : FALSE);		break;
@@ -638,6 +655,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.40 (2023-02-15 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
+	case IDM_CFG_HOTKEY: ConfigHotkey(); break;
 	case IDM_CFG_ETC: ConfigEtc(); break;
 	case IDM_PRESET_EDIT: PresetEdit(); break;
 	case IDM_PRESET_APPLY1: PresetApply(APP()->m_aPreset[0]); break;
@@ -1011,6 +1029,16 @@ void CBatchNamerDlg::ConfigViewOption()
 	}
 }
 
+void CBatchNamerDlg::ConfigHotkey()
+{
+	CDlgCFG_Hotkey dlg;
+	dlg.m_pMenu = GetMenu();
+	if (dlg.DoModal() == IDOK)
+	{
+		UpdateMenuHotkey();
+	}
+}
+
 void CBatchNamerDlg::ConfigEtc()
 {
 	CDlgCFG_Etc dlg;
@@ -1018,14 +1046,12 @@ void CBatchNamerDlg::ConfigEtc()
 	dlg.m_bUseThread = APP()->m_bUseThread;
 	dlg.m_bIncludeExt = APP()->m_bIncludeExt;
 	dlg.m_bAutoNumber = APP()->m_bAutoNumber;
-	dlg.m_pMenu = GetMenu();
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
 		APP()->m_bUseThread = dlg.m_bUseThread;
 		APP()->m_bIncludeExt = dlg.m_bIncludeExt;
 		APP()->m_bAutoNumber = dlg.m_bAutoNumber;
-		UpdateMenuHotkey();
 	}
 }
 
@@ -3199,6 +3225,7 @@ void CBatchNamerDlg::UpdateCount()
 	UpdateToolBar();
 	UpdateMenuEnable();
 	SetDlgItemText(IDC_ST_BAR, strTemp);
+	LogAppend(strTemp);
 }
 
 int CBatchNamerDlg::GetFontSize()
@@ -3273,4 +3300,16 @@ void CBatchNamerDlg::OnInitMenu(CMenu* pMenu)
 {
 	CDialogEx::OnInitMenu(pMenu);
 	UpdateMenuEnable();
+}
+
+void CBatchNamerDlg::LogAppend(CString strLog)
+{
+	CEdit* pEditLog = (CEdit*)GetDlgItem(IDC_EDIT_LOG);
+	int nLen = pEditLog->GetWindowTextLength();
+	pEditLog->SetSel(nLen, nLen);
+	CString strLine;
+	if (nLen == 0) strLine.Format(L"[%s] %s", CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"), strLog);
+	else strLine.Format(L"\r\n[%s] %s", CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"), strLog);
+	
+	pEditLog->ReplaceSel(strLine);
 }

@@ -181,6 +181,7 @@
 #define IDS_FOLDER_EXT                  177
 #define IDS_DATETIME_FORMAT             178
 #define IDD_LIST_FILTER                 178
+#define IDD_CFG_HOTKEY                  179
 #define IDS_CLEAR_LIST_ALL              180
 #define IDS_CLEAR_LIST_BYNAME           181
 #define IDS_CLEAR_LIST_BYNAME_INVERT    182
@@ -245,6 +246,7 @@
 #define IDC_BTN_CLEAR_HOTKEY            1069
 #define IDC_BTN_DEFAULT_HOTKEY          1070
 #define IDC_EDIT1                       1070
+#define IDC_EDIT_LOG                    1070
 #define IDC_BTN_FOLDER_SELECT           1073
 #define IDC_EDIT2                       1074
 #define IDC_BTN_MOVE                    1075
@@ -321,13 +323,14 @@
 #define IDM_UI_KOREAN                   32862
 #define ID_32863                        32863
 #define IDM_UI_DEFAULT                  32864
+#define IDM_CFG_HOTKEY                  32865
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        181
-#define _APS_NEXT_COMMAND_VALUE         32865
+#define _APS_NEXT_COMMAND_VALUE         32866
 #define _APS_NEXT_CONTROL_VALUE         1088
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

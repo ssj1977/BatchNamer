@@ -14,7 +14,6 @@ public:
 	BOOL m_bUseThread;
 	BOOL m_bIncludeExt;
 	BOOL m_bAutoNumber;
-	CMenu* m_pMenu;
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_CFG_ETC };
@@ -28,11 +27,4 @@ public:
 	virtual BOOL OnInitDialog();
 	virtual void OnOK();
 	virtual void OnCancel();
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
-	CListCtrl m_listHotKey;
-	afx_msg void OnDblclkListHotkey(NMHDR* pNMHDR, LRESULT* pResult);
-	afx_msg void OnBnClickedBtnEditHotkey();
-	afx_msg void OnBnClickedBtnClearHotkey();
-	afx_msg void OnBnClickedBtnDefaultHotkey();
-	void LoadHotKey();
 };
