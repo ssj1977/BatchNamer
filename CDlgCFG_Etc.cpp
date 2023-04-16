@@ -41,6 +41,7 @@ BOOL CDlgCFG_Etc::OnInitDialog()
 	SetCheckByID(this, IDC_CHK_USETHREAD, m_bUseThread);
 	SetCheckByID(this, IDC_CHK_EXTINCLUDE, m_bIncludeExt);
 	SetCheckByID(this, IDC_CHK_AUTONUMBER, m_bAutoNumber);
+	SetCheckByID(this, IDC_CHK_SHOWDONEDIALOG, m_bShowDoneDialog);
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
 }
@@ -53,6 +54,7 @@ void CDlgCFG_Etc::OnOK()
 	m_bUseThread = IsChecked(this, IDC_CHK_USETHREAD);
 	m_bIncludeExt = IsChecked(this, IDC_CHK_EXTINCLUDE);
 	m_bAutoNumber = IsChecked(this, IDC_CHK_AUTONUMBER);
+	m_bShowDoneDialog = IsChecked(this, IDC_CHK_SHOWDONEDIALOG);
 	CDialogEx::OnOK();
 }
 

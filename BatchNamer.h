@@ -174,6 +174,9 @@ public:
 	PresetArray m_aPreset;
 	CUIntArray m_aColWidth;
 	BOOL m_bIncludeExt;
+	BOOL m_bShowDoneDialog; // 작업 끝나고 결과 메시지 다이얼로그 표시 여부
+	BOOL m_bShowLog; // 로그 상시 표시 여부
+	int m_nLogHeight; // 로그 창 높이
 	void PresetExport();
 	void PresetImport();
 	void INISave(CString strFile);

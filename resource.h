@@ -162,10 +162,16 @@
 #define IDS_ASCENDING                   148
 #define IDD_SORT                        149
 #define IDS_DESCENDING                  149
+#define IDS_LOG_BEGIN                   150
 #define IDD_PRESET                      151
+#define IDS_LOG_ADDFILES                151
+#define IDS_LOG_REMOVEFILES             152
 #define IDR_TOOLBAR_PRESET              153
+#define IDS_LOG_START_RENAME            153
+#define IDS_LOG_START_COPY              154
 #define IDD_MSG                         155
 #define IDD_CFG_ETC                     157
+#define IDS_LOG_DUPLICATE_NUMBER        157
 #define IDD_HOTKEY                      159
 #define IDS_HOTKEY_COMMAND              161
 #define IDS_HOTKEY_KEY                  162
@@ -243,6 +249,7 @@
 #define IDC_EDIT_HOTKEY                 1067
 #define IDC_CHK_AUTONUMBER              1067
 #define IDC_BTN_EDIT_HOTKEY             1068
+#define IDC_CHK_SHOWDONEDIALOG          1068
 #define IDC_BTN_CLEAR_HOTKEY            1069
 #define IDC_BTN_DEFAULT_HOTKEY          1070
 #define IDC_EDIT1                       1070
@@ -324,13 +331,15 @@
 #define ID_32863                        32863
 #define IDM_UI_DEFAULT                  32864
 #define IDM_CFG_HOTKEY                  32865
+#define IDM_VIEW_LOG                    32866
+#define IDM_SHOW_LOG                    32867
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        181
-#define _APS_NEXT_COMMAND_VALUE         32866
+#define _APS_NEXT_COMMAND_VALUE         32868
 #define _APS_NEXT_CONTROL_VALUE         1088
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

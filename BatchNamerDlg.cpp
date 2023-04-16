@@ -353,7 +353,6 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_pSysImgList = NULL;
 	st_bIsIdle = TRUE;
 	m_nTempLoadType = -1;
-	m_nLogHeight = 50;
 }
 
 void CBatchNamerDlg::DoDataExchange(CDataExchange* pDX)
@@ -386,7 +385,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	SetIcon(APP()->m_hIcon, TRUE);		// Set big icon
 	SetIcon(APP()->m_hIcon, FALSE);		// Set small icon
 	m_wndDragBar.CreateDragBar(TRUE, this, 35000);
-	m_wndDragBar.m_pOldSize = &(m_nLogHeight);
+	m_wndDragBar.m_pOldSize = &(APP()->m_nLogHeight);
 	UpdateImageList();
 	DragAcceptFiles(TRUE);
 	// Windows 기본 UI 설정값을 저장한다.
@@ -505,6 +504,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 		}
 	}
 	ArrangeCtrl();
+	LogAppend(IDSTR(IDS_LOG_BEGIN));
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -552,7 +552,23 @@ void CBatchNamerDlg::ArrangeCtrl()
 	int TOOLHEIGHT = (rcButton.Height() + rcSplit.Width()) * 10;
 	int TOOLWIDTH = rcButton.Width() + rcSplit.Width();
 	int BARHEIGHT = GetFontSize() * 2;
-	int DRAGHEIGHT = 10;
+	int nDragHeight = 0;
+	int nLogHeight = 0;
+	if (APP()->m_bShowLog)
+	{
+		nLogHeight = APP()->m_nLogHeight;
+		nDragHeight = 10;
+		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.ShowWindow(SW_SHOW);
+		GetDlgItem(IDC_EDIT_LOG)->ShowWindow(SW_SHOW);
+	}
+	else
+	{
+		nLogHeight = 0;
+		nDragHeight = 0;
+		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.ShowWindow(SW_HIDE);
+		GetDlgItem(IDC_EDIT_LOG)->ShowWindow(SW_HIDE);
+	}
+
 	CRect rc;
 	GetClientRect(rc);
 
@@ -562,21 +578,19 @@ void CBatchNamerDlg::ArrangeCtrl()
 	{
 		GetDlgItem(IDC_TOOLBORDER_2)->MoveWindow(0, TOOLHEIGHT, TOOLWIDTH, 4);
 		m_tool2.MoveWindow(0, TOOLHEIGHT + 4, TOOLWIDTH, TOOLHEIGHT);
-		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight);
+		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH, rc.Height() - BARHEIGHT - nLogHeight);
 
-		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight, rc.Width() - TOOLWIDTH , DRAGHEIGHT);
-
-		GetDlgItem(IDC_EDIT_LOG)->MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight + DRAGHEIGHT, rc.Width() - TOOLWIDTH, m_nLogHeight - DRAGHEIGHT);
+		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - APP()->m_nLogHeight, rc.Width() - TOOLWIDTH , nDragHeight);
+		GetDlgItem(IDC_EDIT_LOG)->MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - APP()->m_nLogHeight + nDragHeight, rc.Width() - TOOLWIDTH, APP()->m_nLogHeight - nDragHeight);
 	}
 	else
 	{
 		GetDlgItem(IDC_TOOLBORDER_2)->MoveWindow(rc.right - TOOLWIDTH, 0, TOOLWIDTH, 4);
 		m_tool2.MoveWindow(rc.right - TOOLWIDTH, 4, TOOLWIDTH, TOOLHEIGHT);
-		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT - m_nLogHeight);
+		m_list.MoveWindow(TOOLWIDTH, 0, rc.Width() - TOOLWIDTH * 2, rc.Height() - BARHEIGHT - nLogHeight);
 
-		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight, rc.Width() - TOOLWIDTH * 2, DRAGHEIGHT);
-
-		GetDlgItem(IDC_EDIT_LOG)->MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - m_nLogHeight + DRAGHEIGHT, rc.Width() - TOOLWIDTH * 2, m_nLogHeight - DRAGHEIGHT);
+		if (::IsWindow(m_wndDragBar.m_hWnd)) m_wndDragBar.MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - APP()->m_nLogHeight, rc.Width() - TOOLWIDTH * 2, nDragHeight);
+		GetDlgItem(IDC_EDIT_LOG)->MoveWindow(TOOLWIDTH, rc.Height() - BARHEIGHT - APP()->m_nLogHeight + nDragHeight, rc.Width() - TOOLWIDTH * 2, APP()->m_nLogHeight - nDragHeight);
 	}
 	GetDlgItem(IDC_BTN_STOPTHREAD)->ShowWindow(st_bIsIdle ? SW_HIDE : SW_SHOW);
 	GetDlgItem(IDC_BTN_STOPTHREAD)->EnableWindow(!st_bIsIdle);
@@ -651,6 +665,10 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 	case IDM_SHOW_OLDFOLDER:	ToggleListColumn(COL_OLDFOLDER); break;
 	case IDM_SHOW_NEWFOLDER:	ToggleListColumn(COL_NEWFOLDER); break;
 	case IDM_SHOW_FULLPATH:		ToggleListColumn(COL_FULLPATH); break;
+	case IDM_SHOW_LOG:		
+		APP()->m_bShowLog = APP()->m_bShowLog ? FALSE : TRUE; 
+		ArrangeCtrl();
+		break;
 
 	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.40 (2023-02-15 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
@@ -1046,12 +1064,14 @@ void CBatchNamerDlg::ConfigEtc()
 	dlg.m_bUseThread = APP()->m_bUseThread;
 	dlg.m_bIncludeExt = APP()->m_bIncludeExt;
 	dlg.m_bAutoNumber = APP()->m_bAutoNumber;
+	dlg.m_bShowDoneDialog = APP()->m_bShowDoneDialog;
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
 		APP()->m_bUseThread = dlg.m_bUseThread;
 		APP()->m_bIncludeExt = dlg.m_bIncludeExt;
 		APP()->m_bAutoNumber = dlg.m_bAutoNumber;
+		APP()->m_bShowDoneDialog = dlg.m_bShowDoneDialog;
 	}
 }
 
@@ -2209,9 +2229,13 @@ BOOL CopyPath(CString& strOldPath, CString& strNewPath, BOOL bMove)
 //실제 파일 시스템상의 정보를 바꿔 파일 이름 변경하기
 void CBatchNamerDlg::ApplyChange(int nApplyOption)
 {
+	CEdit* pEditLog = (CEdit*)GetDlgItem(IDC_EDIT_LOG);
+	int nLogStart = pEditLog->GetWindowTextLength();
 	BOOL bError = FALSE;
 	st_bIsIdle = FALSE;
 	SetDlgItemText(IDC_ST_BAR, IDSTR(IDS_WORKING));
+	if (nApplyOption == APPLY_COPY) LogAppend(IDSTR(IDS_LOG_START_COPY));
+	else							LogAppend(IDSTR(IDS_LOG_START_RENAME));
 	m_list.EnableWindow(FALSE);
 	m_tool1.EnableWindow(FALSE);
 	m_tool2.EnableWindow(FALSE);
@@ -2234,7 +2258,6 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 		m_list.SetItemState(nItemSel, 0, LVIS_SELECTED | LVIS_FOCUSED);
 		nItemSel = m_list.GetNextItem(-1, LVNI_SELECTED);
 	}
-	
 	CPathSet setNewFolder; // 폴더 존재여부 확인용
 	//중복여부 체크 및 새로운 파일명 만들기
 	CPathSet setNewPath;  //파일 이름 중복 확인용
@@ -2305,7 +2328,10 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 					}
 					nNumber++;
 				} while (setNewPath.find(strTempPath) != setNewPath.end());
-				m_list.SetItemText(i, COL_NEWNAME, Get_Name(strTempPath, TRUE));
+				CString strNewName = Get_Name(strTempPath, TRUE);
+				strLog.Format(L"%s: %s", IDSTR(IDS_LOG_DUPLICATE_NUMBER), strNewName);
+				LogAppend(strLog);
+				m_list.SetItemText(i, COL_NEWNAME, strNewName);
 				strNewPath = strTempPath;
 			}
 			setNewPath.insert(strNewPath);
@@ -2387,7 +2413,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 				{
 					if (bIsDir == TRUE && nApplyOption == APPLY_COPY)
 					{  //SHFileOperation을 캔슬한 경우 GetLastError()를 사용할 수 없으므로 별도로 처리한다.
-						strTemp.Format(_T("(%s) %s → %s\r\n - %s"), IDSTR(IDS_MSG_CHANGEFAIL), m_list.GetOldPath(i), aNewPath[i], IDSTR(IDS_FILEOPCANCELED) );
+						strLog.Format(_T("%s: %s (%s)"), IDSTR(IDS_MSG_CHANGEFAIL), m_list.GetOldPath(i), IDSTR(IDS_FILEOPCANCELED) );
 					}
 					else
 					{
@@ -2400,10 +2426,10 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 							(LPTSTR)&lpMsgBuf, 0, NULL);
 						strErr = (LPCTSTR)lpMsgBuf;
 						LocalFree(lpMsgBuf);
-						if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n')) strErr += _T("\r\n");
-						strTemp.Format(_T("(%s) %s → %s\r\n - %s"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath[i]), strErr);
+						strErr.Trim();
+						strLog.Format(_T("%s: %s (%s)"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), strErr);
 					}
-					strLog += strTemp;
+					LogAppend(strLog);
 				}
 				else
 				{
@@ -2427,8 +2453,8 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 			}
 			else
 			{
-				strTemp.Format(_T("(%s) %s\r\n - %s\r\n"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), IDSTR(IDS_MSG_SAMENAME));
-				strLog += strTemp;
+				strLog.Format(_T("%s: %s (%s)"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), IDSTR(IDS_MSG_SAMENAME));
+				LogAppend(strLog);
 			}
 		}
 		catch (CFileException* e)
@@ -2437,9 +2463,9 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 			e->GetErrorMessage(pBufMsg, 1000);
 			e->Delete();
 			strErr = pBufMsg;
-			if (strErr.IsEmpty() == FALSE && strErr.GetAt(strErr.GetLength() - 1) != _T('\n')) strErr += _T("\r\n");
-			strTemp.Format(_T("(%s) %s → %s\r\n - %s\r\n"),IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), Get_Name(aNewPath.at(i)), strErr);
-			strLog += strTemp;
+			strErr.Trim();
+			strLog.Format(_T("%s: %s (%s)"), IDSTR(IDS_MSG_CHANGEFAIL), Get_Name(strOldPath), strErr);
+			LogAppend(strLog);
 		}
 		if (APP()->m_bUseThread != FALSE)
 		{
@@ -2452,13 +2478,20 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 			}
 		}
 	}
-	strTemp.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
-	if (strLog.IsEmpty() == FALSE) strTemp += _T("\r\n\r\n");
-	strLog = strTemp + strLog;
+	strLog.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
+	LogAppend(strLog);
 	et = clock();
-	strTemp.Format(IDSTR(IDS_ELAPSED_TIME), et - st);
-	strLog += L"\r\n" + strTemp;
-	APP()->ShowMsg(strLog, IDSTR(IDS_RESULT_REPORT));
+	strLog.Format(IDSTR(IDS_ELAPSED_TIME), et - st);
+	LogAppend(strLog);
+	if (APP()->m_bShowDoneDialog)
+	{
+		int nLogEnd = pEditLog->GetWindowTextLength();
+		CString strAllLog, strPopup;
+		pEditLog->GetWindowText(strAllLog);
+		strPopup = strAllLog.Mid(nLogStart, nLogEnd - nLogStart);
+		strPopup.Trim();
+		APP()->ShowMsg(strPopup, IDSTR(IDS_RESULT_REPORT));
+	}
 	m_list.EnableWindow(TRUE);
 	m_tool1.EnableWindow(TRUE);
 	m_tool2.EnableWindow(TRUE);
@@ -3167,6 +3200,7 @@ void CBatchNamerDlg::UpdateMenuEnable()
 		nWidth = m_list.GetColumnWidth(COL_OLDFOLDER + i);
 		pMenu->CheckMenuItem(aShowMenuID[i], (nWidth != 0) ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
 	}
+	pMenu->CheckMenuItem(IDM_SHOW_LOG, APP()->m_bShowLog ? MF_CHECKED | MF_BYCOMMAND : MF_UNCHECKED | MF_BYCOMMAND);
 	UINT nID = GetUILanguageMenuID(APP()->m_strUILanguage);
 	UINT aIDs[] = { IDM_UI_DEFAULT, IDM_UI_KOREAN, IDM_UI_ENGLISH };
 	for (int i = 0; i < 3; i++)
@@ -3213,6 +3247,8 @@ void CBatchNamerDlg::UpdateMenuHotkey()
 	}
 }
 
+static int st_PreviousCount = 0;
+
 void CBatchNamerDlg::UpdateCount()
 {
 	int nCount = m_list.GetItemCount();
@@ -3225,7 +3261,16 @@ void CBatchNamerDlg::UpdateCount()
 	UpdateToolBar();
 	UpdateMenuEnable();
 	SetDlgItemText(IDC_ST_BAR, strTemp);
-	LogAppend(strTemp);
+	if (nCount != st_PreviousCount)
+	{
+		CString strLog;
+		if (nCount > st_PreviousCount)	
+			strLog.Format((LPCTSTR)IDSTR(IDS_LOG_ADDFILES), nCount - st_PreviousCount);
+		else 
+			strLog.Format((LPCTSTR)IDSTR(IDS_LOG_REMOVEFILES), st_PreviousCount - nCount);
+		LogAppend(strLog);
+		st_PreviousCount = nCount;
+	}
 }
 
 int CBatchNamerDlg::GetFontSize()
@@ -3308,8 +3353,7 @@ void CBatchNamerDlg::LogAppend(CString strLog)
 	int nLen = pEditLog->GetWindowTextLength();
 	pEditLog->SetSel(nLen, nLen);
 	CString strLine;
-	if (nLen == 0) strLine.Format(L"[%s] %s", CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"), strLog);
-	else strLine.Format(L"\r\n[%s] %s", CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"), strLog);
-	
+	strLine.Format(L"\r\n[%s] %s", (LPCTSTR)CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"), (LPCTSTR)strLog);
+	if (nLen == 0) strLine.TrimLeft();
 	pEditLog->ReplaceSel(strLine);
 }

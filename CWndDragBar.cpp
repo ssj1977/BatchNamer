@@ -69,7 +69,7 @@ void CWndDragBar::OnMouseMove(UINT nFlags, CPoint point)
 		int& nOldSize = (*m_pOldSize);
 		int nGap = m_bVertical ? point.y : point.x;
 		int nNewSize = nOldSize - nGap;
-		if (abs(nGap) > 5)
+		if (abs(nGap) > 5 && nNewSize > 10)
 		{
 			nOldSize = nNewSize;
 			GetParent()->SendMessage(WM_COMMAND, m_nParentCommand);

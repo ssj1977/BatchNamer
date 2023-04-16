@@ -21,7 +21,6 @@ public:
 	CFont m_font;
 	CFont m_fontDefault;
 	HIMAGELIST* m_pSysImgList;
-	int m_nLogHeight;
 	int m_nTempLoadType;
 	void UpdateImageList();
 	void UpdateListFont();

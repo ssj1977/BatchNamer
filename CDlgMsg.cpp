@@ -71,6 +71,8 @@ BOOL CDlgMsg::OnInitDialog()
 	m_nLogFontHeight = abs(lf.lfHeight);
 	SetWindowText(m_strTitle);
 	SetDlgItemText(IDC_EDIT_MSG, m_strMsg);
+	CEdit* pEdit = (CEdit*)(GetDlgItem(IDC_EDIT_MSG));
+	pEdit->LineScroll(pEdit->GetLineCount());
 	ArrangeCtrl();
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.

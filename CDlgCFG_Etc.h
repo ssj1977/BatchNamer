@@ -14,6 +14,7 @@ public:
 	BOOL m_bUseThread;
 	BOOL m_bIncludeExt;
 	BOOL m_bAutoNumber;
+	BOOL m_bShowDoneDialog;
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_CFG_ETC };
