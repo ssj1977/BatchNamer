@@ -417,6 +417,12 @@ BOOL CBatchNamerDlg::OnInitDialog()
 		APP()->m_nFontSize = m_nDefault_FontSize;
 	}
 	UpdateListFont();
+
+	//로그창의 텍스트 제한을 최대로 늘려준다 (기본값은 30000) 
+	CEdit* pEditLog = (CEdit*)GetDlgItem(IDC_EDIT_LOG);
+	pEditLog->SetLimitText(0);
+
+	//툴바 
 	m_tool1.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST, WS_CHILD | WS_VISIBLE);
 	m_tool1.LoadToolBar(IDR_TOOLBAR1);
 	m_tool2.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST, WS_CHILD | WS_VISIBLE);
