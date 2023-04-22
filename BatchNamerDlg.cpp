@@ -672,7 +672,7 @@ BOOL CBatchNamerDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 		ArrangeCtrl();
 		break;
 
-	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.40 (2023-02-15 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
+	case IDM_VERSION: APP()->ShowMsg(_T("BatchNamer v2.50 (2023-04-23 Release)\r\n\r\nhttps://blog.naver.com/darkwalk77"), IDSTR(IDS_MSG_VERSION)); 	break;
 	case IDM_CFG_LOAD: ConfigLoadType(); break;
 	case IDM_CFG_VIEW: ConfigViewOption(); break;
 	case IDM_CFG_HOTKEY: ConfigHotkey(); break;
@@ -2448,13 +2448,22 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 	LogAppend(strLog);
 	if (APP()->m_bClearAfterApply && aItemDone!=NULL)
 	{	//옵션에 따라 작업이 끝난 이후 성공적으로 적용되었다면 삭제
-		int nLastItem = m_list.GetItemCount() - 1;
-		for (int i = nLastItem; i >= 0; i--)
-		{
-			if (*(aItemDone + i) == TRUE)
+		if (nCount == nChanged)
+		{	//모두 정상 적용된 경우 한번에 삭제
+			//ClearList를 부르면 UpdateCount() 등이 중복 호출되므로 직접 지운다
+			m_list.DeleteAllItems();
+			m_list.m_setPath.clear();
+		}
+		else
+		{	//일부 적용되지 않은 경우는 일일이 체크하면서 삭제
+			int nLastItem = m_list.GetItemCount() - 1;
+			for (int i = nLastItem; i >= 0; i--)
 			{
-				m_list.m_setPath.erase(m_list.GetOldPath(i));
-				m_list.DeleteItem(i);
+				if (*(aItemDone + i) == TRUE)
+				{
+					m_list.m_setPath.erase(m_list.GetOldPath(i));
+					m_list.DeleteItem(i);
+				}
 			}
 		}
 		delete[] aItemDone;
