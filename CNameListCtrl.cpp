@@ -77,7 +77,8 @@ int CNameListCtrl::CompareItemByType(LPARAM item1, LPARAM item2, int nCol, int n
 		}
 		else
 		{
-			nRet = StrCmpLogicalW(str1.GetBuffer(), str2.GetBuffer());
+			if (m_bSortLikeWindows == FALSE) nRet = StrCmp(str1, str2);
+			else nRet = StrCmpLogicalW(str1.GetBuffer(), str2.GetBuffer());
 			str1.ReleaseBuffer();
 			str2.ReleaseBuffer();
 		}

@@ -251,9 +251,12 @@
 #define IDC_BTN_EDIT_HOTKEY             1068
 #define IDC_CHK_SHOWDONEDIALOG          1068
 #define IDC_BTN_CLEAR_HOTKEY            1069
+#define IDC_CHK_SORTLIKEWINDOWS         1069
 #define IDC_BTN_DEFAULT_HOTKEY          1070
 #define IDC_EDIT1                       1070
 #define IDC_EDIT_LOG                    1070
+#define IDC_CHK_SORTLIKEWINDOWS2        1070
+#define IDC_CHK_CLEARAFTERAPPLY         1070
 #define IDC_BTN_FOLDER_SELECT           1073
 #define IDC_EDIT2                       1074
 #define IDC_BTN_MOVE                    1075

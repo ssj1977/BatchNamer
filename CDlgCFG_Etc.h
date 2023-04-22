@@ -15,6 +15,8 @@ public:
 	BOOL m_bIncludeExt;
 	BOOL m_bAutoNumber;
 	BOOL m_bShowDoneDialog;
+	BOOL m_bSortLikeWindows;
+	BOOL m_bClearAfterApply;
 // 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_CFG_ETC };

@@ -41,7 +41,8 @@ typedef vector<CString> CStrArray;
 typedef map<CString, int> CExtMap; //확장자에 해당하는 이미지맵의 번호를 기억
 typedef map<CString, int> CFolderMap; //폴더별 카운트용
 static CExtMap mapExt;
-static BOOL st_bIsIdle;
+static BOOL st_bIsIdle;  // 쓰레드가 돌아가고 있는지 체크
+static BOOL st_bChanged; // 종료시 확인창을 띄울지 여부를 결정하기 위해 변동사항이 있는지를 체크
 CString ReplaceWithWildCards(CString strSrc, CString str1, CString str2, BOOL bReturnBlockOnly);
 
 inline CString GetFolderName(CString strPath)
@@ -352,6 +353,7 @@ CBatchNamerDlg::CBatchNamerDlg(CWnd* pParent /*=nullptr*/)
 	m_clrDefault_Text = RGB(0, 0, 0);
 	m_pSysImgList = NULL;
 	st_bIsIdle = TRUE;
+	st_bChanged = FALSE;
 	m_nTempLoadType = -1;
 }
 
@@ -415,7 +417,6 @@ BOOL CBatchNamerDlg::OnInitDialog()
 		APP()->m_nFontSize = m_nDefault_FontSize;
 	}
 	UpdateListFont();
-
 	m_tool1.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST, WS_CHILD | WS_VISIBLE);
 	m_tool1.LoadToolBar(IDR_TOOLBAR1);
 	m_tool2.CreateEx(this, TBSTYLE_FLAT | TBSTYLE_LIST, WS_CHILD | WS_VISIBLE);
@@ -457,6 +458,7 @@ BOOL CBatchNamerDlg::OnInitDialog()
 	case SHIL_EXTRALARGE: nIconWidth = 48; break;
 	case SHIL_JUMBO: nIconWidth = 256; break;
 	}
+	m_list.m_bSortLikeWindows = APP()->m_bSortLikeWindows;
 	m_list.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 	m_list.InsertColumn(COL_OLDNAME, IDSTR(IDS_COL_OLDNAME)); //_T("현재이름")
 	m_list.InsertColumn(COL_NEWNAME, IDSTR(IDS_COL_NEWNAME)); //_T("바뀔이름"));
@@ -530,7 +532,7 @@ void CBatchNamerDlg::OnCancel()
 		if (AfxMessageBox(IDSTR(IDS_MSG_STOPTHREAD), MB_YESNO) == IDNO) return;
 		st_bIsIdle = TRUE;
 	}
-	if (m_list.GetItemCount() > 0)
+	if (st_bChanged == TRUE && m_list.GetItemCount() > 0)
 	{
 		if (AfxMessageBox(IDSTR(IDS_CONFIRM_EXIT), MB_YESNO) == IDNO) return;
 	}
@@ -1065,6 +1067,8 @@ void CBatchNamerDlg::ConfigEtc()
 	dlg.m_bIncludeExt = APP()->m_bIncludeExt;
 	dlg.m_bAutoNumber = APP()->m_bAutoNumber;
 	dlg.m_bShowDoneDialog = APP()->m_bShowDoneDialog;
+	dlg.m_bSortLikeWindows = APP()->m_bSortLikeWindows;
+	dlg.m_bClearAfterApply = APP()->m_bClearAfterApply;
 	if (dlg.DoModal() == IDOK)
 	{
 		APP()->m_bNameAutoFix = dlg.m_bNameAutoFix;
@@ -1072,6 +1076,9 @@ void CBatchNamerDlg::ConfigEtc()
 		APP()->m_bIncludeExt = dlg.m_bIncludeExt;
 		APP()->m_bAutoNumber = dlg.m_bAutoNumber;
 		APP()->m_bShowDoneDialog = dlg.m_bShowDoneDialog;
+		APP()->m_bSortLikeWindows = dlg.m_bSortLikeWindows;
+		APP()->m_bClearAfterApply = dlg.m_bClearAfterApply;
+		m_list.m_bSortLikeWindows = APP()->m_bSortLikeWindows;
 	}
 }
 
@@ -1083,6 +1090,7 @@ void CBatchNamerDlg::AddPathStart(CString strPath)
 	if (dwAttribute != INVALID_FILE_ATTRIBUTES)
 	{
 		BOOL bIsDirectory = (dwAttribute & FILE_ATTRIBUTE_DIRECTORY) ? TRUE : FALSE;
+		st_bChanged = TRUE;
 		AddPath(strPath, bIsDirectory);
 	}
 }
@@ -1316,60 +1324,6 @@ void CBatchNamerDlg::ClearList(BOOL bClearAll)
 		ClearList(IDS_CLEAR_LIST_ALL, _T(""), _T(""));
 		m_list.SetRedraw(TRUE);
 	}
-/*	if (bClearAll == FALSE)
-	{
-		CDlgListFilter dlg;
-		if (dlg.DoModal() == IDCANCEL) return;
-		if (dlg.m_nClearOption == CLEAR_LIST_BYFILTER ||
-			dlg.m_nClearOption == CLEAR_LIST_BYFILTER_INVERT)
-		{
-			BOOL bInvert = (dlg.m_nClearOption == CLEAR_LIST_BYFILTER_INVERT) ? TRUE : FALSE;
-			int nCount = m_list.GetItemCount() - 1;
-			CString& name_f = dlg.m_strFilter_Name;
-			CString& ext_f = dlg.m_strFilter_Ext;
-			BOOL bUseName = name_f.IsEmpty() ? FALSE : TRUE;
-			BOOL bUseExt = ext_f.IsEmpty() ? FALSE : TRUE;
-			if (bUseName == FALSE && bUseExt == FALSE) return; //조건이 모두 비어있느 경우
-			BOOL bName = !bUseName, bExt = !bUseExt; // 해당 조건이 필요없는 경우에 무시하기 위한 초기값
-			BOOL bIsDir = FALSE;
-			CString strFullPath, strName, strExt;
-			for (int i = nCount; i >= 0 ; i--) //삭제는 끝에서부터
-			{
-				bIsDir = (BOOL)m_list.GetItemData(i);
-				if (bUseName)
-				{
-					strName = Get_Name(m_list.GetItemText(i, COL_OLDNAME), bIsDir);
-					bName = (ReplaceWithWildCards(strName, name_f, name_f, TRUE).IsEmpty()) ? FALSE : TRUE;
-				}
-				if (bUseExt)
-				{
-					strExt = Get_Ext(m_list.GetItemText(i, COL_OLDNAME), bIsDir, FALSE);
-					bExt = (ReplaceWithWildCards(strExt, ext_f, ext_f, TRUE).IsEmpty()) ? FALSE : TRUE;
-				}
-				if ( (!bInvert) == (bName && bExt) )
-				{
-					strFullPath = m_list.GetOldPath(i);
-					m_list.m_setPath.erase(strFullPath);
-					m_list.DeleteItem(i);
-				}
-			}
-			m_bSelected = (m_list.GetNextItem(-1, LVNI_SELECTED) != -1);
-			UpdateCount();
-			return;
-		}
-		else if (dlg.m_nClearOption == CLEAR_LIST_ALL)
-		{
-			bClearAll = TRUE;
-		}
-	}
-	if (bClearAll == TRUE)
-	{
-		m_list.DeleteAllItems();
-		m_list.m_setPath.clear();
-		m_bSelected = FALSE;
-		UpdateCount();
-		return;
-	}*/
 }
 
 //바뀔 이름을 원래 이름으로 다시 복구
@@ -1927,7 +1881,7 @@ void CBatchNamerDlg::NameDigit(int nSubCommand, CString str1, CString str2)
 		BOOL bIsDir = (BOOL)m_list.GetItemData(i);
 		strName = Get_Name(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
 		strExt = Get_Ext(m_list.GetItemText(i, COL_NEWNAME), bIsDir);
-		nStatus = 0;
+		nStatus = 0; //0은 초기상태, 1은 첫 숫자 발견, 2는 숫자 부분 찾기 완료
 		nStart = -1;
 		nEnd = -1;
 		if (nSubCommand == IDS_DIGITBACK) //뒷번호
@@ -1946,6 +1900,7 @@ void CBatchNamerDlg::NameDigit(int nSubCommand, CString str1, CString str2)
 					break;
 				}
 			}
+			if (nStatus == 1 && nStart == -1) nStart = 0;
 		}
 		else //if (nSubCommand == IDS_DIGITFRONT) //앞번호
 		{
@@ -1963,8 +1918,8 @@ void CBatchNamerDlg::NameDigit(int nSubCommand, CString str1, CString str2)
 					break;
 				}
 			}
+			if (nStatus == 1 && nEnd == -1) nEnd = strName.GetLength() - 1;
 		}
-		if (nStatus == 1) nStart = 0;
 		int nNumLength = nEnd - nStart + 1;
 		if (nStart != -1 && nEnd != -1 && nNumLength > 0)
 		{
@@ -2359,6 +2314,12 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 	int nChanged = 0, nPercent = 0, nPreviousPercent = 0;
 	BOOL bIsDir = FALSE;
 	BOOL bSuccess = FALSE;
+	BOOL* aItemDone = NULL; //변환 성공여부를 저장하는 배열, 나중에 성공한 항목의 삭제를 위해 사용한다.
+	if (APP()->m_bClearAfterApply)
+	{
+		aItemDone = new BOOL[nCount];
+		ZeroMemory(aItemDone, sizeof(BOOL) * nCount);
+	}
 	for (i = 0; i < nCount; i++)
 	{
 		if (st_bIsIdle == TRUE) break;
@@ -2448,6 +2409,7 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 							m_list.SetItem(i, 0, LVIF_IMAGE, NULL, nImage, 0, 0, 0);
 						}
 					}
+					if (APP()->m_bClearAfterApply && aItemDone != NULL ) *(aItemDone + i) = TRUE;
 					nChanged++;
 				}
 			}
@@ -2480,11 +2442,25 @@ void CBatchNamerDlg::ApplyChange(int nApplyOption)
 	}
 	strLog.Format(IDSTR(IDS_MSG_CHANGEDONE), nCount, i, nChanged);
 	LogAppend(strLog);
+	if (nCount == nChanged) st_bChanged = FALSE; // 모두 적용되어 바로 끝내도 됨을 알리는 플래그
 	et = clock();
 	strLog.Format(IDSTR(IDS_ELAPSED_TIME), et - st);
 	LogAppend(strLog);
+	if (APP()->m_bClearAfterApply && aItemDone!=NULL)
+	{	//옵션에 따라 작업이 끝난 이후 성공적으로 적용되었다면 삭제
+		int nLastItem = m_list.GetItemCount() - 1;
+		for (int i = nLastItem; i >= 0; i--)
+		{
+			if (*(aItemDone + i) == TRUE)
+			{
+				m_list.m_setPath.erase(m_list.GetOldPath(i));
+				m_list.DeleteItem(i);
+			}
+		}
+		delete[] aItemDone;
+	}
 	if (APP()->m_bShowDoneDialog)
-	{
+	{	//옵션에 따라 작업이 끝난 이후 별도 창으로 표시
 		int nLogEnd = pEditLog->GetWindowTextLength();
 		CString strAllLog, strPopup;
 		pEditLog->GetWindowText(strAllLog);
@@ -3271,6 +3247,7 @@ void CBatchNamerDlg::UpdateCount()
 		LogAppend(strLog);
 		st_PreviousCount = nCount;
 	}
+	if (m_list.GetItemCount() == 0) st_bChanged = FALSE;
 }
 
 int CBatchNamerDlg::GetFontSize()

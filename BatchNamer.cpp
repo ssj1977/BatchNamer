@@ -57,8 +57,10 @@ CBatchNamerApp::CBatchNamerApp()
 	m_bIncludeExt = FALSE;
 	m_bAutoNumber = FALSE;
 	m_bShowDoneDialog = FALSE;
+	m_bSortLikeWindows = TRUE;
 	m_bShowLog = TRUE; 
 	m_nLogHeight = 50;
+	m_bClearAfterApply = FALSE;
 }
 
 
@@ -252,6 +254,8 @@ void CBatchNamerApp::INISave(CString strFile)
 	strLine.Format(_T("ShowDoneDialog=%d\r\n"), m_bShowDoneDialog);	strData += strLine;
 	strLine.Format(_T("ShowLog=%d\r\n"), m_bShowLog);	strData += strLine;
 	strLine.Format(_T("LogHeight=%d\r\n"), m_nLogHeight);	strData += strLine;
+	strLine.Format(_T("SortLikeWindows=%d\r\n"), m_bSortLikeWindows);	strData += strLine;
+	strLine.Format(_T("ClearAfterApply=%d\r\n"), m_bClearAfterApply);	strData += strLine;
 	strData += GetPresetExportString();
 	//컬럼폭 저장
 	strData += _T("ColWidths=");
@@ -332,6 +336,8 @@ void CBatchNamerApp::INILoad(CString strFile)
 			else if (str1.CompareNoCase(_T("AutoNumber")) == 0) m_bAutoNumber = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("ShowDoneDialog")) == 0) m_bShowDoneDialog = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("ShowLog")) == 0) m_bShowLog = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("SortLikeWindows")) == 0) m_bSortLikeWindows = CString2BOOL(str2);
+			else if (str1.CompareNoCase(_T("ClearAfterApply")) == 0) m_bClearAfterApply = CString2BOOL(str2);
 			else if (str1.CompareNoCase(_T("LogHeight")) == 0) 
 			{
 				m_nLogHeight = _ttoi(str2); 

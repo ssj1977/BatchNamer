@@ -28,5 +28,6 @@ public:
 	CString GetOldPath(int nItem);
 	CString GetNewPath(int nItem);
 	void DeleteListItem(int nItem);
+	BOOL m_bSortLikeWindows = TRUE;
 };
 

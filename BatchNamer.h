@@ -176,6 +176,8 @@ public:
 	BOOL m_bIncludeExt;
 	BOOL m_bShowDoneDialog; // 작업 끝나고 결과 메시지 다이얼로그 표시 여부
 	BOOL m_bShowLog; // 로그 상시 표시 여부
+	BOOL m_bSortLikeWindows; //윈도우 탐색기와 동일한 방식으로 정렬하는 옵션
+	BOOL m_bClearAfterApply; //작업 성공시 자동으로 목록으로 삭제하는 옵션
 	int m_nLogHeight; // 로그 창 높이
 	void PresetExport();
 	void PresetImport();
